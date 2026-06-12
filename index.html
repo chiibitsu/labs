@@ -3,8 +3,28 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Sigil — a generative cosmos that is uniquely yours</title>
-<meta name="description" content="A self-contained generative artwork and ambient instrument. Every name grows its own universe." />
+<title>Sigil — type a name, watch its universe grow</title>
+<meta name="description" content="A self-contained generative artwork and ambient instrument. Type a name and a whole cosmos grows from it — colour, glyph, music, and motion. Every name is a shareable universe." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<!-- Open Graph / social cards.
+     Update the absolute URLs below if you host on a custom domain
+     (e.g. https://chiibitsu.com/sigil/). The defaults assume GitHub Pages. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Sigil — type a name, watch its universe grow" />
+<meta property="og:description" content="A generative cosmos grown from a single word. Colour, glyph, music, and motion — every name is its own shareable universe." />
+<meta property="og:url" content="https://chiibitsu.github.io/labs/" />
+<meta property="og:image" content="https://chiibitsu.github.io/labs/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="A glowing, symmetric cosmos of particles around a central glyph, with the wordmark SIGIL." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Sigil — type a name, watch its universe grow" />
+<meta name="twitter:description" content="A generative cosmos grown from a single word. Every name is its own shareable universe." />
+<meta name="twitter:image" content="https://chiibitsu.github.io/labs/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2305060a'/%3E%3Ccircle cx='16' cy='16' r='6.5' fill='%23b9a6ff'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E" />
 <style>
   :root { color-scheme: dark; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,6 +54,21 @@
     background: rgba(120,150,255,0.06); transition: all 0.4s ease; cursor: pointer;
   }
   #intro .start:hover { background: rgba(120,150,255,0.16); border-color: rgba(180,200,255,0.6); transform: translateY(-1px); }
+  #intro .namebox { margin-top: 2.4em; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  #nameInput {
+    width: min(72vw, 320px); padding: 0.85em 1.2em; font: inherit; font-size: 0.95rem; letter-spacing: 0.08em;
+    color: #eef1ff; background: rgba(120,140,220,0.06); border: 1px solid rgba(150,170,255,0.28);
+    border-radius: 999px; outline: none; text-align: center; transition: all 0.3s ease;
+  }
+  #nameInput::placeholder { color: #6b73a0; letter-spacing: 0.12em; }
+  #nameInput:focus { border-color: rgba(180,200,255,0.7); background: rgba(120,140,220,0.12); box-shadow: 0 0 24px rgba(120,150,255,0.18); }
+  #intro form.namebox .start { margin-top: 0; }
+  #intro .surprise {
+    margin-top: 1.4em; background: none; border: none; cursor: pointer;
+    color: #8a93b8; font: inherit; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    border-bottom: 1px dashed rgba(138,147,184,0.4); padding-bottom: 2px; transition: color 0.3s ease;
+  }
+  #intro .surprise:hover { color: #cfd6ff; }
   #intro .credit { position: absolute; bottom: 22px; font-size: 0.62rem; letter-spacing: 0.22em; color: #4a5078; text-transform: uppercase; }
 
   /* ---- HUD ---- */
@@ -58,6 +93,13 @@
     opacity: 0; transition: all 0.5s ease; pointer-events: none;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #sig {
+    position: fixed; right: 14px; bottom: 13px; z-index: 8;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #4a5078; text-decoration: none; opacity: 0.75; transition: color 0.3s ease;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  #sig:hover { color: #aab2e0; }
   @media (max-width: 640px) { #hud { display: none; } }
 </style>
 </head>
@@ -66,9 +108,13 @@
 
 <div id="intro">
   <h1 id="title">sigil</h1>
-  <div class="seedline">a cosmos grown from <b id="seedName">your name</b></div>
-  <div class="start" id="startBtn">enter ▸ sound on</div>
-  <div class="credit">drag to bend space · keys to explore</div>
+  <div class="seedline">type a name — watch its universe grow</div>
+  <form id="nameForm" class="namebox" autocomplete="off">
+    <input id="nameInput" type="text" maxlength="40" placeholder="your name…" aria-label="name your cosmos" spellcheck="false" />
+    <button type="submit" class="start" id="createBtn">create ▸ sound on</button>
+  </form>
+  <button type="button" class="surprise" id="surpriseBtn">or surprise me</button>
+  <div class="credit">drag to bend space · keys to explore · share the link</div>
 </div>
 
 <div id="hud" class="">
@@ -76,6 +122,7 @@
   <div><kbd>S</kbd> save image &nbsp; <kbd>C</kbd> clear &nbsp; <kbd>F</kbd> fullscreen &nbsp; <kbd>H</kbd> hide</div>
 </div>
 <div id="toast"></div>
+<a id="sig" href="mailto:labs@chiibitsu.com" title="Chiibitsu Labs · labs@chiibitsu.com">Chiibitsu Labs</a>
 
 <script>
 "use strict";
@@ -484,7 +531,9 @@ const introEl = document.getElementById("intro");
 const hudEl = document.getElementById("hud");
 const toastEl = document.getElementById("toast");
 const titleEl = document.getElementById("title");
-const seedNameEl = document.getElementById("seedName");
+const nameForm = document.getElementById("nameForm");
+const nameInput = document.getElementById("nameInput");
+const surpriseBtn = document.getElementById("surpriseBtn");
 
 let toastTimer = null;
 function toast(msg) {
@@ -494,16 +543,21 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
 }
 
-function defaultSeed() {
-  const params = new URLSearchParams(location.search);
-  const s = params.get("seed");
-  if (s) return decodeURIComponent(s);
-  return "chiibitsu";
+function urlSeed() {
+  const s = new URLSearchParams(location.search).get("seed");
+  return s ? decodeURIComponent(s) : null;
+}
+// a friendly random word-ish seed for "surprise me"
+const SEED_PARTS = ["lumen","vela","orin","cael","nyx","aster","ember","koi","rime","sol",
+  "vire","echo","mira","onyx","halo","fenn","arc","wren","isa","umbra"];
+function randomSeed() {
+  const r = Math.random;
+  return SEED_PARTS[(r() * SEED_PARTS.length) | 0] + "-" +
+         SEED_PARTS[(r() * SEED_PARTS.length) | 0] + ((r() * 90 + 10) | 0);
 }
 
 function setUniverse(seedText, updateUrl) {
   U = buildUniverse(seedText);
-  seedNameEl.textContent = seedText;
   titleEl.textContent = displayTitle(seedText);
   paintBackground();
   if (updateUrl) {
@@ -524,13 +578,25 @@ function startExperience() {
   setTimeout(() => hudEl.classList.remove("show"), 7000);
 }
 
-document.getElementById("startBtn").addEventListener("click", () => {
+// grow a named cosmos and reveal it (with sound, from a user gesture)
+function enter(seedText) {
+  setUniverse(seedText, true);
   toggleSound(true);
   startExperience();
+}
+nameForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  enter(nameInput.value.trim() || randomSeed());
+});
+surpriseBtn.addEventListener("click", () => {
+  const s = randomSeed();
+  nameInput.value = s;
+  enter(s);
 });
 
 // keyboard
 window.addEventListener("keydown", (e) => {
+  if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
   const k = e.key.toLowerCase();
   if (k === " ") { e.preventDefault(); if (!running) { startExperience(); } toggleSound(); }
   else if (k === "r") {
@@ -566,11 +632,24 @@ function toggleFullscreen() {
 
 /* ----------------------------- boot ------------------------------------ */
 resize();
-setUniverse(defaultSeed(), false);
-// One animation loop, started once. It runs softly behind the intro card so
-// the cosmos is already breathing when the title fades; entering just reveals it.
-running = true;
-requestAnimationFrame(step);
+// One animation loop, started once. It runs softly behind the intro card so a
+// cosmos is already breathing when the title fades; entering just reveals it.
+const shared = urlSeed();
+if (shared) {
+  // a shared link drops friends straight into that exact cosmos
+  nameInput.value = shared;
+  setUniverse(shared, false);
+  running = true;
+  requestAnimationFrame(step);
+  startExperience();                 // skip the form
+  setTimeout(() => toast("press space for sound"), 800);
+} else {
+  // the landing page: a random cosmos shimmers behind the name prompt
+  setUniverse(randomSeed(), false);
+  running = true;
+  requestAnimationFrame(step);
+  setTimeout(() => nameInput.focus(), 400);
+}
 </script>
 </body>
 </html>
