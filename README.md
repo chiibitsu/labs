@@ -95,7 +95,23 @@ python3 -m http.server 8000   # then visit http://localhost:8000
 Source: *GitHub Actions*). The included workflow publishes the page on every
 push to `main`, giving every cosmos a public, shareable URL.
 
+## Nice link previews
+
+Shared links unfurl with a custom Open Graph card (`og.png`) — a rendered
+cosmos with the wordmark. That image is itself generated with zero
+dependencies; regenerate it any time with:
+
+```bash
+node scripts/gen-og.js
+```
+
+The social tags in `index.html` point at the GitHub Pages URL by default; if
+you host on a custom domain, update the `og:url` / `og:image` values near the
+top of the file.
+
 ---
+
+Made by **Chiibitsu Labs** — [labs@chiibitsu.com](mailto:labs@chiibitsu.com)
 
 *No dependencies. ~600 lines. Tweak the constants near the top of
 `buildUniverse()` to change the character of every cosmos at once.*

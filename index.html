@@ -3,8 +3,28 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Sigil — a generative cosmos that is uniquely yours</title>
-<meta name="description" content="A self-contained generative artwork and ambient instrument. Every name grows its own universe." />
+<title>Sigil — type a name, watch its universe grow</title>
+<meta name="description" content="A self-contained generative artwork and ambient instrument. Type a name and a whole cosmos grows from it — colour, glyph, music, and motion. Every name is a shareable universe." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<!-- Open Graph / social cards.
+     Update the absolute URLs below if you host on a custom domain
+     (e.g. https://chiibitsu.com/sigil/). The defaults assume GitHub Pages. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Sigil — type a name, watch its universe grow" />
+<meta property="og:description" content="A generative cosmos grown from a single word. Colour, glyph, music, and motion — every name is its own shareable universe." />
+<meta property="og:url" content="https://chiibitsu.github.io/labs/" />
+<meta property="og:image" content="https://chiibitsu.github.io/labs/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="A glowing, symmetric cosmos of particles around a central glyph, with the wordmark SIGIL." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Sigil — type a name, watch its universe grow" />
+<meta name="twitter:description" content="A generative cosmos grown from a single word. Every name is its own shareable universe." />
+<meta name="twitter:image" content="https://chiibitsu.github.io/labs/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2305060a'/%3E%3Ccircle cx='16' cy='16' r='6.5' fill='%23b9a6ff'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E" />
 <style>
   :root { color-scheme: dark; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,6 +93,13 @@
     opacity: 0; transition: all 0.5s ease; pointer-events: none;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #sig {
+    position: fixed; right: 14px; bottom: 13px; z-index: 8;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #4a5078; text-decoration: none; opacity: 0.75; transition: color 0.3s ease;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  #sig:hover { color: #aab2e0; }
   @media (max-width: 640px) { #hud { display: none; } }
 </style>
 </head>
@@ -95,6 +122,7 @@
   <div><kbd>S</kbd> save image &nbsp; <kbd>C</kbd> clear &nbsp; <kbd>F</kbd> fullscreen &nbsp; <kbd>H</kbd> hide</div>
 </div>
 <div id="toast"></div>
+<a id="sig" href="mailto:labs@chiibitsu.com" title="Chiibitsu Labs · labs@chiibitsu.com">Chiibitsu Labs</a>
 
 <script>
 "use strict";
