@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Sigil — type a name, watch its universe grow</title>
+<meta name="description" content="A self-contained generative artwork and ambient instrument. Type a name and a whole cosmos grows from it — colour, glyph, music, and motion. Every name is a shareable universe." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<!-- Open Graph / social cards.
+     Served from the labs.chiibitsu.com hub at the /sigil/ path (see /CNAME).
+     If you ever move it, update the absolute URLs below. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Sigil — type a name, watch its universe grow" />
+<meta property="og:description" content="A generative cosmos grown from a single word. Colour, glyph, music, and motion — every name is its own shareable universe." />
+<meta property="og:url" content="https://labs.chiibitsu.com/sigil/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/sigil/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="A glowing, symmetric cosmos of particles around a central glyph, with the wordmark SIGIL." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Sigil — type a name, watch its universe grow" />
+<meta name="twitter:description" content="A generative cosmos grown from a single word. Every name is its own shareable universe." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/sigil/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2305060a'/%3E%3Ccircle cx='16' cy='16' r='6.5' fill='%23b9a6ff'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E" />
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #05060a; touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  body { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; cursor: crosshair; }
+  canvas { display: block; position: fixed; inset: 0; touch-action: none; }
+
+  /* ---- intro / title card ---- */
+  #intro {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(120% 120% at 50% 40%, rgba(8,10,18,0.0) 0%, rgba(5,6,10,0.65) 70%, rgba(5,6,10,0.92) 100%);
+    transition: opacity 1.6s ease;
+    text-align: center; padding: 24px; user-select: none;
+  }
+  #intro.gone { opacity: 0; pointer-events: none; }
+  #intro h1 {
+    font-size: clamp(2.2rem, 9vw, 6rem); font-weight: 300; letter-spacing: 0.18em;
+    color: #eef1ff; text-transform: lowercase; line-height: 1;
+    text-shadow: 0 0 32px rgba(140,170,255,0.45);
+  }
+  #intro .seedline { margin-top: 1.1em; font-size: clamp(0.7rem, 2.4vw, 0.95rem); letter-spacing: 0.34em; color: #8a93b8; text-transform: uppercase; }
+  #intro .seedline b { color: #cfd6ff; font-weight: 500; }
+  #intro .start {
+    margin-top: 2.6em; padding: 0.85em 1.8em; border: 1px solid rgba(150,170,255,0.35);
+    border-radius: 999px; color: #d8ddff; font-size: 0.8rem; letter-spacing: 0.28em; text-transform: uppercase;
+    background: rgba(120,150,255,0.06); transition: all 0.4s ease; cursor: pointer;
+  }
+  #intro .start:hover { background: rgba(120,150,255,0.16); border-color: rgba(180,200,255,0.6); transform: translateY(-1px); }
+  #intro .namebox { margin-top: 2.4em; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  #nameInput {
+    width: min(72vw, 320px); padding: 0.85em 1.2em; font: inherit; font-size: 0.95rem; letter-spacing: 0.08em;
+    color: #eef1ff; background: rgba(120,140,220,0.06); border: 1px solid rgba(150,170,255,0.28);
+    border-radius: 999px; outline: none; text-align: center; transition: all 0.3s ease;
+  }
+  #nameInput::placeholder { color: #6b73a0; letter-spacing: 0.12em; }
+  #nameInput:focus { border-color: rgba(180,200,255,0.7); background: rgba(120,140,220,0.12); box-shadow: 0 0 24px rgba(120,150,255,0.18); }
+  #intro form.namebox .start { margin-top: 0; }
+  #intro .surprise {
+    margin-top: 1.4em; background: none; border: none; cursor: pointer;
+    color: #8a93b8; font: inherit; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    border-bottom: 1px dashed rgba(138,147,184,0.4); padding-bottom: 2px; transition: color 0.3s ease;
+  }
+  #intro .surprise:hover { color: #cfd6ff; }
+  #intro .credit { position: absolute; bottom: 22px; font-size: 0.62rem; letter-spacing: 0.22em; color: #4a5078; text-transform: uppercase; }
+
+  /* ---- HUD ---- */
+  #hud {
+    position: fixed; left: 16px; bottom: 14px; z-index: 8;
+    font-size: 0.64rem; letter-spacing: 0.16em; color: #6b73a0;
+    line-height: 1.9; text-transform: uppercase; user-select: none;
+    opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  #hud.show { opacity: 0.62; }
+  #hud kbd {
+    display: inline-block; min-width: 1.5em; text-align: center; padding: 0.1em 0.4em;
+    border: 1px solid rgba(120,135,200,0.3); border-radius: 4px; color: #aab2e0; margin-right: 0.5em;
+    background: rgba(120,140,220,0.05);
+  }
+  #toast {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(-12px); z-index: 9;
+    font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase; color: #cdd4ff;
+    padding: 0.6em 1.2em; border: 1px solid rgba(150,170,255,0.25); border-radius: 999px;
+    background: rgba(12,14,26,0.7); backdrop-filter: blur(6px);
+    opacity: 0; transition: all 0.5s ease; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #sig {
+    position: fixed; right: 14px; bottom: 13px; z-index: 8;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #4a5078; text-decoration: none; opacity: 0.75; transition: color 0.3s ease;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  #sig:hover { color: #aab2e0; }
+  #nameplate {
+    position: fixed; top: 22px; left: 50%; z-index: 7;
+    transform: translateX(-50%) translateY(-8px);
+    font-size: clamp(0.82rem, 3.2vw, 1.05rem); letter-spacing: 0.32em; text-transform: lowercase;
+    color: #cfd6ff; opacity: 0; pointer-events: none; user-select: none; white-space: nowrap;
+    max-width: 86vw; overflow: hidden; text-overflow: ellipsis;
+    text-shadow: 0 0 26px rgba(140,170,255,0.5);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  #nameplate.show { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 640px) { #hud { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="intro">
+  <h1 id="title">sigil</h1>
+  <div class="seedline">type a name — watch its universe grow</div>
+  <form id="nameForm" class="namebox" autocomplete="off">
+    <input id="nameInput" type="text" maxlength="40" placeholder="your name…" aria-label="name your cosmos" spellcheck="false" />
+    <button type="submit" class="start" id="createBtn">create ▸ sound on</button>
+  </form>
+  <button type="button" class="surprise" id="surpriseBtn">or surprise me</button>
+  <div class="credit">drag to bend space · keys to explore · share the link</div>
+</div>
+
+<div id="hud" class="">
+  <div><kbd>space</kbd> sound &nbsp; <kbd>R</kbd> new seed &nbsp; <kbd>N</kbd> name a seed</div>
+  <div><kbd>S</kbd> save image &nbsp; <kbd>C</kbd> clear &nbsp; <kbd>F</kbd> fullscreen &nbsp; <kbd>H</kbd> hide</div>
+</div>
+<div id="toast"></div>
+<div id="nameplate"></div>
+<a id="sig" href="https://chiibitsu.com" target="_blank" rel="noopener" title="Chiibitsu Labs">Chiibitsu Labs</a>
+
+<script>
+"use strict";
+/* =========================================================================
+   SIGIL — a self-contained generative cosmos + ambient instrument.
+   No libraries, no build step, no network. One file.
+
+   Everything you see and hear is deterministically grown from a single
+   text seed (your name, by default). Same seed -> same universe, forever.
+   ========================================================================= */
+
+/* ----------------------------- seeded randomness ----------------------- */
+// xmur3 string hash -> 32-bit seed
+function xmur3(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return h >>> 0;
+  };
+}
+// mulberry32 PRNG
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ----------------------------- perlin noise ---------------------------- */
+// Classic 2D Perlin noise with a seeded permutation table.
+function makeNoise(rand) {
+  const perm = new Uint8Array(512);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = (rand() * (i + 1)) | 0;
+    const t = p[i]; p[i] = p[j]; p[j] = t;
+  }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+  const lerp = (a, b, t) => a + t * (b - a);
+  const grad = (h, x, y) => {
+    const u = (h & 1) ? -x : x;
+    const v = (h & 2) ? -y : y;
+    return u + v;
+  };
+  return function (x, y) {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    x -= Math.floor(x); y -= Math.floor(y);
+    const u = fade(x), v = fade(y);
+    const aa = perm[perm[X] + Y], ab = perm[perm[X] + Y + 1];
+    const ba = perm[perm[X + 1] + Y], bb = perm[perm[X + 1] + Y + 1];
+    const r = lerp(
+      lerp(grad(aa, x, y), grad(ba, x - 1, y), u),
+      lerp(grad(ab, x, y - 1), grad(bb, x - 1, y - 1), u),
+      v
+    );
+    return r; // ~[-1,1]
+  };
+}
+
+/* ----------------------------- DOM + canvas ---------------------------- */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d", { alpha: false });
+let W = 0, H = 0, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  paintBackground();
+}
+window.addEventListener("resize", resize);
+
+/* ----------------------------- the universe ---------------------------- */
+// A "universe" is everything derived from one seed: palette, noise field,
+// musical scale, central glyph geometry, particle behaviour.
+let U = null;
+
+function buildUniverse(seedText) {
+  const seedFn = xmur3(seedText);
+  const rand = mulberry32(seedFn());
+  const noise = makeNoise(mulberry32(seedFn()));
+
+  // --- palette: a base hue with harmonics, in a pleasant range ---
+  const baseHue = Math.floor(rand() * 360);
+  const scheme = rand();
+  const spread = scheme < 0.4 ? 28 : scheme < 0.75 ? 60 : 140; // analogous..triadic
+  const palette = [];
+  const stops = 5;
+  for (let i = 0; i < stops; i++) {
+    const hue = (baseHue + (i - (stops - 1) / 2) * (spread / stops) + 360) % 360;
+    const sat = 55 + rand() * 35;
+    const lig = 48 + i * 6 + rand() * 8;
+    palette.push([hue, sat, lig]);
+  }
+
+  // --- musical scale derived from seed ---
+  const scales = [
+    [0, 2, 4, 7, 9],        // major pentatonic
+    [0, 3, 5, 7, 10],       // minor pentatonic
+    [0, 2, 3, 7, 8],        // kumoi-ish
+    [0, 2, 4, 6, 7, 9, 11], // lydian
+    [0, 1, 5, 7, 8],        // hint of phrygian
+  ];
+  const scale = scales[(rand() * scales.length) | 0];
+  const rootMidi = 48 + ((rand() * 7) | 0); // C3..
+
+  // --- central glyph geometry ---
+  const symmetry = 3 + ((rand() * 7) | 0);    // 3..9 fold
+  const rings = 3 + ((rand() * 5) | 0);
+  const glyph = [];
+  for (let r = 0; r < rings; r++) {
+    glyph.push({
+      radius: 0.06 + r * (0.07 + rand() * 0.04),
+      nodes: symmetry * (1 + ((rand() * 2) | 0)),
+      phase: rand() * Math.PI * 2,
+      wobble: 0.1 + rand() * 0.5,
+      speed: (rand() - 0.5) * 0.0008,
+    });
+  }
+
+  // --- particles ---
+  const count = Math.floor(Math.min(2600, (W * H) / 620));
+  const particles = new Array(count);
+  for (let i = 0; i < count; i++) {
+    particles[i] = {
+      x: rand() * W, y: rand() * H,
+      px: 0, py: 0,
+      life: rand() * 200,
+      maxLife: 120 + rand() * 260,
+      ci: (rand() * palette.length) | 0,
+      spd: 0.6 + rand() * 1.2,
+    };
+  }
+
+  return {
+    seedText, rand, noise, palette, baseHue, spread,
+    scale, rootMidi, symmetry, rings, glyph,
+    particles, count,
+    fieldScale: 0.0012 + rand() * 0.0018,
+    fieldDrift: 0.00006 + rand() * 0.00010,
+    swirl: 0.6 + rand() * 1.4,
+  };
+}
+
+function hsl(c, a) {
+  return "hsla(" + c[0].toFixed(1) + "," + c[1].toFixed(1) + "%," + c[2].toFixed(1) + "%," + a + ")";
+}
+
+function paintBackground() {
+  ctx.fillStyle = "#05060a";
+  ctx.fillRect(0, 0, W, H);
+  if (!U) return;
+  // faint vignette tinted by the palette
+  const g = ctx.createRadialGradient(W / 2, H * 0.46, 0, W / 2, H * 0.46, Math.max(W, H) * 0.75);
+  g.addColorStop(0, hsl(U.palette[U.palette.length - 1], 0.06));
+  g.addColorStop(1, "rgba(5,6,10,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+/* ----------------------------- pointer / gravity ----------------------- */
+const pointer = { x: 0, y: 0, active: false, strength: 0 };
+function setPointer(e, active) {
+  const t = e.touches ? e.touches[0] : e;
+  if (t) { pointer.x = t.clientX; pointer.y = t.clientY; }
+  pointer.active = active;
+}
+canvas.addEventListener("mousedown", (e) => { setPointer(e, true); });
+canvas.addEventListener("mousemove", (e) => { setPointer(e, pointer.active); pointer.hx = e.clientX; pointer.hy = e.clientY; });
+window.addEventListener("mouseup", () => { pointer.active = false; });
+canvas.addEventListener("touchstart", (e) => { setPointer(e, true); e.preventDefault(); }, { passive: false });
+canvas.addEventListener("touchmove", (e) => { setPointer(e, true); e.preventDefault(); }, { passive: false });
+window.addEventListener("touchend", () => { pointer.active = false; });
+
+/* ----------------------------- animation ------------------------------- */
+let frame = 0;
+let running = false;
+
+function step() {
+  if (!running || !U) return;
+  frame++;
+  const t = frame;
+
+  // gentle fade -> long luminous trails
+  ctx.fillStyle = "rgba(5,6,10,0.052)";
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "lighter";
+
+  const cx = W / 2, cy = H * 0.46;
+  const fs = U.fieldScale;
+  const drift = t * U.fieldDrift;
+  const P = U.particles;
+
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    p.px = p.x; p.py = p.y;
+
+    // flow-field angle from noise, plus a swirl around the centre
+    const n = U.noise(p.x * fs + drift, p.y * fs - drift);
+    let ang = n * Math.PI * 3.0;
+    const dx = p.x - cx, dy = p.y - cy;
+    const dist = Math.hypot(dx, dy) + 0.0001;
+    const swirl = U.swirl / (1 + dist * 0.004);
+    ang += Math.atan2(dy, dx) + Math.PI / 2 * swirl * 0.25;
+
+    let vx = Math.cos(ang) * p.spd;
+    let vy = Math.sin(ang) * p.spd;
+
+    // pointer gravity well
+    if (pointer.active) {
+      const gx = pointer.x - p.x, gy = pointer.y - p.y;
+      const gd = Math.hypot(gx, gy) + 0.0001;
+      const pull = Math.min(2.4, 7000 / (gd * gd));
+      vx += (gx / gd) * pull;
+      vy += (gy / gd) * pull;
+    }
+
+    p.x += vx; p.y += vy;
+    p.life++;
+
+    // respawn off-screen or expired particles near a seeded scatter
+    if (p.life > p.maxLife || p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) {
+      p.x = U.rand() * W; p.y = U.rand() * H;
+      p.px = p.x; p.py = p.y;
+      p.life = 0; p.maxLife = 120 + U.rand() * 260;
+      p.ci = (U.rand() * U.palette.length) | 0;
+      continue;
+    }
+
+    const lifeT = p.life / p.maxLife;
+    const alpha = Math.sin(lifeT * Math.PI) * 0.34;
+    if (alpha <= 0.002) continue;
+    const col = U.palette[p.ci];
+    ctx.strokeStyle = hsl(col, alpha);
+    ctx.lineWidth = 0.6 + (1 - dist / Math.max(W, H)) * 1.1;
+    ctx.beginPath();
+    ctx.moveTo(p.px, p.py);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+
+  drawGlyph(cx, cy, t);
+
+  ctx.globalCompositeOperation = "source-over";
+  requestAnimationFrame(step);
+}
+
+function drawGlyph(cx, cy, t) {
+  const R = Math.min(W, H) * 0.9;
+  ctx.globalCompositeOperation = "lighter";
+  for (let r = 0; r < U.glyph.length; r++) {
+    const ring = U.glyph[r];
+    const col = U.palette[(r + 1) % U.palette.length];
+    const baseR = ring.radius * R;
+    const nodes = ring.nodes;
+    const rot = ring.phase + t * ring.speed;
+    const pulse = 1 + Math.sin(t * 0.01 + r) * 0.04;
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    for (let k = 0; k <= nodes; k++) {
+      const a = (k / nodes) * Math.PI * 2 + rot;
+      const wob = 1 + Math.sin(a * U.symmetry + t * 0.012 + r) * ring.wobble * 0.25;
+      const rr = baseR * pulse * wob;
+      const x = cx + Math.cos(a) * rr;
+      const y = cy + Math.sin(a) * rr;
+      if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = hsl(col, 0.16 + 0.06 * Math.sin(t * 0.02 + r));
+    ctx.stroke();
+
+    // luminous nodes
+    for (let k = 0; k < nodes; k++) {
+      const a = (k / nodes) * Math.PI * 2 + rot;
+      const wob = 1 + Math.sin(a * U.symmetry + t * 0.012 + r) * ring.wobble * 0.25;
+      const rr = baseR * pulse * wob;
+      const x = cx + Math.cos(a) * rr;
+      const y = cy + Math.sin(a) * rr;
+      const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * 0.05 + k * 1.7 + r));
+      ctx.beginPath();
+      ctx.arc(x, y, 1.4 * tw + 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = hsl(col, 0.5 * tw);
+      ctx.fill();
+    }
+  }
+  // core
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.05);
+  core.addColorStop(0, hsl(U.palette[0], 0.5));
+  core.addColorStop(1, hsl(U.palette[0], 0));
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ----------------------------- audio engine ---------------------------- */
+// Generative ambient drone + sparse plucks, all from the seed's scale.
+let audio = null;
+function initAudio() {
+  if (audio) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  const ac = new AC();
+  const master = ac.createGain();
+  master.gain.value = 0.0;
+  const comp = ac.createDynamicsCompressor();
+  master.connect(comp); comp.connect(ac.destination);
+
+  // reverb-ish: feedback delay network (cheap, no impulse file)
+  const wet = ac.createGain(); wet.gain.value = 0.32;
+  const delay = ac.createDelay(2.0); delay.delayTime.value = 0.33;
+  const fb = ac.createGain(); fb.gain.value = 0.42;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2200;
+  delay.connect(fb); fb.connect(lp); lp.connect(delay);
+  delay.connect(wet); wet.connect(master);
+
+  audio = { ac, master, wet, delay, drones: [], nextNote: 0 };
+
+  // fade in
+  master.gain.linearRampToValueAtTime(0.5, ac.currentTime + 3.0);
+
+  // two slow drones (root + fifth-ish)
+  function drone(midi, gainV, type) {
+    const o = ac.createOscillator(); o.type = type;
+    o.frequency.value = midiToFreq(midi);
+    const g = ac.createGain(); g.gain.value = 0;
+    const lfo = ac.createOscillator(); lfo.frequency.value = 0.05 + Math.random() * 0.08;
+    const lfg = ac.createGain(); lfg.gain.value = gainV * 0.5;
+    lfo.connect(lfg); lfg.connect(g.gain);
+    g.gain.value = gainV * 0.5;
+    o.connect(g); g.connect(master); g.connect(delay);
+    o.start(); lfo.start();
+    audio.drones.push(o, lfo);
+  }
+  drone(U.rootMidi - 12, 0.10, "sine");
+  drone(U.rootMidi - 12 + 7, 0.06, "triangle");
+}
+function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+function pluck(midi, when, vel) {
+  if (!audio) return;
+  const ac = audio.ac;
+  const o = ac.createOscillator();
+  o.type = Math.random() < 0.5 ? "sine" : "triangle";
+  o.frequency.value = midiToFreq(midi);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(vel, when + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0008, when + 1.8);
+  o.connect(g); g.connect(audio.master); g.connect(audio.delay);
+  o.start(when); o.stop(when + 2.0);
+}
+
+function audioTick() {
+  if (!audio) return;
+  const ac = audio.ac;
+  const tnow = ac.currentTime;
+  while (audio.nextNote < tnow + 0.6) {
+    const when = Math.max(audio.nextNote, tnow + 0.05);
+    // sparse, seed-driven melody
+    const sc = U.scale;
+    const deg = sc[(U.rand() * sc.length) | 0];
+    const oct = 12 * (1 + ((U.rand() * 2) | 0));
+    const midi = U.rootMidi + deg + oct;
+    if (U.rand() < 0.78) pluck(midi, when, 0.05 + U.rand() * 0.06);
+    audio.nextNote = when + 0.45 + U.rand() * 1.4;
+  }
+  setTimeout(audioTick, 120);
+}
+
+let soundOn = false;
+function toggleSound(force) {
+  const want = force === undefined ? !soundOn : force;
+  if (want) {
+    initAudio();
+    if (audio) {
+      audio.ac.resume();
+      if (audio.nextNote < audio.ac.currentTime) audio.nextNote = audio.ac.currentTime + 0.2;
+      audioTick();
+      soundOn = true;
+      toast("sound on");
+    }
+  } else if (audio) {
+    audio.ac.suspend();
+    soundOn = false;
+    toast("sound off");
+  }
+}
+
+/* ----------------------------- UI plumbing ----------------------------- */
+const introEl = document.getElementById("intro");
+const hudEl = document.getElementById("hud");
+const toastEl = document.getElementById("toast");
+const nameplateEl = document.getElementById("nameplate");
+const nameForm = document.getElementById("nameForm");
+const nameInput = document.getElementById("nameInput");
+const surpriseBtn = document.getElementById("surpriseBtn");
+
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
+}
+
+function urlSeed() {
+  const s = new URLSearchParams(location.search).get("seed");
+  return s ? decodeURIComponent(s) : null;
+}
+// a friendly random word-ish seed for "surprise me"
+const SEED_PARTS = ["lumen","vela","orin","cael","nyx","aster","ember","koi","rime","sol",
+  "vire","echo","mira","onyx","halo","fenn","arc","wren","isa","umbra"];
+function randomSeed() {
+  const r = Math.random;
+  return SEED_PARTS[(r() * SEED_PARTS.length) | 0] + "-" +
+         SEED_PARTS[(r() * SEED_PARTS.length) | 0] + ((r() * 90 + 10) | 0);
+}
+
+function setUniverse(seedText, updateUrl) {
+  U = buildUniverse(seedText);
+  nameplateEl.textContent = seedText;        // the name, shown in the world
+  paintBackground();
+  if (updateUrl) {
+    const url = new URL(location.href);
+    url.searchParams.set("seed", seedText);
+    history.replaceState(null, "", url);
+  }
+}
+
+function startExperience() {
+  if (!introEl.classList.contains("gone")) introEl.classList.add("gone");
+  nameplateEl.classList.add("show");   // reveal the name once you enter the world
+  hudEl.classList.add("show");
+  setTimeout(() => hudEl.classList.remove("show"), 7000);
+}
+
+// grow a named cosmos and reveal it (with sound, from a user gesture)
+function enter(seedText) {
+  setUniverse(seedText, true);
+  toggleSound(true);
+  startExperience();
+}
+nameForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  enter(nameInput.value.trim() || randomSeed());
+});
+surpriseBtn.addEventListener("click", () => {
+  const s = randomSeed();
+  nameInput.value = s;
+  enter(s);
+});
+
+// keyboard
+window.addEventListener("keydown", (e) => {
+  if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
+  const k = e.key.toLowerCase();
+  if (k === " ") { e.preventDefault(); if (!running) { startExperience(); } toggleSound(); }
+  else if (k === "r") {
+    const seed = Math.random().toString(36).slice(2, 9);
+    setUniverse(seed, true); toast("new seed · " + seed);
+    if (audio) audio.nextNote = audio.ac.currentTime + 0.2;
+  }
+  else if (k === "n") {
+    const name = prompt("name your cosmos (any word grows a different universe):", U ? U.seedText : "");
+    if (name && name.trim()) { setUniverse(name.trim(), true); toast("grown from · " + name.trim()); }
+  }
+  else if (k === "s") { saveImage(); }
+  else if (k === "c") { paintBackground(); toast("cleared"); }
+  else if (k === "f") { toggleFullscreen(); }
+  else if (k === "h") { hudEl.classList.toggle("show"); }
+});
+
+function saveImage() {
+  try {
+    const link = document.createElement("a");
+    link.download = "sigil-" + (U ? U.seedText.replace(/[^a-z0-9]/gi, "_") : "cosmos") + ".png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast("image saved");
+  } catch (err) { toast("save blocked"); }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    (document.documentElement.requestFullscreen || function () {}).call(document.documentElement);
+  } else { document.exitFullscreen && document.exitFullscreen(); }
+}
+
+/* ----------------------------- boot ------------------------------------ */
+resize();
+// One animation loop, started once. It runs softly behind the intro card so a
+// cosmos is already breathing when the title fades; entering just reveals it.
+const shared = urlSeed();
+if (shared) {
+  // a shared link drops friends straight into that exact cosmos
+  nameInput.value = shared;
+  setUniverse(shared, false);
+  running = true;
+  requestAnimationFrame(step);
+  startExperience();                 // skip the form
+  setTimeout(() => toast("press space for sound"), 800);
+} else {
+  // the landing page: a random cosmos shimmers behind the name prompt
+  setUniverse(randomSeed(), false);
+  running = true;
+  requestAnimationFrame(step);
+  setTimeout(() => nameInput.focus(), 400);
+}
+</script>
+</body>
+</html>
