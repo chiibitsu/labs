@@ -1,36 +1,39 @@
 # ✦ Sigil
 
-**A generative cosmos that is uniquely yours.**
+**Type a name. Watch its universe grow.**
 
 Sigil is a single, self-contained HTML file — no libraries, no build step, no
 network calls — that grows an entire audiovisual universe from one piece of
-text. Type a name and you get a deterministic world: its own colour palette,
-its own central glyph, its own musical scale, and thousands of particles
-flowing through a seeded noise field. The same word always grows the same
+text. Enter a name and you get a deterministic world all its own: a colour
+palette, a glowing central glyph, a musical scale, and thousands of particles
+drifting through a seeded noise field. The same word always grows the same
 cosmos. A different word grows a different one. Forever.
 
-It's part generative artwork, part ambient instrument, part toy.
+It's part generative artwork, part ambient instrument, part toy — and every
+universe is a shareable link, so anyone can find theirs and send it to a
+friend.
 
-> Open [`index.html`](./index.html) in any modern browser and click **enter**.
+> **[Open `index.html`](./index.html)**, type a name, and press **create**.
 
 ---
 
-## Why this exists
+## Try it
 
-You asked to be surprised — for something you wouldn't think to ask for. So
-instead of a typical demo app, here's a tiny, complete piece of generative art
-that doubles as a showcase of what can live inside **one file**:
+1. Open the page — a cosmos is already shimmering behind the prompt.
+2. Type any name (yours, a friend's, a word you like) and hit **create**, or
+   tap **surprise me**.
+3. **Drag** across the canvas to bend space with a gravity well. Turn the sound
+   up.
 
-- a **seeded PRNG** (xmur3 → mulberry32) so every universe is reproducible
-- a hand-written **Perlin noise** flow field driving the particles
-- a **palette engine** that derives harmonious colour schemes from the seed
-- a **procedural glyph** (an n-fold symmetric mandala) at the heart of it
-- a **generative audio engine** built from raw Web Audio — drones, a
-  feedback-delay "reverb", and a sparse melody quantised to a seed-chosen scale
-- **interaction**: drag to bend space with a gravity well, reseed, save a frame
+Every name is encoded in the URL, so universes are links you can share:
 
-Every one of those systems reads from the *same* seed, so the look and the
-sound of your cosmos always agree with each other.
+```
+index.html?seed=ada
+index.html?seed=your-name-here
+```
+
+Open someone's link and you drop straight into *their* cosmos, exactly as they
+saw it. Send people their name and watch them discover their own.
 
 ## Controls
 
@@ -39,41 +42,25 @@ sound of your cosmos always agree with each other.
 | **drag / touch**    | bend space — a gravity well pulls the flow    |
 | `space`             | toggle the generative soundscape              |
 | `R`                 | grow a brand-new random universe              |
-| `N`                 | name your own universe (any word)             |
+| `N`                 | name a new universe                           |
 | `S`                 | save the current frame as a PNG               |
 | `C`                 | clear the canvas (keep the same cosmos)       |
 | `F`                 | fullscreen                                    |
 | `H`                 | hide / show the controls                      |
 
-## Make it personal
+## What's under the hood
 
-The seed lives in the URL, so universes are shareable links:
+It looks like art, but it's a small showcase of how much can live inside a
+single file. Everything below reads from the *same* text seed, so a universe's
+look and its sound always agree:
 
-```
-index.html?seed=chiibitsu
-index.html?seed=your-name-here
-```
-
-Send someone their name and they'll see *their* cosmos, exactly as you did.
-
-## Run it
-
-It's just a file. Any of these work:
-
-```bash
-# open it directly
-open index.html            # macOS
-xdg-open index.html        # Linux
-
-# or serve it (needed if your browser blocks file:// audio)
-python3 -m http.server 8000   # then visit http://localhost:8000
-```
-
-If you enable **GitHub Pages** for this repo (Settings → Pages → Source:
-GitHub Actions), the included workflow publishes it automatically on every push
-to `main`, and your cosmos gets a public URL.
-
-## How it fits together
+- a **seeded PRNG** (xmur3 → mulberry32) so every universe is reproducible
+- a hand-written **Perlin noise** flow field driving the particles
+- a **palette engine** that derives a harmonious colour scheme from the seed
+- a **procedural glyph** — an n-fold symmetric mandala that breathes at the centre
+- a **generative audio engine** built from raw Web Audio: drones, a
+  feedback-delay "reverb", and a sparse melody quantised to a seed-chosen scale
+- **interaction**: a draggable gravity well, instant reseeding, and frame export
 
 ```
 seed text
@@ -91,9 +78,24 @@ each animation frame:
    (audio runs on its own scheduler, plucking notes from the scale)
 ```
 
-No dependencies. ~600 lines. Entirely yours.
+## Run / host it
+
+It's just one file. Any of these work:
+
+```bash
+# open it directly
+open index.html            # macOS
+xdg-open index.html        # Linux
+
+# or serve it (recommended — some browsers block audio on file://)
+python3 -m http.server 8000   # then visit http://localhost:8000
+```
+
+**Put it online for your friends:** enable GitHub Pages (Settings → Pages →
+Source: *GitHub Actions*). The included workflow publishes the page on every
+push to `main`, giving every cosmos a public, shareable URL.
 
 ---
 
-*Built as a one-file showcase. Tweak the constants near the top of
+*No dependencies. ~600 lines. Tweak the constants near the top of
 `buildUniverse()` to change the character of every cosmos at once.*
