@@ -13,10 +13,11 @@ here.**
 
 > ### 👀 See it work first → [**Ghost Office**](https://labs.chiibitsu.com/ghost-team/)
 > Not sure what "sub-agents" even means? Play the demo. Pitch a company in one
-> sentence and watch the whole team turn it into a founding brief — no install,
-> no account. It's free and scripted by default; flip on **⚡ Real Claude** and
-> paste your own Anthropic key to have actual Claude write the plan (your key
-> stays in your browser). Then come back here to run them for real.
+> sentence and watch the team actually get to work — a live build log — and
+> **ship you a real landing page** you can preview and download. No install, no
+> account. It's free and scripted by default; flip on **⚡ Real Claude**, pick a
+> model, and paste your own Anthropic key to have actual Claude build it (your
+> key stays in your browser). Then come back here to run them for real.
 
 ---
 
@@ -38,29 +39,42 @@ team route the work.
 
 ---
 
-## Install
+## Install — no terminal required
 
-**1. Grab just this folder** (no labs repo history, only the team):
+You don't need the command line. The fastest way is to have Claude install the
+team **for** you:
+
+1. **Open Claude Code** — on the web at
+   [claude.ai/code](https://claude.ai/code) (nothing to install), or the desktop
+   app / your IDE extension. Sign in with your **Claude account** — it runs on
+   your Pro/Max subscription, no API key.
+2. **Connect your project's GitHub repo** (or start a fresh one).
+3. **Paste this prompt:**
+
+   > Add the Ghost Team sub-agents to this project: copy the `agents/` and
+   > `commands/` folders from
+   > `github.com/chiibitsu/labs/tree/main/ghost-team` into my `.claude/`
+   > directory, then run `/standup`.
+
+That's it — Claude copies the files in and the team is live. It's
+**model-agnostic**: the team runs on whatever model you've selected.
+
+<details>
+<summary><b>Prefer the terminal?</b></summary>
+
+Pull just this folder (no labs repo history) and run the installer:
 
 ```bash
 npx degit chiibitsu/labs/ghost-team my-ghost-team
 cd my-ghost-team
+./install.sh                  # into the current project's ./.claude
+./install.sh --global         # into ~/.claude (every project)
+./install.sh /path/to/project # into a specific project
 ```
 
-**2. Drop the team into a project:**
-
-```bash
-./install.sh                      # into the current project's ./.claude
-./install.sh --global             # into ~/.claude (every project you open)
-./install.sh /path/to/project     # into a specific project
-```
-
-That copies the team into a `.claude/` folder. There's no build step and no
-dependencies — Claude Code reads these Markdown files directly.
-
-> **No Node / prefer not to run a script?** Download the folder and just copy
-> `agents/*.md` into your project's `.claude/agents/` and `commands/*.md` into
-> `.claude/commands/`. Same result.
+No Node? Just copy `agents/*.md` into `.claude/agents/` and `commands/*.md`
+into `.claude/commands/`. Same result.
+</details>
 
 ---
 
