@@ -11,6 +11,7 @@ root is a landing page that lists them.
 | | Path | What it is |
 |---|---|---|
 | **[Sigil](./sigil/)** | [`labs.chiibitsu.com/sigil/`](https://labs.chiibitsu.com/sigil/) | Type a name, watch its universe grow — a generative cosmos of colour, glyph, motion, and sound, all from one word. Single file, zero dependencies. |
+| **[Ghost Team](./ghost-team/)** | [`/ghost-team/`](./ghost-team/) | A starter team of Claude Code sub-agents for solo founders — a chief of staff and six specialists you delegate real work to. Fork it and make it your own company's team. |
 
 ## Layout
 
