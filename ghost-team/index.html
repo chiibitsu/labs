@@ -57,11 +57,13 @@
   .how .num{color:var(--violet);margin-right:.4em}
 
   /* form */
-  textarea,input[type=text]{
+  textarea,input[type=text],input[type=password]{
     width:100%;background:#0a0c16;color:var(--ink);border:1px solid var(--line2);border-radius:12px;
     padding:13px 15px;font:inherit;font-size:.92rem;resize:vertical;transition:border-color .2s}
   textarea:focus,input:focus{outline:none;border-color:var(--violet)}
   textarea{min-height:74px}
+  .remember{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:.74rem;color:var(--dim);cursor:pointer}
+  .remember input{width:auto}
   .field{margin-top:14px}
   .field>label{display:block;font-size:.72rem;letter-spacing:.08em;color:var(--dim);margin-bottom:7px}
   .field>label .opt{color:var(--faint);text-transform:none;letter-spacing:0}
@@ -207,6 +209,21 @@
         <button class="pill" data-mode="raise" aria-pressed="false">💰 Raise money</button>
       </div>
     </div>
+    <div class="field">
+      <label>Engine</label>
+      <div class="modes" id="engine">
+        <button class="pill" data-engine="demo" aria-pressed="true">✦ Scripted demo (free)</button>
+        <button class="pill" data-engine="live" aria-pressed="false">⚡ Real Claude (your key)</button>
+      </div>
+      <div id="keywrap" hidden style="margin-top:12px">
+        <input type="password" id="apikey" placeholder="sk-ant-… — your Anthropic API key" autocomplete="off" spellcheck="false" />
+        <label class="remember"><input type="checkbox" id="remember" /> remember on this device</label>
+        <p class="hint">Your key stays in <b>your</b> browser and calls Anthropic directly — on your dime, never sent to us.
+          Uses the cheapest model (Haiku, ~$0.001 a plan). Get a key at
+          <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+          Leave this off for the free scripted demo.</p>
+      </div>
+    </div>
     <div class="row">
       <button class="btn primary" id="start">Wake the team ✦</button>
       <button class="btn ghostbtn" id="surprise">surprise me</button>
@@ -243,10 +260,11 @@
   <!-- CTA -->
   <section id="cta" class="panel" hidden>
     <div class="label">Run the real team</div>
-    <p class="note">What you just watched is a <b>scripted demo</b> — it shows the <i>shape</i> of the
-      work. The real ghost team runs on <b>Claude Code</b>: it reads your actual codebase, talks to
-      real users through your connected tools, and writes real, shippable code. Same seven teammates —
-      actually doing the job. Pull just this folder (no repo baggage):</p>
+    <p class="note">What you just watched is a <b>taste</b> — scripted by default, or powered by real Claude
+      if you pasted a key. Either way it shows the <i>shape</i> of the work. The real ghost team runs on
+      <b>Claude Code</b>: it reads your actual codebase, talks to real users through your connected tools,
+      and writes real, shippable code. Same seven teammates — actually doing the job. Pull just this folder
+      (no repo baggage):</p>
     <pre><button class="copycode">copy</button><span class="ctc"># grab the team — just the ghost-team folder, nothing else</span>
 npx degit chiibitsu/labs/ghost-team my-ghost-team
 cd my-ghost-team && ./install.sh
@@ -459,11 +477,77 @@ function sectionMD(agent,sec){
   return m;
 }
 
+/* ============ optional: real Claude, with the visitor's own key ============
+   Direct browser → Anthropic call. The key never leaves the visitor's machine
+   and never touches us. Falls back to the scripted demo on any failure.        */
+function parseJSON(text){
+  const a=text.indexOf("{"),b=text.lastIndexOf("}");
+  if(a<0||b<0)return null;
+  try{const o=JSON.parse(text.slice(a,b+1));return(o&&typeof o==="object")?o:null;}catch(e){return null;}
+}
+function normalizeSec(s){
+  if(!s||!Array.isArray(s.body))return null;
+  const body=[];
+  for(const bl of s.body){
+    if(bl&&Array.isArray(bl.list))body.push({list:bl.list.map(String)});
+    else if(bl&&bl.lbl&&bl.p)body.push({lbl:String(bl.lbl),p:String(bl.p)});
+    else if(bl&&bl.p)body.push({p:String(bl.p)});
+  }
+  if(!body.length)return null;
+  return {headline:String(s.headline||""),body};
+}
+async function callClaude(brief,specialists){
+  const keys=specialists.map(a=>a.key).concat("chief-of-staff");
+  const sys=
+`You are a world-class founding team helping a solo founder. Produce a founding brief for their idea — one section per teammate, in each teammate's distinct voice. Be concrete and specific to THIS idea and audience; no generic filler. Honour the mode (fast = ship asap; validate = test the bet before building; raise = fundability and story).
+
+Section each teammate writes:
+- founder-coach: the single riskiest assumption + the real bet
+- customer-researcher: who to talk to + 3 past-behaviour interview questions + the job-to-be-done
+- designer: the one core user flow (as steps) + a brand direction
+- product-engineer: the smallest shippable MVP + a sensible boring stack + a 2-week build
+- growth-marketer: a positioning one-liner + the single best channel + a launch line to steal
+- ops-finance: a simple pricing idea + the 3 metrics to watch + a runway/legal note
+- chief-of-staff: the ordered first-week plan + the single Next action
+
+Output ONLY valid JSON — no markdown fences, no preamble. Shape:
+{"<role-key>":{"headline":"short title","body":[BLOCKS]}}
+Each BLOCK is exactly one of: {"p":"text"} | {"lbl":"Label","p":"text"} | {"list":["item","item"]}.
+Use **bold** sparingly. 3-5 blocks per section. Include exactly these role keys: ${keys.join(", ")}.`;
+  const user=`Idea: ${brief.idea}\nFor: ${brief.who}\nMode: ${brief.mode}`;
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key":apiKey,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({
+      model:"claude-haiku-4-5",
+      max_tokens:2400,
+      system:sys,
+      messages:[{role:"user",content:user}]
+    })
+  });
+  if(!res.ok){
+    let detail="HTTP "+res.status;
+    try{const e=await res.json();if(e&&e.error&&e.error.message)detail=e.error.message;}catch(_){}
+    throw new Error(detail);
+  }
+  const data=await res.json();
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  const obj=parseJSON(text);
+  if(!obj)throw new Error("couldn't parse the model's reply");
+  return obj;
+}
+
 /* ============ DOM + state ============ */
 const $=s=>document.querySelector(s);
 const desksEl=$("#desks"),briefEl=$("#brief"),cardsEl=$("#cards"),barWrap=$("#barwrap"),bar=$("#bar");
 const intro=$("#intro"),actionsEl=$("#actions"),ctaEl=$("#cta"),toastEl=$("#toast");
 let mode="fast",muted=false,running=false,SPEED=1,lastBrief=null,lastSections=[];
+let engine="demo",apiKey="";
 const ghostEls={};
 
 const GHOST_SVG=`<svg viewBox="0 0 88 88" aria-hidden="true"><path fill="currentColor" d="M8 47 C8 24 24 8 44 8 C64 8 80 24 80 47 L80 80 L69 71 L58 80 L47 71 L36 80 L25 71 L8 80 Z"/><circle class="eye" cx="34" cy="43" r="5"/><circle class="eye" cx="54" cy="43" r="5"/></svg>`;
@@ -545,14 +629,22 @@ async function run(){
   const total=specialists.length+1;
   let step=0;
 
-  // chief frames + delegates
-  await think(chief);doneThinking(chief);
+  // chief frames + delegates (and, in live mode, briefs the real Claude)
+  let liveData=null;
+  const useLive=engine==="live"&&apiKey;
+  await think(chief);
+  if(useLive){
+    bubble.querySelector(".txt").textContent="Briefing the real Claude… one moment.";
+    try{liveData=await callClaude(lastBrief,specialists);}
+    catch(e){toast("Couldn't reach Claude ("+e.message+") — running the scripted demo.");liveData=null;}
+  }
+  doneThinking(chief);
   bar.style.width=(++step/(total+1)*100)+"%";
 
   // specialists work in order
   for(const a of specialists){
     await think(a);
-    const sec=a.gen(lastBrief);
+    const sec=(liveData&&normalizeSec(liveData[a.key]))||a.gen(lastBrief);
     addCard(a,sec);blip(step);
     lastSections.push({agent:a,sec});
     doneThinking(a);bubble.classList.remove("show");
@@ -563,7 +655,7 @@ async function run(){
   // chief synthesises the week
   ghostEls[chief.key].classList.remove("done");
   await think(chief);
-  const plan=chiefPlan(lastBrief,specialists);
+  const plan=(liveData&&normalizeSec(liveData["chief-of-staff"]))||chiefPlan(lastBrief,specialists);
   addCard(chief,plan);blip(step);
   lastSections.unshift({agent:chief,sec:plan});
   doneThinking(chief);bubble.classList.remove("show");
@@ -654,6 +746,23 @@ $("#modes").addEventListener("click",e=>{
   mode=btn.dataset.mode;
   [...$("#modes").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));
 });
+$("#engine").addEventListener("click",e=>{
+  const btn=e.target.closest(".pill");if(!btn)return;
+  engine=btn.dataset.engine;
+  [...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));
+  $("#keywrap").hidden=engine!=="live";
+  if(engine==="live")setTimeout(()=>$("#apikey").focus(),60);
+});
+function saveKey(){try{if($("#remember").checked&&apiKey)localStorage.setItem("gt_key",apiKey);else localStorage.removeItem("gt_key");}catch(e){}}
+$("#apikey").addEventListener("input",function(){apiKey=this.value.trim();saveKey();});
+$("#remember").addEventListener("change",saveKey);
+(function loadKey(){
+  try{const k=localStorage.getItem("gt_key");if(!k)return;
+    apiKey=k;$("#apikey").value=k;$("#remember").checked=true;engine="live";
+    [...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p.dataset.engine==="live"));
+    $("#keywrap").hidden=false;
+  }catch(e){}
+})();
 $("#start").onclick=run;
 $("#surprise").onclick=()=>{
   const ex=[

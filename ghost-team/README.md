@@ -13,8 +13,10 @@ here.**
 
 > ### 👀 See it work first → [**Ghost Office**](https://labs.chiibitsu.com/ghost-team/)
 > Not sure what "sub-agents" even means? Play the demo. Pitch a company in one
-> sentence and watch the whole team turn it into a founding brief, live — no
-> install, no account. Then come back here to run them for real.
+> sentence and watch the whole team turn it into a founding brief — no install,
+> no account. It's free and scripted by default; flip on **⚡ Real Claude** and
+> paste your own Anthropic key to have actual Claude write the plan (your key
+> stays in your browser). Then come back here to run them for real.
 
 ---
 
