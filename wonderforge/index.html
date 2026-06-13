@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wonderforge — a tiny imagination machine</title>
+    <meta
+      name="description"
+      content="A self-contained, offline-first creative compass that turns mood, time, and constraints into surprising project briefs."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell" aria-labelledby="app-title">
+      <section class="hero panel">
+        <div class="kicker">No account. No API key. No tracking. Just a spark.</div>
+        <h1 id="app-title">Wonderforge</h1>
+        <p class="lede">
+          A pocket-sized imagination machine for days when you want a useful surprise, not another blank page.
+        </p>
+        <div class="hero-actions" aria-label="Primary actions">
+          <button class="button primary" id="forge-button" type="button">Forge a surprise</button>
+          <button class="button ghost" id="copy-button" type="button">Copy brief</button>
+        </div>
+      </section>
+
+      <section class="panel controls" aria-labelledby="controls-title">
+        <div>
+          <h2 id="controls-title">Tune the signal</h2>
+          <p>Pick a vibe, a timebox, and one creative constraint. Wonderforge combines them into a complete tiny mission.</p>
+        </div>
+        <label>
+          Vibe
+          <select id="vibe-select">
+            <option>playful</option>
+            <option>quietly ambitious</option>
+            <option>cinematic</option>
+            <option>practical magic</option>
+            <option>oddly specific</option>
+          </select>
+        </label>
+        <label>
+          Timebox
+          <select id="time-select">
+            <option>10 minutes</option>
+            <option>25 minutes</option>
+            <option>one focused hour</option>
+            <option>a lazy afternoon</option>
+          </select>
+        </label>
+        <label>
+          Constraint
+          <select id="constraint-select">
+            <option>must fit on one page</option>
+            <option>must teach something</option>
+            <option>must make someone smile</option>
+            <option>must work offline</option>
+            <option>must use only what is already nearby</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="panel output" aria-live="polite" aria-labelledby="brief-title">
+        <div class="constellation" id="constellation" aria-hidden="true"></div>
+        <p class="eyebrow" id="brief-type">Micro-brief</p>
+        <h2 id="brief-title">Press “Forge a surprise” to begin.</h2>
+        <p id="brief-body">
+          This page is intentionally self-contained: no build step, no dependencies, and no paid model calls.
+        </p>
+        <div class="cards" id="cards"></div>
+      </section>
+
+      <section class="panel manifesto" aria-labelledby="manifesto-title">
+        <h2 id="manifesto-title">Why this exists</h2>
+        <p>
+          The best creative tools do not try to replace your taste. They reduce friction, add a little wonder, and hand the final move back to you.
+        </p>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./script.js"></script>
+  </body>
+</html>
