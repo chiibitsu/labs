@@ -7,9 +7,16 @@ you could — a chief of staff and six specialists — built as
 [Claude Code sub-agents](https://docs.claude.com/en/docs/claude-code/sub-agents)
 you can talk to, delegate real work to, and reshape into your own.
 
-It's meant to be forked. Clone it, change the names and instincts to fit *your*
+It's meant to be forked. Grab it, change the names and instincts to fit *your*
 company, and make it yours. If you're a founder friend reading this: **start
 here.**
+
+> ### 👀 See it work first → [**Ghost Office**](https://labs.chiibitsu.com/ghost-team/)
+> Not sure what "sub-agents" even means? Play the demo. Pitch a company in one
+> sentence and watch the whole team turn it into a founding brief — no install,
+> no account. It's free and scripted by default; flip on **⚡ Real Claude** and
+> paste your own Anthropic key to have actual Claude write the plan (your key
+> stays in your browser). Then come back here to run them for real.
 
 ---
 
@@ -33,24 +40,27 @@ team route the work.
 
 ## Install
 
-From inside this folder:
+**1. Grab just this folder** (no labs repo history, only the team):
 
 ```bash
-# into the current project (creates ./.claude/agents and ./.claude/commands)
-./install.sh
+npx degit chiibitsu/labs/ghost-team my-ghost-team
+cd my-ghost-team
+```
 
-# or for every project you open, into your home directory
-./install.sh --global
+**2. Drop the team into a project:**
 
-# or into a specific project
-./install.sh /path/to/your/project
+```bash
+./install.sh                      # into the current project's ./.claude
+./install.sh --global             # into ~/.claude (every project you open)
+./install.sh /path/to/project     # into a specific project
 ```
 
 That copies the team into a `.claude/` folder. There's no build step and no
 dependencies — Claude Code reads these Markdown files directly.
 
-> **Prefer not to run a script?** Just copy `agents/*.md` into your project's
-> `.claude/agents/` and `commands/*.md` into `.claude/commands/`. Same result.
+> **No Node / prefer not to run a script?** Download the folder and just copy
+> `agents/*.md` into your project's `.claude/agents/` and `commands/*.md` into
+> `.claude/commands/`. Same result.
 
 ---
 

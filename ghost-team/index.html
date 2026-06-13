@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ghost Office — your AI founding team, at work</title>
+<meta name="description" content="Type a raw idea and watch a team of Claude Code sub-agents — a chief of staff and six specialists — turn it into a real founding brief. Then run the same team for real." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Ghost Office — your AI founding team" />
+<meta property="og:description" content="Pitch a company in one sentence. Watch your ghost team ship the founding plan. Then run the same sub-agent team for real in Claude Code." />
+<meta property="og:url" content="https://labs.chiibitsu.com/ghost-team/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/ghost-team/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Ghost Office — your AI founding team" />
+<meta name="twitter:description" content="Pitch a company in one sentence. Watch your ghost team ship the founding plan." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/ghost-team/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305060a'/%3E%3Cpath d='M7 19 C7 11 11 6 16 6 C21 6 25 11 25 19 L25 26 L22 23 L19 26 L16 23 L13 26 L10 23 L7 26 Z' fill='%23b9a6ff'/%3E%3Ccircle cx='13' cy='16' r='1.8' fill='%2305060a'/%3E%3Ccircle cx='19' cy='16' r='1.8' fill='%2305060a'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#05060a; --ink:#eef1ff; --dim:#9aa2c8; --faint:#5b628c;
+    --line:rgba(140,160,230,0.14); --line2:rgba(140,160,230,0.28);
+    --violet:#b9a6ff; --card:rgba(120,140,220,0.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    min-height:100vh;background:var(--bg);color:var(--ink);
+    font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  }
+  canvas#bg{position:fixed;inset:0;z-index:0;display:block}
+  .wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:clamp(28px,6vh,72px) 20px 80px}
+  a{color:var(--violet);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{margin-bottom:28px}
+  .mark{display:flex;align-items:center;gap:13px}
+  .markghost{width:38px;height:38px;flex:none;filter:drop-shadow(0 0 16px rgba(150,150,255,.55))}
+  h1{font-size:clamp(1.5rem,5.4vw,2.3rem);font-weight:300;letter-spacing:.14em;text-transform:lowercase}
+  .tagline{margin-top:.9em;color:var(--dim);font-size:clamp(.8rem,2.4vw,.95rem);letter-spacing:.04em;max-width:60ch}
+  .tagline b{color:var(--ink);font-weight:500}
+
+  .panel{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:clamp(18px,3vw,26px);margin-top:22px}
+  .label{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+
+  /* how to play */
+  .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:6px}
+  .how .step{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.78rem;color:var(--dim)}
+  .how .step b{display:block;color:var(--ink);font-weight:500;margin-bottom:4px;letter-spacing:.04em}
+  .how .num{color:var(--violet);margin-right:.4em}
+
+  /* form */
+  textarea,input[type=text],input[type=password]{
+    width:100%;background:#0a0c16;color:var(--ink);border:1px solid var(--line2);border-radius:12px;
+    padding:13px 15px;font:inherit;font-size:.92rem;resize:vertical;transition:border-color .2s}
+  textarea:focus,input:focus{outline:none;border-color:var(--violet)}
+  textarea{min-height:74px}
+  .remember{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:.74rem;color:var(--dim);cursor:pointer}
+  .remember input{width:auto}
+  .field{margin-top:14px}
+  .field>label{display:block;font-size:.72rem;letter-spacing:.08em;color:var(--dim);margin-bottom:7px}
+  .field>label .opt{color:var(--faint);text-transform:none;letter-spacing:0}
+
+  .modes{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .pill{border:1px solid var(--line2);background:transparent;color:var(--dim);border-radius:999px;
+    padding:.5em 1em;font:inherit;font-size:.76rem;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+  .pill:hover{border-color:var(--violet);color:var(--ink)}
+  .pill[aria-pressed=true]{background:rgba(185,166,255,.16);border-color:var(--violet);color:#fff}
+
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+  .btn{border:1px solid var(--line2);background:rgba(185,166,255,.1);color:var(--ink);border-radius:11px;
+    padding:.7em 1.3em;font:inherit;font-size:.84rem;cursor:pointer;letter-spacing:.05em;transition:all .2s}
+  .btn:hover{border-color:var(--violet);background:rgba(185,166,255,.2)}
+  .btn.primary{background:var(--violet);color:#0a0a14;border-color:var(--violet);font-weight:600}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghostbtn{background:transparent}
+  .btn:disabled{opacity:.4;cursor:default}
+  .hint{font-size:.72rem;color:var(--faint);margin-top:10px}
+
+  /* office */
+  #office{margin-top:22px}
+  .officehead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .officehead .sub{font-size:.72rem;color:var(--faint);letter-spacing:.04em}
+  .desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px 4px;margin-top:18px}
+  .ghost{position:relative;display:flex;flex-direction:column;align-items:center;padding:8px 4px 4px;cursor:pointer;
+    border-radius:14px;transition:background .25s}
+  .ghost:hover{background:rgba(185,166,255,.06)}
+  .ghost .figure{width:62px;height:62px;position:relative;transition:transform .3s}
+  .ghost .figure svg{width:100%;height:100%;color:hsl(var(--hue) 75% 70%);
+    filter:drop-shadow(0 0 0 transparent);transition:filter .4s,opacity .3s;animation:bob 4s ease-in-out infinite}
+  .ghost .eye{fill:#0a0c14}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .desk{width:74px;height:7px;border-radius:50%;margin-top:-2px;
+    background:radial-gradient(ellipse,rgba(120,140,230,.35),transparent 70%);transition:opacity .3s}
+  .plate{margin-top:7px;text-align:center;font-size:.66rem;letter-spacing:.04em;color:var(--ink);line-height:1.3}
+  .plate small{display:block;color:var(--faint);font-size:.58rem;letter-spacing:.02em;text-transform:uppercase;margin-top:2px}
+  /* states */
+  .ghost.benched .figure svg{opacity:.18;filter:grayscale(1)}
+  .ghost.benched .plate{color:var(--faint)}
+  .ghost.benched .desk{opacity:.2}
+  .ghost.active .figure{transform:scale(1.12)}
+  .ghost.active .figure svg{filter:drop-shadow(0 0 14px hsl(var(--hue) 80% 65% / .8));animation-duration:1.6s}
+  .ghost.done .figure svg{filter:drop-shadow(0 0 7px hsl(var(--hue) 80% 65% / .5))}
+  .ghost .tick{position:absolute;top:6px;right:14px;width:16px;height:16px;border-radius:50%;
+    background:hsl(var(--hue) 70% 60%);color:#08080f;font-size:.62rem;display:none;align-items:center;justify-content:center;font-weight:700}
+  .ghost.done .tick{display:flex}
+  .ghost .benchtag{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:.52rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:1px 7px;display:none}
+  .ghost.benched .benchtag{display:block}
+
+  /* thought bubble */
+  .bubble{position:fixed;z-index:30;max-width:min(360px,82vw);background:#11131f;border:1px solid var(--line2);
+    border-radius:14px;padding:11px 14px;font-size:.78rem;color:var(--ink);line-height:1.5;
+    box-shadow:0 16px 50px -16px rgba(120,150,255,.5);pointer-events:none;opacity:0;transition:opacity .25s;transform:translate(-50%,-100%)}
+  .bubble.show{opacity:1}
+  .bubble::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+    border:7px solid transparent;border-top-color:#11131f}
+  .bubble .who{display:block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin-bottom:4px}
+  .caret{display:inline-block;width:7px;background:var(--violet);margin-left:1px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* progress */
+  .bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:18px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--violet),#7cc5ff);transition:width .5s}
+
+  /* brief */
+  #brief{margin-top:22px}
+  .briefcard{border:1px solid var(--line);border-left:3px solid hsl(var(--hue) 70% 62%);border-radius:12px;
+    background:rgba(10,12,22,.5);padding:16px 18px;margin-top:12px;
+    opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s}
+  .briefcard.in{opacity:1;transform:none}
+  .briefcard h3{font-size:.95rem;font-weight:500;letter-spacing:.03em;display:flex;align-items:center;gap:.5em}
+  .briefcard h3 .em{font-size:1.1em}
+  .briefcard h3 .role{margin-left:auto;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:400}
+  .briefcard .headline{color:hsl(var(--hue) 60% 78%);font-size:.82rem;margin:7px 0 10px}
+  .briefcard p{font-size:.82rem;color:var(--dim);margin:8px 0}
+  .briefcard p strong,.briefcard li strong{color:var(--ink);font-weight:600}
+  .briefcard .lbl{color:hsl(var(--hue) 55% 80%)}
+  .briefcard ul{margin:8px 0 8px 1.1em}
+  .briefcard li{font-size:.82rem;color:var(--dim);margin:5px 0}
+
+  /* cta */
+  #cta{margin-top:22px;border-color:var(--line2)}
+  #cta .note{font-size:.78rem;color:var(--dim);margin-bottom:14px}
+  #cta .note b{color:var(--ink)}
+  pre{background:#0a0c16;border:1px solid var(--line);border-radius:11px;padding:14px 16px;overflow-x:auto;
+    font-size:.8rem;color:#cfe0ff;margin:10px 0;position:relative;line-height:1.7}
+  pre .copycode{position:absolute;top:8px;right:8px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+    background:rgba(185,166,255,.12);border:1px solid var(--line2);color:var(--dim);border-radius:7px;padding:3px 8px;cursor:pointer}
+  pre .copycode:hover{color:var(--ink);border-color:var(--violet)}
+  .ctc{color:var(--faint)}
+
+  footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;
+    font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  footer a{color:var(--dim)}
+  footer .spacer{flex:1 1 auto}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:50;
+    background:#11131f;border:1px solid var(--line2);border-radius:999px;padding:.6em 1.2em;font-size:.76rem;
+    color:var(--ink);opacity:0;transition:all .3s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  [hidden]{display:none!important}
+  @media(max-width:560px){.ghost .figure{width:54px;height:54px}.desks{gap:4px 2px}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<main class="wrap">
+  <header>
+    <div class="mark">
+      <svg class="markghost" viewBox="0 0 88 88" aria-hidden="true"><path fill="#b9a6ff" d="M8 47 C8 24 24 8 44 8 C64 8 80 24 80 47 L80 80 L69 71 L58 80 L47 71 L36 80 L25 71 L8 80 Z"/><circle cx="34" cy="43" r="5" fill="#05060a"/><circle cx="54" cy="43" r="5" fill="#05060a"/></svg>
+      <h1>ghost&nbsp;office</h1>
+    </div>
+    <p class="tagline">Every solo founder wishes they had a team. <b>Pitch a company in one
+      sentence</b> and watch your ghost team — a chief of staff and six specialists —
+      turn it into a founding brief, live. Then run the same team for real.</p>
+  </header>
+
+  <!-- INTRO -->
+  <section id="intro" class="panel">
+    <div class="label">How it works</div>
+    <div class="how">
+      <div class="step"><b><span class="num">1</span>Pitch it</b>One raw sentence. A half-formed idea is fine — that's the point.</div>
+      <div class="step"><b><span class="num">2</span>Pick your team</b>Tap a ghost to bench it. Choose how they should think.</div>
+      <div class="step"><b><span class="num">3</span>Watch them ship</b>They work in front of you and hand back a real founding brief.</div>
+    </div>
+
+    <div class="field">
+      <label for="idea">What's the company? <span class="opt">— or just a raw idea</span></label>
+      <textarea id="idea" placeholder="e.g. A tool that turns messy voice memos into clean meeting notes for busy consultants."></textarea>
+    </div>
+    <div class="field">
+      <label for="who">Who's it for? <span class="opt">— optional, but the team works better with it</span></label>
+      <input type="text" id="who" placeholder="e.g. independent consultants" />
+    </div>
+    <div class="field">
+      <label>How should they think?</label>
+      <div class="modes" id="modes">
+        <button class="pill" data-mode="fast" aria-pressed="true">⚡ Ship fast</button>
+        <button class="pill" data-mode="validate" aria-pressed="false">🔎 Validate first</button>
+        <button class="pill" data-mode="raise" aria-pressed="false">💰 Raise money</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Engine</label>
+      <div class="modes" id="engine">
+        <button class="pill" data-engine="demo" aria-pressed="true">✦ Scripted demo (free)</button>
+        <button class="pill" data-engine="live" aria-pressed="false">⚡ Real Claude (your key)</button>
+      </div>
+      <div id="keywrap" hidden style="margin-top:12px">
+        <input type="password" id="apikey" placeholder="sk-ant-… — your Anthropic API key" autocomplete="off" spellcheck="false" />
+        <label class="remember"><input type="checkbox" id="remember" /> remember on this device</label>
+        <p class="hint">Your key stays in <b>your</b> browser and calls Anthropic directly — on your dime, never sent to us.
+          Uses the cheapest model (Haiku, ~$0.001 a plan). Get a key at
+          <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+          Leave this off for the free scripted demo.</p>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="start">Wake the team ✦</button>
+      <button class="btn ghostbtn" id="surprise">surprise me</button>
+      <button class="btn ghostbtn" id="mute" title="sound" aria-pressed="true">🔊 sound on</button>
+    </div>
+    <p class="hint">Tip: tap any ghost below to bench it — the team is yours to shape.</p>
+  </section>
+
+  <!-- OFFICE -->
+  <section id="office">
+    <div class="officehead">
+      <div class="label" style="margin:0">The team</div>
+      <div class="sub" id="officesub">7 at their desks · tap to bench</div>
+    </div>
+    <div class="desks" id="desks"></div>
+    <div class="bar" id="barwrap" hidden><i id="bar"></i></div>
+  </section>
+
+  <!-- BRIEF -->
+  <section id="brief" hidden>
+    <div class="label">Founding brief — <span id="briefidea"></span></div>
+    <div id="cards"></div>
+  </section>
+
+  <!-- RESULT ACTIONS -->
+  <section id="actions" class="row" hidden style="margin-top:22px">
+    <button class="btn primary" id="runreal">▶ Run this for real</button>
+    <button class="btn" id="copyplan">⧉ Copy brief</button>
+    <button class="btn" id="download">↓ Download .md</button>
+    <button class="btn" id="sharelink">🔗 Share link</button>
+    <button class="btn ghostbtn" id="again">↺ New idea</button>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta" class="panel" hidden>
+    <div class="label">Run the real team</div>
+    <p class="note">What you just watched is a <b>taste</b> — scripted by default, or powered by real Claude
+      if you pasted a key. Either way it shows the <i>shape</i> of the work. The real ghost team runs on
+      <b>Claude Code</b>: it reads your actual codebase, talks to real users through your connected tools,
+      and writes real, shippable code. Same seven teammates — actually doing the job. Pull just this folder
+      (no repo baggage):</p>
+    <pre><button class="copycode">copy</button><span class="ctc"># grab the team — just the ghost-team folder, nothing else</span>
+npx degit chiibitsu/labs/ghost-team my-ghost-team
+cd my-ghost-team && ./install.sh
+
+<span class="ctc"># then open Claude Code in your project and type:</span>
+/ship a tool that turns voice memos into meeting notes</pre>
+    <p class="note">No Node? Just copy the <code>agents/</code> and <code>commands/</code> files into your
+      project's <code>.claude/</code> folder. Full guide + how to customize the team:
+      <a href="https://github.com/chiibitsu/labs/tree/main/ghost-team" target="_blank" rel="noopener">README on GitHub →</a></p>
+  </section>
+
+  <footer>
+    <span>© Chiibitsu Labs</span>
+    <a href="../">labs</a>
+    <a href="https://github.com/chiibitsu/labs/tree/main/ghost-team" target="_blank" rel="noopener">source</a>
+    <a href="https://docs.claude.com/en/docs/claude-code/sub-agents" target="_blank" rel="noopener">sub-agents</a>
+    <span class="spacer"></span>
+    <span>a scripted demo of a real team</span>
+  </footer>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============ seeded randomness (same recipe as the rest of labs) ============ */
+function xmur3(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=(h<<13)|(h>>>19);}return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);h^=h>>>16;return h>>>0;};}
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+let RNG=Math.random;
+function seedFrom(s){const f=xmur3(s||"ghost");RNG=mulberry32(f());}
+const pick=a=>a[(RNG()*a.length)|0];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const tidy=s=>s.replace(/\s+/g," ").trim();
+
+/* ============ derive a "brief" from the founder's input ============ */
+const STOP=new Set("the a an and or for to of in on with that this your you our we it is are be can will into from as at by app tool platform service product idea about make build help people users user thing things using use".split(" "));
+function keywords(idea){
+  const seen=new Set(),out=[];
+  for(const w of idea.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/)){
+    if(w.length>3&&!STOP.has(w)&&!seen.has(w)){seen.add(w);out.push(w);}
+  }
+  return out.slice(0,5);
+}
+function deriveWho(idea,whoInput){
+  if(whoInput) return tidy(whoInput);
+  const m=idea.match(/\bfor\s+([^.,;]+)/i);
+  if(m) return tidy(m[1]).replace(/\s+(who|that|which)\b.*$/i,"");
+  return "the people who feel this problem most";
+}
+function buildBrief(idea,whoInput,mode){
+  idea=tidy(idea);
+  seedFrom(idea+"|"+whoInput+"|"+mode);
+  const who=deriveWho(idea,whoInput);
+  const kw=keywords(idea);
+  return {idea,who,kw,mode};
+}
+
+/* ============ the team ============ */
+// each agent: visual + a "thinking" line + a generator producing a brief section
+const AGENTS=[
+  {key:"chief-of-staff",name:"Chief of Staff",role:"orchestrator",emoji:"🧭",hue:255,bench:false,
+   think:b=>`Reading the brief. Pulling in the right people and sequencing the week.`},
+  {key:"founder-coach",name:"Founder Coach",role:"strategy",emoji:"🧠",hue:280,bench:true,
+   think:b=>`Okay — what's the real bet hiding inside "${trunc(b.idea,40)}"?`,
+   gen:coach},
+  {key:"customer-researcher",name:"Researcher",role:"customers",emoji:"🔍",hue:200,bench:true,
+   think:b=>`Before we build anything — who is ${b.who}, really, and what do they do today?`,
+   gen:research},
+  {key:"designer",name:"Designer",role:"product · ux",emoji:"🎨",hue:330,bench:true,
+   think:b=>`What's the single flow that has to feel obvious?`,
+   gen:design},
+  {key:"product-engineer",name:"Engineer",role:"build",emoji:"🔧",hue:160,bench:true,
+   think:b=>`What's the smallest thing I can ship end-to-end this week?`,
+   gen:engineer},
+  {key:"growth-marketer",name:"Growth",role:"distribution",emoji:"📣",hue:35,bench:true,
+   think:b=>`How do the first 100 of ${b.who} actually hear about this?`,
+   gen:growth},
+  {key:"ops-finance",name:"Ops & Finance",role:"survival",emoji:"📊",hue:95,bench:true,
+   think:b=>`What does it cost, what does it charge, and how long does the runway last?`,
+   gen:ops},
+];
+const trunc=(s,n)=>s.length>n?s.slice(0,n).replace(/\s\S*$/,"")+"…":s;
+
+/* ---- section generators. Each returns {headline, body:[blocks]} ----
+   block = {p}  |  {lbl,p}  |  {list:[...]}                          */
+function modeLine(b,opts){return opts[b.mode]||opts.fast;}
+
+function coach(b){
+  return {headline:"The bet you're actually making",
+    body:[
+    {p:`Strip away the features and this is one bet: that **${b.who}** feel the problem behind "${trunc(b.idea,80)}" strongly enough to change what they do today.`},
+    {lbl:"Riskiest assumption",p:pick([
+      `that ${b.who} already know they have this problem (most people don't — they've just accepted the workaround).`,
+      `that this is a top-3 problem for ${b.who}, not a nice-to-have they'll nod at and never pay for.`,
+      `that ${b.who} will trust a new tool with this enough to switch from whatever ugly thing they use now.`])},
+    {lbl:"The honest question",p:`If only one thing here turns out to be true in 90 days, it has to be that real ${b.who} reach for this without you pushing. Build to learn *that* first.`},
+    {lbl:modeLine(b,{fast:"Mode · ship fast",validate:"Mode · validate first",raise:"Mode · raise money"}),
+      p:modeLine(b,{
+        fast:`Bias the next two weeks toward getting something real — even ugly — in front of ${b.who}. Motion beats meetings.`,
+        validate:`Don't write a line of production code until this assumption survives contact with real ${b.who}. Cheaper to be wrong on a call than in a codebase.`,
+        raise:`Investors fund a believable story about a big change, not a feature. Make sure this bet implies a market — what has to be true for this to be huge?`})},
+    ]};
+}
+function research(b){
+  const where=pick([
+    `the communities where ${b.who} already complain about this`,
+    `5 people who fit "${b.who}" and have hit this in the last week`,
+    `${b.who} you can reach in one warm intro — quality over a big list`]);
+  return {headline:"Who to talk to, and what to ask",
+    body:[
+    {lbl:"Find your first 5",p:`Don't survey — talk. Start with ${where}. Five real conversations beat a hundred-row form right now.`},
+    {lbl:"Ask about the past, not the future",list:[
+      `"Tell me about the last time you dealt with ${b.kw[0]||"this"}. Walk me through what you actually did."`,
+      `"What did you try before that? Why did you stop?"`,
+      `"If this just vanished tomorrow, what would you reach for instead?"`]},
+    {lbl:"The job to be done",p:`Frame what you hear as: *"When ___, ${b.who} want to ___, so they can ___."* Fill that in from their words, not yours — it becomes the spec everyone else here builds against.`},
+    {lbl:"Watch for",p:`The difference between "that's interesting" (polite) and "can I use it now?" (real). Only the second one counts.`},
+    ]};
+}
+function design(b){
+  return {headline:"The one flow that has to feel obvious",
+    body:[
+    {p:`A solo founder wins on *clarity*, not chrome. Design one path to value and strip every step that isn't on it:`},
+    {list:[
+      `**Land** — in one line, ${b.who} understand what this does for them and hit a single obvious button.`,
+      `**Do the core thing** — the shortest route from their input to the "oh, nice" moment. No setup detours.`,
+      `**See the payoff** — show the result so clearly they want to do it again or share it.`]},
+    {lbl:"Design the unhappy paths too",p:`The empty state, the loading moment, the error. That's where trust is won or lost — and where most MVPs feel broken.`},
+    {lbl:"A brand in one breath",p:`Pick ${pick(["one accent color and a lot of calm whitespace","a plain, confident voice that sounds like a smart friend","one memorable detail and restraint everywhere else"])}. Consistency reads as quality; a different look per screen reads as amateur.`},
+    ]};
+}
+function engineer(b){
+  const stack=pick([
+    "a boring, well-trodden stack (one framework, one managed Postgres, one host) — novelty is a cost you pay in 3am debugging",
+    "the smallest hosted setup that ships today — a managed DB and a one-click deploy beat infrastructure you have to babysit",
+    "whatever you already know best — at this stage, your familiarity is worth more than any 'right' choice"]);
+  return {headline:"The smallest thing worth shipping",
+    body:[
+    {lbl:"MVP, in one sentence",p:`The version of "${trunc(b.idea,70)}" that does *only* the core job for ${b.who} — and nothing else — deployed where a real person can touch it.`},
+    {lbl:"Ship one vertical slice",p:`One feature working end to end (screen → logic → data → live URL) beats five half-built layers. If it doesn't move ${b.who} closer to the payoff, cut it from v1.`},
+    {lbl:"Stack",p:`Choose ${stack}.`},
+    {lbl:"Two-week build",list:[
+      modeLine(b,{fast:`Days 1–4: the happy path, end to end, deployed (even ugly).`,validate:`Days 1–4: a clickable fake or no-code stand-in — enough to test the bet without real code.`,raise:`Days 1–4: a sharp, real demo of the single most impressive moment.`}),
+      `Days 5–8: the unhappy paths the designer flagged — empty, loading, error.`,
+      `Days 9–14: put it in front of ${b.who}, watch where they get stuck, fix only that.`]},
+    ]};
+}
+function growth(b){
+  const k=b.kw.slice(0,2).map(w=>w.replace(/[^a-z0-9]/g,"")).filter(Boolean);
+  const names=k.length?[cap(k[0])+pick(["ly","flow","kit","base","loop","hq"]),cap(k[0])+(k[1]?cap(k[1]):"AI"),"get"+cap(k[0])]:["—"];
+  const chan=channelFor(b.who);
+  return {headline:"How the first 100 hear about it",
+    body:[
+    {lbl:"Positioning (fill in the blanks)",p:`*"For **${b.who}** who are tired of ___, **[name]** is the ___ that ___ — without ___."* Lead with the outcome and the pain you heard in research, not the feature list.`},
+    {lbl:"The one channel",p:`You can't run six. For ${b.who}, start with **${chan.pick}** — ${chan.why} ${modeLine(b,{fast:"Post the rough version now; polish loses to presence.",validate:"Use it to recruit conversations as much as signups.",raise:"A strong public launch is also a signal to investors that you can distribute."})}`},
+    {lbl:"A launch line to steal",p:`"${launchLine(b)}"`},
+    ...(k.length?[{lbl:"Name starters",p:`Throwaway directions to react to: ${names.map(n=>"**"+n+"**").join(" · ")}. Pick the one ${b.who} could say out loud without explaining.`}]:[]),
+    {lbl:"One number to watch",p:`Track ${modeLine(b,{fast:"signups that actually use the core feature",validate:"how many conversations turn into 'can I use it now?'",raise:"week-over-week growth on one honest metric"})} — and decide *now* what result means double-down vs. kill it.`},
+    ]};
+}
+function channelFor(who){
+  const w=who.toLowerCase();
+  if(/dev|engineer|program|technical|coder|hacker/.test(w)) return {pick:"Show HN + a genuinely great README",why:"this crowd rewards substance and shareable detail over hype."};
+  if(/design|creator|artist|writer|maker|founder/.test(w)) return {pick:"X / Twitter with a short visual demo",why:"a 15-second clip of the payoff travels further than any paragraph."};
+  if(/sales|business|smb|company|team|manager|consult|agency|enterprise/.test(w)) return {pick:"direct outreach — warm intros, then tight cold email",why:"these buyers don't browse Product Hunt; they answer a specific, useful message."};
+  if(/student|gamer|fan|hobby|parent|consumer/.test(w)) return {pick:"the one community / subreddit they already live in",why:"meet them where they gather instead of building an audience from zero."};
+  return {pick:"the single place "+who+" already gather to talk about this",why:"go where the audience exists rather than trying to summon one."};
+}
+function launchLine(b){
+  return pick([
+    `I got tired of watching ${b.who} fight with this, so I built the thing I wished existed. Here's the 30-second version →`,
+    `${cap(b.who)} spend hours on something that should take minutes. This fixes that. Take a look →`,
+    `Built this for ${b.who} in a weekend because nothing out there actually solved it. Brutal feedback welcome →`]);
+}
+function ops(b){
+  return {headline:"Staying alive long enough to win",
+    body:[
+    {lbl:"Pricing, kept simple",p:`Price on the *value* ${b.who} get, sanity-checked against your cost to serve. Start with one or two plans you can explain in a breath — ${pick(["a free tier to pull people in, one paid tier that removes the main limit","a flat monthly price, no usage-metering maze","a simple per-seat or per-use price tied to the value moment"])}. You'll raise it later; underpricing is easy to fix, a confusing page isn't.`},
+    {lbl:"The 3 numbers that matter now",list:[
+      "**Runway** — months of cash left. Everything else is noise if this hits zero.",
+      `**Activation** — of the ${b.who} who try it, how many reach the payoff?`,
+      modeLine(b,{fast:"**Repeat use** — do they come back without a nudge?",validate:"**Pull** — how many ask for it before you offer?",raise:"**Growth rate** — week-over-week, the one number investors actually read."})]},
+    {lbl:"Don't trip on the boring stuff",p:`Get the basics in place early — a plain terms & privacy page, clean invoicing if you charge, and don't commit secrets to your repo. Anything touching real money or real legal risk: spend an hour with a real professional. Cheaper than the alternative.`},
+    ]};
+}
+
+/* ============ render a section to HTML and to markdown ============ */
+function mdInline(s){return s;} // markdown keeps **bold** / *italic* as-is
+function htmlInline(s){return esc(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>");}
+function sectionHTML(agent,sec){
+  let h=`<h3><span class="em">${agent.emoji}</span> ${esc(agent.name)} <span class="role">${esc(agent.role)}</span></h3>`;
+  h+=`<div class="headline">${htmlInline(sec.headline)}</div>`;
+  for(const bl of sec.body){
+    if(bl.list){h+="<ul>"+bl.list.map(li=>`<li>${htmlInline(li)}</li>`).join("")+"</ul>";}
+    else if(bl.lbl){h+=`<p><strong class="lbl">${esc(bl.lbl)} —</strong> ${htmlInline(bl.p)}</p>`;}
+    else{h+=`<p>${htmlInline(bl.p)}</p>`;}
+  }
+  return h;
+}
+function sectionMD(agent,sec){
+  let m=`## ${agent.emoji} ${agent.name} — ${sec.headline}\n\n`;
+  for(const bl of sec.body){
+    if(bl.list){m+=bl.list.map(li=>"- "+mdInline(li)).join("\n")+"\n\n";}
+    else if(bl.lbl){m+=`**${bl.lbl}.** ${mdInline(bl.p)}\n\n`;}
+    else{m+=mdInline(bl.p)+"\n\n";}
+  }
+  return m;
+}
+
+/* ============ optional: real Claude, with the visitor's own key ============
+   Direct browser → Anthropic call. The key never leaves the visitor's machine
+   and never touches us. Falls back to the scripted demo on any failure.        */
+function parseJSON(text){
+  const a=text.indexOf("{"),b=text.lastIndexOf("}");
+  if(a<0||b<0)return null;
+  try{const o=JSON.parse(text.slice(a,b+1));return(o&&typeof o==="object")?o:null;}catch(e){return null;}
+}
+function normalizeSec(s){
+  if(!s||!Array.isArray(s.body))return null;
+  const body=[];
+  for(const bl of s.body){
+    if(bl&&Array.isArray(bl.list))body.push({list:bl.list.map(String)});
+    else if(bl&&bl.lbl&&bl.p)body.push({lbl:String(bl.lbl),p:String(bl.p)});
+    else if(bl&&bl.p)body.push({p:String(bl.p)});
+  }
+  if(!body.length)return null;
+  return {headline:String(s.headline||""),body};
+}
+async function callClaude(brief,specialists){
+  const keys=specialists.map(a=>a.key).concat("chief-of-staff");
+  const sys=
+`You are a world-class founding team helping a solo founder. Produce a founding brief for their idea — one section per teammate, in each teammate's distinct voice. Be concrete and specific to THIS idea and audience; no generic filler. Honour the mode (fast = ship asap; validate = test the bet before building; raise = fundability and story).
+
+Section each teammate writes:
+- founder-coach: the single riskiest assumption + the real bet
+- customer-researcher: who to talk to + 3 past-behaviour interview questions + the job-to-be-done
+- designer: the one core user flow (as steps) + a brand direction
+- product-engineer: the smallest shippable MVP + a sensible boring stack + a 2-week build
+- growth-marketer: a positioning one-liner + the single best channel + a launch line to steal
+- ops-finance: a simple pricing idea + the 3 metrics to watch + a runway/legal note
+- chief-of-staff: the ordered first-week plan + the single Next action
+
+Output ONLY valid JSON — no markdown fences, no preamble. Shape:
+{"<role-key>":{"headline":"short title","body":[BLOCKS]}}
+Each BLOCK is exactly one of: {"p":"text"} | {"lbl":"Label","p":"text"} | {"list":["item","item"]}.
+Use **bold** sparingly. 3-5 blocks per section. Include exactly these role keys: ${keys.join(", ")}.`;
+  const user=`Idea: ${brief.idea}\nFor: ${brief.who}\nMode: ${brief.mode}`;
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key":apiKey,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({
+      model:"claude-haiku-4-5",
+      max_tokens:2400,
+      system:sys,
+      messages:[{role:"user",content:user}]
+    })
+  });
+  if(!res.ok){
+    let detail="HTTP "+res.status;
+    try{const e=await res.json();if(e&&e.error&&e.error.message)detail=e.error.message;}catch(_){}
+    throw new Error(detail);
+  }
+  const data=await res.json();
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  const obj=parseJSON(text);
+  if(!obj)throw new Error("couldn't parse the model's reply");
+  return obj;
+}
+
+/* ============ DOM + state ============ */
+const $=s=>document.querySelector(s);
+const desksEl=$("#desks"),briefEl=$("#brief"),cardsEl=$("#cards"),barWrap=$("#barwrap"),bar=$("#bar");
+const intro=$("#intro"),actionsEl=$("#actions"),ctaEl=$("#cta"),toastEl=$("#toast");
+let mode="fast",muted=false,running=false,SPEED=1,lastBrief=null,lastSections=[];
+let engine="demo",apiKey="";
+const ghostEls={};
+
+const GHOST_SVG=`<svg viewBox="0 0 88 88" aria-hidden="true"><path fill="currentColor" d="M8 47 C8 24 24 8 44 8 C64 8 80 24 80 47 L80 80 L69 71 L58 80 L47 71 L36 80 L25 71 L8 80 Z"/><circle class="eye" cx="34" cy="43" r="5"/><circle class="eye" cx="54" cy="43" r="5"/></svg>`;
+
+function buildDesks(){
+  desksEl.innerHTML="";
+  for(const a of AGENTS){
+    const el=document.createElement("div");
+    el.className="ghost";el.style.setProperty("--hue",a.hue);el.dataset.key=a.key;
+    el.innerHTML=`<div class="tick">✓</div><div class="benchtag">benched</div>
+      <div class="figure">${GHOST_SVG}</div><div class="desk"></div>
+      <div class="plate">${esc(a.name)}<small>${esc(a.role)}</small></div>`;
+    el.title=a.key==="chief-of-staff"?"the chief of staff runs the show — always in":"tap to bench / activate";
+    el.addEventListener("click",()=>toggleBench(a,el));
+    desksEl.appendChild(el);
+    ghostEls[a.key]=el;
+  }
+  updateSub();
+}
+function toggleBench(a,el){
+  if(running||a.key==="chief-of-staff")return;
+  a.bench=!a.bench;el.classList.toggle("benched",a.bench);updateSub();
+}
+function updateSub(){
+  const n=AGENTS.filter(a=>!a.bench).length;
+  $("#officesub").textContent=`${n} at their desks · tap to bench`;
+}
+
+/* ---- thought bubble positioning ---- */
+const bubble=document.createElement("div");bubble.className="bubble";bubble.innerHTML='<span class="who"></span><span class="txt"></span><span class="caret">&nbsp;</span>';
+document.body.appendChild(bubble);
+function placeBubble(el){
+  const r=el.querySelector(".figure").getBoundingClientRect();
+  bubble.style.left=Math.min(Math.max(r.left+r.width/2,180),innerWidth-180)+"px";
+  bubble.style.top=(r.top-12)+"px";
+}
+async function think(agent){
+  const el=ghostEls[agent.key];el.classList.add("active");
+  placeBubble(el);bubble.querySelector(".who").textContent=agent.name;
+  const txt=bubble.querySelector(".txt");txt.textContent="";bubble.classList.add("show");
+  const line=agent.think(lastBrief);
+  for(let i=0;i<line.length;i++){txt.textContent+=line[i];await sleep(16/SPEED);}
+  await sleep(620/SPEED);
+}
+function doneThinking(agent){ghostEls[agent.key].classList.remove("active");ghostEls[agent.key].classList.add("done");}
+
+/* ---- audio: a soft pentatonic blip per delivery ---- */
+let actx=null;const SCALE=[523.25,587.33,659.25,783.99,880,1046.5];
+function blip(i){
+  if(muted||!actx)return;
+  const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();
+  o.type="sine";o.frequency.value=SCALE[i%SCALE.length];
+  o.connect(g);g.connect(actx.destination);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.08,t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+  o.start(t);o.stop(t+0.55);
+}
+
+/* ---- the run loop ---- */
+async function run(){
+  if(running)return;
+  const ideaRaw=$("#idea").value.trim();
+  if(!ideaRaw){toast("Pitch the company first ✦");$("#idea").focus();return;}
+  running=true;SPEED=1;
+  lastBrief=buildBrief(ideaRaw,$("#who").value,mode);
+  if(!actx&&!muted){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+
+  // reset visuals
+  cardsEl.innerHTML="";lastSections=[];
+  AGENTS.forEach(a=>{ghostEls[a.key].classList.remove("active","done");});
+  intro.querySelectorAll("button,textarea,input").forEach(x=>x.disabled=true);
+  actionsEl.hidden=true;ctaEl.hidden=true;
+  briefEl.hidden=false;$("#briefidea").textContent=trunc(lastBrief.idea,70);
+  barWrap.hidden=false;bar.style.width="3%";
+  addSkip();
+
+  const chief=AGENTS[0];
+  const specialists=AGENTS.slice(1).filter(a=>!a.bench);
+  const total=specialists.length+1;
+  let step=0;
+
+  // chief frames + delegates (and, in live mode, briefs the real Claude)
+  let liveData=null;
+  const useLive=engine==="live"&&apiKey;
+  await think(chief);
+  if(useLive){
+    bubble.querySelector(".txt").textContent="Briefing the real Claude… one moment.";
+    try{liveData=await callClaude(lastBrief,specialists);}
+    catch(e){toast("Couldn't reach Claude ("+e.message+") — running the scripted demo.");liveData=null;}
+  }
+  doneThinking(chief);
+  bar.style.width=(++step/(total+1)*100)+"%";
+
+  // specialists work in order
+  for(const a of specialists){
+    await think(a);
+    const sec=(liveData&&normalizeSec(liveData[a.key]))||a.gen(lastBrief);
+    addCard(a,sec);blip(step);
+    lastSections.push({agent:a,sec});
+    doneThinking(a);bubble.classList.remove("show");
+    bar.style.width=(++step/(total+1)*100)+"%";
+    await sleep(260/SPEED);
+  }
+
+  // chief synthesises the week
+  ghostEls[chief.key].classList.remove("done");
+  await think(chief);
+  const plan=(liveData&&normalizeSec(liveData["chief-of-staff"]))||chiefPlan(lastBrief,specialists);
+  addCard(chief,plan);blip(step);
+  lastSections.unshift({agent:chief,sec:plan});
+  doneThinking(chief);bubble.classList.remove("show");
+  bar.style.width="100%";
+
+  await sleep(400);barWrap.hidden=true;
+  finish();
+}
+function chiefPlan(b,specialists){
+  const has=k=>specialists.some(a=>a.key===k);
+  const steps=[];
+  if(b.mode==="validate"&&has("customer-researcher")) steps.push(`Talk to 5 of **${b.who}** — the researcher's questions are above. Decide your bet is real before building.`);
+  if(has("designer")) steps.push(`Sketch the one core flow. Just the happy path.`);
+  if(has("product-engineer")) steps.push(`Build that flow end-to-end and deploy it — ugly is allowed.`);
+  if(has("growth-marketer")) steps.push(`Write the landing line and pick the one channel. Line up the launch.`);
+  if(has("ops-finance")) steps.push(`Set one simple price and wire up the 3 numbers to watch.`);
+  if(b.mode==="raise") steps.push(`Turn the demo into a 60-second story: the change you're betting on, and why now.`);
+  if(!steps.length) steps.push(`Get something real in front of ${b.who} this week.`);
+  const next=b.mode==="validate"
+    ? `Message the first person who fits "${b.who}" and book a 20-minute call. Today.`
+    : has("product-engineer")
+      ? `Open your editor and build the single core flow. Nothing else until it works.`
+      : `Put the smallest real version in front of one of ${b.who} this week.`;
+  return {headline:"Your first week",
+    body:[
+    {p:`Here's the whole plan, sequenced. Do these in order — each one teaches you something the next one needs:`},
+    {list:steps.map((s,i)=>`${i+1}. ${s}`)},
+    {lbl:"Next action",p:`${next}`},
+    {lbl:"What I'm protecting you from",p:`Doing all of this at once. Pick the top item, finish it, then look up. A plan that ships one real thing this week beats a perfect roadmap.`},
+    ]};
+}
+
+function addCard(agent,sec){
+  const c=document.createElement("div");
+  c.className="briefcard";c.style.setProperty("--hue",agent.hue);
+  c.innerHTML=sectionHTML(agent,sec);
+  cardsEl.appendChild(c);
+  requestAnimationFrame(()=>c.classList.add("in"));
+  c.scrollIntoView({behavior:"smooth",block:"center"});
+}
+function addSkip(){
+  if($("#skipbtn"))return;
+  const b=document.createElement("button");
+  b.id="skipbtn";b.className="btn ghostbtn";b.textContent="skip ▸";b.style.marginLeft="auto";
+  b.onclick=()=>{SPEED=8;b.disabled=true;};
+  $(".officehead").appendChild(b);
+}
+function finish(){
+  running=false;
+  const sk=$("#skipbtn");if(sk)sk.remove();
+  intro.querySelectorAll("button,textarea,input").forEach(x=>x.disabled=false);
+  actionsEl.hidden=false;
+  actionsEl.scrollIntoView({behavior:"smooth",block:"nearest"});
+  history.replaceState(null,"",shareURL());
+}
+
+/* ============ exports / sharing ============ */
+function planMarkdown(){
+  const b=lastBrief;
+  let m=`# Founding brief\n\n> **Idea:** ${b.idea}\n> **For:** ${b.who}\n> **Mode:** ${({fast:"ship fast",validate:"validate first",raise:"raise money"})[b.mode]}\n\n`;
+  m+=lastSections.map(s=>sectionMD(s.agent,s.sec)).join("\n");
+  m+=`\n---\n\n*Drafted by the Ghost Office demo — a scripted team of Claude Code sub-agents. Run the real team: https://github.com/chiibitsu/labs/tree/main/ghost-team*\n`;
+  return m;
+}
+function shareURL(){
+  const b=lastBrief,p=new URLSearchParams();
+  p.set("idea",b.idea);if($("#who").value.trim())p.set("who",$("#who").value.trim());p.set("mode",b.mode);
+  const benched=AGENTS.filter(a=>a.bench).map(a=>a.key);if(benched.length)p.set("bench",benched.join(","));
+  return location.pathname+"?"+p.toString();
+}
+async function copy(text,msg){
+  try{await navigator.clipboard.writeText(text);toast(msg||"copied ✦");}
+  catch(e){toast("couldn't copy — select & copy manually");}
+}
+function download(){
+  const blob=new Blob([planMarkdown()],{type:"text/markdown"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="founding-brief.md";a.click();URL.revokeObjectURL(a.href);
+  toast("downloaded founding-brief.md ✦");
+}
+let toastT;
+function toast(msg){toastEl.textContent=msg;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove("show"),2200);}
+
+/* ============ wiring ============ */
+buildDesks();
+$("#modes").addEventListener("click",e=>{
+  const btn=e.target.closest(".pill");if(!btn)return;
+  mode=btn.dataset.mode;
+  [...$("#modes").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));
+});
+$("#engine").addEventListener("click",e=>{
+  const btn=e.target.closest(".pill");if(!btn)return;
+  engine=btn.dataset.engine;
+  [...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));
+  $("#keywrap").hidden=engine!=="live";
+  if(engine==="live")setTimeout(()=>$("#apikey").focus(),60);
+});
+function saveKey(){try{if($("#remember").checked&&apiKey)localStorage.setItem("gt_key",apiKey);else localStorage.removeItem("gt_key");}catch(e){}}
+$("#apikey").addEventListener("input",function(){apiKey=this.value.trim();saveKey();});
+$("#remember").addEventListener("change",saveKey);
+(function loadKey(){
+  try{const k=localStorage.getItem("gt_key");if(!k)return;
+    apiKey=k;$("#apikey").value=k;$("#remember").checked=true;engine="live";
+    [...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p.dataset.engine==="live"));
+    $("#keywrap").hidden=false;
+  }catch(e){}
+})();
+$("#start").onclick=run;
+$("#surprise").onclick=()=>{
+  const ex=[
+    {i:"A tool that turns messy voice memos into clean meeting notes.",w:"independent consultants"},
+    {i:"A weekly meal-plan that shops itself — recipes plus a cart you approve in one tap.",w:"busy parents"},
+    {i:"A dashboard that tells indie game devs which of their Steam wishlists are about to churn.",w:"solo game developers"},
+    {i:"An app that turns your run routes into shareable hand-drawn maps.",w:"hobby runners"},
+    {i:"A bookkeeping copilot that categorises expenses by reading your bank feed.",w:"freelance designers"},
+  ];
+  const e=pick(ex);$("#idea").value=e.i;$("#who").value=e.w;toast("surprise idea loaded — wake the team ✦");
+};
+$("#mute").onclick=function(){muted=!muted;this.setAttribute("aria-pressed",!muted);this.textContent=muted?"🔇 sound off":"🔊 sound on";if(!muted&&!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}};
+$("#copyplan").onclick=()=>copy(planMarkdown(),"brief copied as markdown ✦");
+$("#download").onclick=download;
+$("#sharelink").onclick=()=>copy(location.origin+shareURL(),"share link copied ✦");
+$("#runreal").onclick=()=>{ctaEl.hidden=false;ctaEl.scrollIntoView({behavior:"smooth",block:"start"});};
+$("#again").onclick=()=>{briefEl.hidden=true;actionsEl.hidden=true;ctaEl.hidden=true;cardsEl.innerHTML="";
+  AGENTS.forEach(a=>ghostEls[a.key].classList.remove("active","done"));
+  history.replaceState(null,"",location.pathname);intro.scrollIntoView({behavior:"smooth"});$("#idea").focus();};
+document.addEventListener("click",e=>{
+  const cc=e.target.closest(".copycode");if(cc){const pre=cc.closest("pre").cloneNode(true);pre.querySelector(".copycode").remove();copy(pre.textContent.trim(),"commands copied ✦");}
+});
+window.addEventListener("scroll",()=>{if(bubble.classList.contains("show")){const a=AGENTS.find(x=>ghostEls[x.key].classList.contains("active"));if(a)placeBubble(ghostEls[a.key]);}},{passive:true});
+
+/* prefill from a shared link */
+(function fromURL(){
+  const p=new URLSearchParams(location.search);
+  if(p.get("idea")){$("#idea").value=p.get("idea");}
+  if(p.get("who")){$("#who").value=p.get("who");}
+  if(p.get("mode")){mode=p.get("mode");[...$("#modes").children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===mode));}
+  if(p.get("bench")){const set=new Set(p.get("bench").split(","));AGENTS.forEach(a=>{if(set.has(a.key)&&a.key!=="chief-of-staff"){a.bench=true;ghostEls[a.key].classList.add("benched");}});updateSub();}
+  if(p.get("idea")){setTimeout(run,500);}
+})();
+
+/* ============ background starfield (cohesion with labs) ============ */
+(function stars(){
+  const cv=$("#bg"),cx=cv.getContext("2d");let W,H,DPR,st=[],raf=0;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function resize(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+"px";cv.style.height=H+"px";cx.setTransform(DPR,0,0,DPR,0,0);
+    const n=Math.min(160,Math.floor(W*H/11000));
+    st=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:.3+Math.random()*.7,tw:Math.random()*6.28,hue:235+Math.random()*70}));}
+  function frame(t){cx.clearRect(0,0,W,H);
+    const g=cx.createRadialGradient(W/2,H*0.28,0,W/2,H*0.28,Math.max(W,H)*0.6);
+    g.addColorStop(0,"rgba(90,90,170,0.09)");g.addColorStop(1,"rgba(5,6,10,0)");cx.fillStyle=g;cx.fillRect(0,0,W,H);
+    for(const s of st){s.x-=s.z*0.14;if(s.x<-2){s.x=W+2;s.y=Math.random()*H;}
+      const a=0.22+0.5*(0.5+0.5*Math.sin(t*0.001+s.tw))*s.z;
+      cx.beginPath();cx.arc(s.x,s.y,s.z*1.2,0,6.283);cx.fillStyle="hsla("+s.hue+",70%,80%,"+a.toFixed(3)+")";cx.fill();}
+    raf=requestAnimationFrame(frame);}
+  addEventListener("resize",resize);
+  document.addEventListener("visibilitychange",()=>document.hidden?(cancelAnimationFrame(raf),raf=0):(raf||(raf=requestAnimationFrame(frame))));
+  resize();if(reduce){frame(0);cancelAnimationFrame(raf);}else{raf=requestAnimationFrame(frame);}
+})();
+</script>
+</body>
+</html>
