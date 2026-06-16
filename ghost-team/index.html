@@ -228,21 +228,18 @@
       <label>Engine</label>
       <div class="modes" id="engine">
         <button class="pill" data-engine="demo" aria-pressed="true">✦ Scripted demo (free)</button>
-        <button class="pill" data-engine="live" aria-pressed="false">⚡ Real Claude (your key)</button>
+        <button class="pill" data-engine="live" aria-pressed="false">⚡ Real AI (your key)</button>
       </div>
       <div id="keywrap" hidden style="margin-top:12px">
-        <input type="password" id="apikey" placeholder="sk-ant-… — your Anthropic API key" autocomplete="off" spellcheck="false" />
+        <div class="modes" id="provider" style="margin-bottom:10px">
+          <button class="pill" data-prov="anthropic" aria-pressed="true">Claude</button>
+          <button class="pill" data-prov="openai" aria-pressed="false">OpenAI</button>
+          <button class="pill" data-prov="openrouter" aria-pressed="false">OpenRouter</button>
+        </div>
+        <input type="password" id="apikey" placeholder="sk-ant-… — your API key" autocomplete="off" spellcheck="false" />
+        <input type="text" id="model" placeholder="model id" autocomplete="off" spellcheck="false" style="margin-top:9px" />
         <label class="remember"><input type="checkbox" id="remember" /> remember on this device</label>
-        <select id="model" style="margin-top:9px">
-          <option value="claude-haiku-4-5">Model: Haiku — cheapest &amp; fastest</option>
-          <option value="claude-sonnet-4-6">Model: Sonnet — balanced</option>
-          <option value="claude-opus-4-8">Model: Opus — most capable</option>
-        </select>
-        <p class="hint">This is a quick <b>live preview</b> using an API key (the only thing a webpage can call) —
-          your key stays in your browser, calls Anthropic directly on your dime, never touches us.
-          <b>Want to use your Claude subscription instead of a key?</b> That runs the real team in Claude Code —
-          see “Run the real team” after the demo. Get a key at
-          <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+        <p class="hint" id="keyhint">A quick <b>live preview</b> using an API key — it stays in your browser and calls the provider directly, on your dime, never through us.</p>
       </div>
     </div>
     <div class="row">
@@ -527,7 +524,7 @@ function sectionMD(a,sec){
 /* ============ optional: real Claude with the visitor's own key ============ */
 function parseJSON(t){const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<0)return null;try{const o=JSON.parse(t.slice(a,b+1));return(o&&typeof o==="object")?o:null;}catch(e){return null;}}
 function normalizeSec(s){if(!s||!Array.isArray(s.body))return null;const body=[];for(const bl of s.body){if(bl&&Array.isArray(bl.list))body.push({list:bl.list.map(String)});else if(bl&&bl.lbl&&bl.p)body.push({lbl:String(bl.lbl),p:String(bl.p)});else if(bl&&bl.p)body.push({p:String(bl.p)});}if(!body.length)return null;return {headline:String(s.headline||""),body};}
-async function callClaude(brief,specialists){
+async function callModel(brief,specialists){
   const keys=specialists.map(a=>a.key).concat("chief-of-staff");
   const sys=
 `You are a world-class founding team helping a solo founder. From their idea, produce (1) a founding plan — one section per teammate, in each teammate's voice — and (2) a real landing page for the company. Be concrete and specific to THIS idea and audience; no generic filler. Honour the mode (fast=ship asap; validate=test the bet first; raise=fundability and story).
@@ -538,21 +535,34 @@ Output ONLY valid JSON, no markdown fences, no preamble:
 {"brief":{"<role-key>":{"headline":"short title","body":[BLOCK,...]}},"landing":{"name":"BrandName","tagline":"punchy benefit headline (max ~9 words)","sub":"one-sentence subhead describing the product","features":[{"title":"...","desc":"..."},{"title":"...","desc":"..."},{"title":"...","desc":"..."}],"pricing":{"plan":"Starter","price":"$9/mo or Free","line":"one line"},"cta":"button label","palette":{"bg":"#hex light","ink":"#hex dark text","accent":"#hex brand","soft":"#hex pale tint of accent"}}}
 BLOCK is exactly one of {"p":"text"} | {"lbl":"Label","p":"text"} | {"list":["item",...]}. Use **bold** sparingly. 3-5 blocks per section. brief must include exactly these role keys: ${keys.join(", ")}. Make the landing copy genuinely tailored to the idea and audience.`;
   const user=`Idea: ${brief.idea}\nFor: ${brief.who}\nMode: ${brief.mode}`;
-  const model=($("#model")&&$("#model").value)||"claude-haiku-4-5";
-  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{
-    "content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"
-  },body:JSON.stringify({model,max_tokens:3000,system:sys,messages:[{role:"user",content:user}]})});
-  if(!res.ok){let d="HTTP "+res.status;try{const e=await res.json();if(e&&e.error&&e.error.message)d=e.error.message;}catch(_){ }throw new Error(d);}
-  const data=await res.json();
-  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  const model=$("#model").value.trim()||PROV[provider].model;
+  let text;
+  if(provider==="anthropic"){
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{
+      "content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"
+    },body:JSON.stringify({model,max_tokens:3000,system:sys,messages:[{role:"user",content:user}]})});
+    if(!res.ok)throw new Error(await errMsg(res));
+    const data=await res.json();
+    text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  }else{
+    // OpenAI-compatible (OpenAI, OpenRouter)
+    const url=provider==="openai"?"https://api.openai.com/v1/chat/completions":"https://openrouter.ai/api/v1/chat/completions";
+    const headers={"content-type":"application/json","authorization":"Bearer "+apiKey};
+    if(provider==="openrouter"){headers["HTTP-Referer"]=location.origin;headers["X-Title"]="Ghost Office";}
+    const res=await fetch(url,{method:"POST",headers,body:JSON.stringify({model,max_tokens:3000,messages:[{role:"system",content:sys},{role:"user",content:user}]})});
+    if(!res.ok)throw new Error(await errMsg(res));
+    const data=await res.json();
+    text=(((data.choices||[])[0]||{}).message||{}).content||"";
+  }
   const obj=parseJSON(text);if(!obj)throw new Error("couldn't parse the model's reply");return obj;
 }
+async function errMsg(res){let d="HTTP "+res.status;try{const e=await res.json();if(e&&e.error&&e.error.message)d=e.error.message;}catch(_){ }return d;}
 
 /* ============ DOM + state ============ */
 const $=s=>document.querySelector(s);
 const desksEl=$("#desks"),cardsEl=$("#cards"),barWrap=$("#barwrap"),bar=$("#bar"),logEl=$("#buildlog");
 const intro=$("#intro"),workEl=$("#work"),outputEl=$("#output"),actionsEl=$("#actions"),ctaEl=$("#cta"),toastEl=$("#toast");
-let mode="fast",muted=false,running=false,SPEED=1,engine="demo",apiKey="";
+let mode="fast",muted=false,running=false,SPEED=1,engine="demo",apiKey="",provider="anthropic";
 let lastBrief=null,lastSections=[],lastLanding=null,lastLandingHTML="",blobUrl="";
 const ghostEls={};
 
@@ -617,9 +627,9 @@ async function run(){
   await think(chief);
   logLine("▶","Chief of Staff is briefing the team…","em");
   if(useLive){
-    bubble.querySelector(".txt").textContent="Briefing the real Claude… one moment.";
-    logLine("⚡",`Calling Claude (${($("#model")&&$("#model").options[$("#model").selectedIndex].text)||"live"})…`,"em");
-    try{liveData=await callClaude(lastBrief,specialists);logLine("⚡","Claude responded — team is working from it.","ok");}
+    bubble.querySelector(".txt").textContent="Briefing the model… one moment.";
+    logLine("⚡",`Calling ${provName()} (${$("#model").value.trim()||PROV[provider].model})…`,"em");
+    try{liveData=await callModel(lastBrief,specialists);logLine("⚡","Model responded — team is working from it.","ok");}
     catch(e){toast("Couldn't reach Claude ("+e.message+") — running the scripted demo.");logLine("⚠","Live call failed — falling back to scripted demo.","em");liveData=null;}
   }
   doneThinking(chief);bar.style.width=(++step/(total+1)*100)+"%";
@@ -688,10 +698,30 @@ let toastT;function toast(msg){toastEl.textContent=msg;toastEl.classList.add("sh
 buildDesks();
 $("#modes").addEventListener("click",e=>{const btn=e.target.closest(".pill");if(!btn)return;mode=btn.dataset.mode;[...$("#modes").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));});
 $("#engine").addEventListener("click",e=>{const btn=e.target.closest(".pill");if(!btn)return;engine=btn.dataset.engine;[...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p===btn));$("#keywrap").hidden=engine!=="live";if(engine==="live")setTimeout(()=>$("#apikey").focus(),60);});
-function saveKey(){try{if($("#remember").checked&&apiKey)localStorage.setItem("gt_key",apiKey);else localStorage.removeItem("gt_key");}catch(e){}}
+
+const PROV={
+ anthropic:{model:"claude-haiku-4-5",ph:"sk-ant-… — your Anthropic API key",
+   hint:'A quick <b>live preview</b> — your key stays in your browser and calls <b>Anthropic</b> directly, on your dime, never through us. Use any Claude model id (claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-8). Key: <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>. Prefer a <b>subscription</b>? That\'s the real team in Claude Code — see below.'},
+ openai:{model:"gpt-4o-mini",ph:"sk-… — your OpenAI API key",
+   hint:'A quick <b>live preview</b> — your key stays in your browser and calls <b>OpenAI</b> directly, on your dime, never through us. Use any OpenAI model id (gpt-4o-mini, gpt-4o, …). Key: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>.'},
+ openrouter:{model:"openai/gpt-4o-mini",ph:"sk-or-… — your OpenRouter API key",
+   hint:'A quick <b>live preview</b> — your key stays in your browser and calls <b>OpenRouter</b> directly, on your dime, never through us. <b>One key, any model</b> — Claude, GPT, Gemini, Llama… use any id from <a href="https://openrouter.ai/models" target="_blank" rel="noopener">openrouter.ai/models</a> (e.g. anthropic/claude-3.5-sonnet). Key: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.'}
+};
+function provName(){return {anthropic:"Anthropic",openai:"OpenAI",openrouter:"OpenRouter"}[provider];}
+function applyProvider(){const p=PROV[provider];$("#apikey").placeholder=p.ph;$("#model").value=p.model;$("#keyhint").innerHTML=p.hint;}
+$("#provider").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;provider=b.dataset.prov;[...$("#provider").children].forEach(x=>x.setAttribute("aria-pressed",x===b));applyProvider();saveKey();});
+$("#model").addEventListener("input",saveKey);
+function saveKey(){try{if($("#remember").checked&&apiKey){localStorage.setItem("gt_key",apiKey);localStorage.setItem("gt_prov",provider);localStorage.setItem("gt_model",$("#model").value.trim());}else{localStorage.removeItem("gt_key");localStorage.removeItem("gt_prov");localStorage.removeItem("gt_model");}}catch(e){}}
 $("#apikey").addEventListener("input",function(){apiKey=this.value.trim();saveKey();});
 $("#remember").addEventListener("change",saveKey);
-(function loadKey(){try{const k=localStorage.getItem("gt_key");if(!k)return;apiKey=k;$("#apikey").value=k;$("#remember").checked=true;engine="live";[...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p.dataset.engine==="live"));$("#keywrap").hidden=false;}catch(e){}})();
+applyProvider();
+(function loadKey(){try{const k=localStorage.getItem("gt_key");if(!k)return;
+  const pv=localStorage.getItem("gt_prov");if(pv&&PROV[pv]){provider=pv;[...$("#provider").children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.prov===pv));}
+  applyProvider();
+  apiKey=k;$("#apikey").value=k;$("#remember").checked=true;
+  const m=localStorage.getItem("gt_model");if(m)$("#model").value=m;
+  engine="live";[...$("#engine").children].forEach(p=>p.setAttribute("aria-pressed",p.dataset.engine==="live"));$("#keywrap").hidden=false;
+}catch(e){}})();
 
 $("#start").onclick=run;
 $("#surprise").onclick=()=>{const ex=[
