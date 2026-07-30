@@ -549,14 +549,20 @@ BLOCK is exactly one of {"p":"text"} | {"lbl":"Label","p":"text"} | {"list":["it
     const url=provider==="openai"?"https://api.openai.com/v1/chat/completions":"https://openrouter.ai/api/v1/chat/completions";
     const headers={"content-type":"application/json","authorization":"Bearer "+apiKey};
     if(provider==="openrouter"){headers["HTTP-Referer"]=location.origin;headers["X-Title"]="Ghost Office";}
-    const msgs=[{role:"system",content:sys},{role:"user",content:user}];
+    // OpenAI reasoning models (o-series, gpt-5…) take a `developer` role instead of
+    // `system`, and `max_completion_tokens` instead of `max_tokens`. OpenRouter
+    // normalises both across vendors, so only special-case direct OpenAI.
+    const reasoning=provider==="openai"&&/^(o\d|gpt-5)/i.test(model);
+    const msgs=[{role:reasoning?"developer":"system",content:sys},{role:"user",content:user}];
     const send=cap=>fetch(url,{method:"POST",headers,body:JSON.stringify(Object.assign({model,messages:msgs},cap))});
-    let res=await send({max_tokens:3000});
-    // Reasoning models (o-series, gpt-5…) reject max_tokens and want max_completion_tokens.
+    let res=await send(reasoning?{max_completion_tokens:3000}:{max_tokens:3000});
     if(!res.ok){
       const first=await errMsg(res);
-      if(/max_tokens|max_completion_tokens/i.test(first))res=await send({max_completion_tokens:3000});
-      if(!res.ok)throw new Error(first);
+      // Safety net for models we didn't detect (e.g. a reasoning id via OpenRouter).
+      if(!reasoning&&/max_tokens|max_completion_tokens/i.test(first)){
+        res=await send({max_completion_tokens:3000});
+        if(!res.ok)throw new Error(await errMsg(res)); // the retry's real error, not the stale one
+      }else throw new Error(first);
     }
     const data=await res.json();
     text=(((data.choices||[])[0]||{}).message||{}).content||"";
@@ -716,7 +722,13 @@ const PROV={
 };
 function provName(){return {anthropic:"Anthropic",openai:"OpenAI",openrouter:"OpenRouter"}[provider];}
 function applyProvider(){const p=PROV[provider];$("#apikey").placeholder=p.ph;$("#model").value=p.model;$("#keyhint").innerHTML=p.hint;}
-$("#provider").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;provider=b.dataset.prov;[...$("#provider").children].forEach(x=>x.setAttribute("aria-pressed",x===b));applyProvider();saveKey();});
+$("#provider").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;
+  if(b.dataset.prov===provider)return;
+  provider=b.dataset.prov;
+  // Never carry a credential across vendors: clear it (and anything persisted) on switch.
+  apiKey="";$("#apikey").value="";
+  [...$("#provider").children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+  applyProvider();saveKey();$("#apikey").focus();});
 $("#model").addEventListener("input",saveKey);
 function saveKey(){try{if($("#remember").checked&&apiKey){localStorage.setItem("gt_key",apiKey);localStorage.setItem("gt_prov",provider);localStorage.setItem("gt_model",$("#model").value.trim());}else{localStorage.removeItem("gt_key");localStorage.removeItem("gt_prov");localStorage.removeItem("gt_model");}}catch(e){}}
 $("#apikey").addEventListener("input",function(){apiKey=this.value.trim();saveKey();});
