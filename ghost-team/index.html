@@ -457,7 +457,7 @@ function landingFromBrief(b){
   ];
   const pricing={plan:"Starter",price:pick(["$9/mo","$19/mo","Free to start"]),line:`Everything ${b.who} need to begin.`};
   const cta=pick(["Start free","Get early access","Try it now"]);
-  return {name,tagline,sub,features,pricing,cta,palette:{bg:"#faf9f7",ink:"#171821",accent:`hsl(${hue} 74% 50%)`,soft:`hsl(${hue} 70% 96%)`}};
+  return {name,tagline,sub,features,pricing,cta,palette:{bg:"#faf9f7",ink:"#171821",accent:hsl2hex(hue,74,50),soft:hsl2hex(hue,70,96)}};
 }
 function normalizeLanding(L){
   if(!L||typeof L!=="object")return null;
@@ -469,7 +469,20 @@ function normalizeLanding(L){
     cta:String(L.cta||"Start free"),
     palette:{bg:hex(p.bg,"#faf9f7"),ink:hex(p.ink,"#171821"),accent:hex(p.accent,"#5b54e6"),soft:hex(p.soft,"#f0eefc")}};
 }
-function hex(v,fb){return(typeof v==="string"&&/^#?[0-9a-fA-F]{3,8}$|^hsl/.test(v))?(v[0]==="#"||v.startsWith("hsl")?v:"#"+v):fb;}
+// Palette values land inside a <style> block, and esc() only escapes HTML — it does
+// nothing about `;` or `url(...)`. So accept ONE shape only: a complete hex colour,
+// whole-string anchored. Anything else (including any hsl()) falls back to the default.
+function hex(v,fb){
+  const s=typeof v==="string"?v.trim():"";
+  return /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(s)
+    ? (s[0]==="#"?s:"#"+s) : fb;
+}
+function hsl2hex(h,s,l){
+  s/=100;l/=100;
+  const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l),
+        f=n=>Math.round(255*(l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)))));
+  return "#"+[f(0),f(8),f(4)].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
 function landingHTML(L){
   const e=esc;
   const feats=L.features.map(f=>`<div class="f"><h3>${e(f.title)}</h3><p>${e(f.desc)}</p></div>`).join("");
