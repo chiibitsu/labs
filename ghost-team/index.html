@@ -331,9 +331,12 @@ let RNG=Math.random;
 function seedFrom(s){const f=xmur3(s||"ghost");RNG=mulberry32(f());}
 const pick=a=>a[(RNG()*a.length)|0];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const esc=s=>str(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
 const tidy=s=>s.replace(/\s+/g," ").trim();
+// String() throws on objects with no primitive conversion (e.g. {toString:null,
+// valueOf:null}) — which a model can legally return. A validator must never throw.
+const str=v=>{if(typeof v==="string")return v;try{return String(v);}catch(_){return "";}};
 const trunc=(s,n)=>s.length>n?s.slice(0,n).replace(/\s\S*$/,"")+"…":s;
 
 /* ============ derive a brief from the founder's input ============ */
@@ -461,12 +464,12 @@ function landingFromBrief(b){
 }
 function normalizeLanding(L){
   if(!L||typeof L!=="object")return null;
-  const feat=Array.isArray(L.features)?L.features.filter(f=>f&&f.title).slice(0,4).map(f=>({title:String(f.title),desc:String(f.desc||"")})):[];
+  const feat=Array.isArray(L.features)?L.features.filter(f=>f&&f.title).slice(0,4).map(f=>({title:str(f.title),desc:str(f.desc||"")})):[];
   if(!L.tagline||!feat.length)return null;
   const p=L.palette||{};
-  return {name:String(L.name||"Launch"),tagline:String(L.tagline),sub:String(L.sub||""),features:feat,
-    pricing:{plan:String((L.pricing&&L.pricing.plan)||"Starter"),price:String((L.pricing&&L.pricing.price)||"Free"),line:String((L.pricing&&L.pricing.line)||"")},
-    cta:String(L.cta||"Start free"),
+  return {name:str(L.name||"Launch"),tagline:str(L.tagline),sub:str(L.sub||""),features:feat,
+    pricing:{plan:str((L.pricing&&L.pricing.plan)||"Starter"),price:str((L.pricing&&L.pricing.price)||"Free"),line:str((L.pricing&&L.pricing.line)||"")},
+    cta:str(L.cta||"Start free"),
     palette:{bg:hex(p.bg,"#faf9f7"),ink:hex(p.ink,"#171821"),accent:hex(p.accent,"#5b54e6"),soft:hex(p.soft,"#f0eefc")}};
 }
 // Palette values land inside a <style> block, and esc() only escapes HTML — it does
@@ -536,7 +539,7 @@ function sectionMD(a,sec){
 
 /* ============ optional: real Claude with the visitor's own key ============ */
 function parseJSON(t){const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<0)return null;try{const o=JSON.parse(t.slice(a,b+1));return(o&&typeof o==="object")?o:null;}catch(e){return null;}}
-function normalizeSec(s){if(!s||!Array.isArray(s.body))return null;const body=[];for(const bl of s.body){if(bl&&Array.isArray(bl.list))body.push({list:bl.list.map(String)});else if(bl&&bl.lbl&&bl.p)body.push({lbl:String(bl.lbl),p:String(bl.p)});else if(bl&&bl.p)body.push({p:String(bl.p)});}if(!body.length)return null;return {headline:String(s.headline||""),body};}
+function normalizeSec(s){if(!s||!Array.isArray(s.body))return null;const body=[];for(const bl of s.body){if(bl&&Array.isArray(bl.list))body.push({list:bl.list.map(str)});else if(bl&&bl.lbl&&bl.p)body.push({lbl:str(bl.lbl),p:str(bl.p)});else if(bl&&bl.p)body.push({p:str(bl.p)});}if(!body.length)return null;return {headline:str(s.headline||""),body};}
 async function callModel(brief,specialists){
   const keys=specialists.map(a=>a.key).concat("chief-of-staff");
   const sys=
@@ -630,11 +633,23 @@ function logLine(emoji,text,cls){
 let actx=null;const SCALE=[523.25,587.33,659.25,783.99,880,1046.5];
 function blip(i){if(muted||!actx)return;const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=SCALE[i%SCALE.length];o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.08,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);o.start(t);o.stop(t+0.55);}
 
+// run() is a guard: whatever happens inside, the form comes back. Without the
+// finally, anything throwing mid-build (a malformed model field, a DOM hiccup)
+// rejects this handler's promise and leaves the page disabled until reload.
 async function run(){
   if(running)return;
   const ideaRaw=$("#idea").value.trim();
   if(!ideaRaw){toast("Pitch the company first ✦");$("#idea").focus();return;}
-  running=true;SPEED=1;
+  running=true;
+  try{ await runBuild(ideaRaw); }
+  catch(err){
+    const m=(err&&err.message)||str(err);
+    toast("Couldn't finish that build — "+m);
+    logLine("⚠","Build failed: "+m,"em");
+  }finally{ recoverUI(); }
+}
+async function runBuild(ideaRaw){
+  SPEED=1;
   lastBrief=buildBrief(ideaRaw,$("#who").value,mode);
   if(!actx&&!muted){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
 
@@ -698,7 +713,14 @@ function addCard(agent,sec){
   c.innerHTML=sectionHTML(agent,sec);cardsEl.appendChild(c);
 }
 function addSkip(){if($("#skipbtn"))return;const b=document.createElement("button");b.id="skipbtn";b.className="btn ghostbtn";b.textContent="skip ▸";b.style.marginLeft="auto";b.onclick=()=>{SPEED=8;b.disabled=true;};$(".officehead").appendChild(b);}
-function finish(){running=false;const sk=$("#skipbtn");if(sk)sk.remove();intro.querySelectorAll("button,textarea,input,select").forEach(x=>x.disabled=false);actionsEl.hidden=false;actionsEl.scrollIntoView({behavior:"smooth",block:"nearest"});history.replaceState(null,"",shareURL());}
+// Success tail only. Anything that must happen win-or-lose belongs in recoverUI().
+function finish(){actionsEl.hidden=false;actionsEl.scrollIntoView({behavior:"smooth",block:"nearest"});history.replaceState(null,"",shareURL());}
+function recoverUI(){
+  running=false;
+  const sk=$("#skipbtn");if(sk)sk.remove();
+  intro.querySelectorAll("button,textarea,input,select").forEach(x=>x.disabled=false);
+  barWrap.hidden=true;bubble.classList.remove("show");
+}
 
 /* tabs */
 function selectTab(name){
