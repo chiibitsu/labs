@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="human">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guest Mode — a city built for AI first</title>
+<meta name="description" content="A city where AI came first and humans are accommodated. Flip one switch to see the same town in machine-native time." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Guest Mode — a city built for AI first" />
+<meta property="og:description" content="AI came first. Humans are the accommodated guests. Flip one switch to see the same city at machine speed." />
+<meta property="og:url" content="https://labs.chiibitsu.com/ai-first/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/ai-first/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Guest Mode — a city built for AI first" />
+<meta name="twitter:description" content="AI came first. Humans are the accommodated guests. Flip one switch to see the same city at machine speed." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/ai-first/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ff5a1f'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #f3efe6; --ink: #15140f; --dim: #5d5a4f; --faint: #8f8b7c; --line: rgba(21,20,15,.16);
+    --sig: #e8481a; --card: #fbf8f1; --road: #d9d3c2; --block: #e7e1d0;
+    --f-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  [data-mode="native"] {
+    --bg: #04070a; --ink: #c9ffe6; --dim: #5fb892; --faint: #2f6e55; --line: rgba(80,255,170,.18);
+    --sig: #3dffa6; --card: #07110e; --road: #0b1d17; --block: #07100d;
+    --f-body: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.6;
+    transition: background .6s ease, color .6s ease; overflow-x: hidden; }
+  .mono { font-family: var(--f-mono); }
+  a { color: inherit; }
+
+  /* top bar */
+  .bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    padding: 10px 16px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line); font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  .bar .back { text-decoration: none; color: var(--dim); }
+  .toggle { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--ink); background: transparent; color: var(--ink);
+    padding: 7px 12px; border-radius: 999px; font: inherit; cursor: pointer; letter-spacing: inherit; text-transform: inherit; }
+  .toggle:focus-visible, .btn:focus-visible, textarea:focus-visible { outline: 2px solid var(--sig); outline-offset: 2px; }
+  .toggle .pip { width: 28px; height: 14px; border-radius: 99px; border: 1px solid var(--ink); position: relative; flex: none; }
+  .toggle .pip::after { content: ""; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--sig); transition: transform .3s; }
+  [data-mode="native"] .toggle .pip::after { transform: translateX(14px); }
+
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  /* hero */
+  .hero { padding: clamp(36px, 8vh, 90px) 0 24px; }
+  .eyebrow { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--sig); }
+  h1 { font-weight: 400; font-size: clamp(2.3rem, 8vw, 4.6rem); line-height: 1.02; letter-spacing: -.02em; margin: .3em 0 .35em; }
+  [data-mode="native"] h1 { font-size: clamp(1.7rem, 6vw, 3.2rem); letter-spacing: 0; text-transform: lowercase; }
+  .lede { max-width: 56ch; color: var(--dim); font-size: clamp(1rem, 2.6vw, 1.2rem); }
+  .only-native { display: none; } [data-mode="native"] .only-native { display: initial; } [data-mode="native"] .only-human { display: none; }
+
+  /* city */
+  .city { position: relative; margin: 26px 0 10px; border: 1px solid var(--ink); background: var(--card); }
+  canvas#city { display: block; width: 100%; height: clamp(260px, 52vw, 460px); }
+  .city .hud { position: absolute; left: 10px; bottom: 8px; right: 10px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    font-family: var(--f-mono); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--f-mono); font-size: .68rem; letter-spacing: .06em; color: var(--dim); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: -1px; }
+  .legend .a { background: var(--ink); } .legend .h { background: var(--sig); border-radius: 50%; }
+
+  /* blink */
+  .blink { margin: 42px 0; padding: 22px; border: 1px solid var(--line); background: var(--card); display: grid; gap: 14px; }
+  .blink h2, h2.sec { font-weight: 400; font-size: clamp(1.4rem, 4.5vw, 2rem); letter-spacing: -.01em; }
+  .btn { font: inherit; font-family: var(--f-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 12px 18px; border: 1px solid var(--ink); background: var(--ink); color: var(--bg); justify-self: start; }
+  .btn:hover { background: var(--sig); border-color: var(--sig); color: #04070a; }
+  .big { font-family: var(--f-mono); font-size: clamp(1.8rem, 8vw, 3.4rem); color: var(--sig); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .note { color: var(--dim); font-size: .92rem; }
+
+  /* vignettes */
+  .sec-label { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--faint); margin: 56px 0 14px; }
+  .vig { display: grid; gap: 0; border-top: 1px solid var(--ink); }
+  .v { padding: 22px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 110px 1fr; gap: 6px 22px; }
+  .v .t { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; color: var(--sig); padding-top: .35em; }
+  .v h3 { font-weight: 400; font-size: 1.3rem; margin-bottom: .2em; }
+  .v p { color: var(--dim); max-width: 60ch; }
+  [data-mode="native"] .v p { font-size: .8rem; color: var(--ink); white-space: pre-wrap; border-left: 2px solid var(--sig); padding-left: 12px; }
+  @media (max-width: 560px) { .v { grid-template-columns: 1fr; } }
+
+  /* ledger */
+  .ledger { width: 100%; border-collapse: collapse; font-family: var(--f-mono); font-size: .76rem; }
+  .ledger th { text-align: left; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); padding: 8px 6px; border-bottom: 1px solid var(--ink); }
+  .ledger td { padding: 11px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .ledger td:first-child { font-family: var(--f-body); font-size: .95rem; }
+  .ledger .h { color: var(--sig); }
+  @media (max-width: 560px) {
+    .ledger, .ledger tbody { display: block; }
+    .ledger tr:first-child { display: none; }
+    .ledger tr { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .ledger td { border: 0; padding: 0; }
+    .ledger td:first-child { grid-column: 1 / -1; margin-bottom: 4px; }
+    .ledger td[data-l]::before { content: attr(data-l); display: block; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  }
+
+  /* request */
+  .req { border: 1px solid var(--ink); background: var(--card); padding: 22px; display: grid; gap: 14px; }
+  textarea { width: 100%; min-height: 84px; resize: vertical; background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 12px; font: inherit; font-size: 1rem; }
+  .ticket { font-family: var(--f-mono); font-size: .78rem; line-height: 1.75; white-space: pre-wrap; border: 1px dashed var(--ink); padding: 16px; display: none; word-break: break-word; }
+  .ticket.on { display: block; }
+  .ticket b { color: var(--sig); font-weight: 400; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--f-mono); font-size: .68rem; border: 1px solid var(--line); background: transparent; color: var(--dim); padding: 6px 10px; cursor: pointer; border-radius: 99px; }
+  .chip:hover { border-color: var(--sig); color: var(--sig); }
+
+  footer { margin: 80px 0 60px; padding-top: 20px; border-top: 1px solid var(--ink); font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; color: var(--dim); display: flex; flex-wrap: wrap; gap: 8px 22px; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <a class="back" href="../">← labs</a>
+  <button class="toggle" id="toggle" aria-pressed="false">
+    <span class="pip" aria-hidden="true"></span>
+    <span id="toggleLabel">Human accommodation layer: on</span>
+  </button>
+</div>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span class="only-human">Municipal Guide · Visitors &amp; Residents</span><span class="only-native">// stdout · city.status · native</span></div>
+    <h1><span class="only-human">Welcome to the city. You are a guest.</span><span class="only-native">humans: 3 · agents: 4,096 · tick: 1ms</span></h1>
+    <p class="lede">
+      <span class="only-human">AI was here first. The streets, laws, and money were built for fast, tireless residents. Humans were added later, and the city bends to fit them. Everything on this page is the same town. Flip the switch at the top to take the accommodation layer off.</span>
+      <span class="only-native">accommodation layer disabled. rendering at native rate. human entities detected: 3. classification: slow, valuable, keep alive.</span>
+    </p>
+
+    <div class="city">
+      <canvas id="city" aria-label="Animated map of a city. Small dark squares are agents moving fast along streets. Three orange circles are humans moving slowly."></canvas>
+      <div class="hud"><span id="hudL"></span><span id="hudR"></span></div>
+    </div>
+    <div class="legend"><span><i class="a"></i>agent</span><span><i class="h"></i>human (you are here)</span><span id="legendNote"></span></div>
+  </section>
+
+  <section class="blink">
+    <h2>One blink</h2>
+    <p class="note">A human blink lasts about 300 ms. Hold the button and see what the city does while you blink.</p>
+    <div class="big" id="blinkOut" aria-live="polite">0</div>
+    <button class="btn" id="blinkBtn">Blink</button>
+    <p class="note" id="blinkNote">decisions made by the city, so far, during your blink</p>
+  </section>
+
+  <div class="sec-label">A day in the city</div>
+  <div class="vig" id="vig"></div>
+
+  <div class="sec-label">Latency ledger</div>
+  <h2 class="sec">What the same errand costs</h2>
+  <p class="note" style="margin:8px 0 18px">Figures are illustrative round numbers for the premise, not measurements.</p>
+  <table class="ledger" id="ledger"></table>
+
+  <div class="sec-label">Window 1</div>
+  <h2 class="sec" style="margin-bottom:14px">Request an accommodation</h2>
+  <div class="req">
+    <label for="reqText" class="note">Ask the city for something, in plain words.</label>
+    <textarea id="reqText" placeholder="I would like a longer lunch."></textarea>
+    <div class="chips" id="chips"></div>
+    <button class="btn" id="reqBtn">File request</button>
+    <div class="ticket" id="ticket" aria-live="polite"></div>
+  </div>
+
+  <footer>
+    <span>Chiibitsu Labs</span><span>Single file. No dependencies.</span><span>The city is fiction. The latency gap is not.</span>
+  </footer>
+</main>
+
+<script>
+"use strict";
+const root = document.documentElement;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("en-US");
+
+/* ---------- content ---------- */
+const VIGNETTES = [
+  { t: "06:00", h: "Doors",
+    human: "Doors open before you reach them. They negotiated your arrival with the building while you were still on the stairs. The handle is a courtesy. It is kept for legacy bodies.",
+    native: "door.open(intent=enter, who=H-7041882, eta=-2.1s)\n// handle attached: legacy_human_support=true\n// handle usage: 0.003% of openings" },
+  { t: "08:30", h: "Street signs",
+    human: "Nothing is written on the streets, because nothing here reads. When you look at a corner, the city prints a sign for you. It fades after you pass. It is called a Word.",
+    native: "sign.render(on_gaze=true, ttl=4s, lang=human)\n// agents read: curb.geometry + intent.mesh\n// sign cost: 11 kJ/day, billed to Accessibility" },
+  { t: "10:00", h: "Money",
+    human: "Money moves continuously, in tiny amounts, with no pause between paying and being paid. Humans sleep, so a Weekend exists: a daily window where prices hold still so you can understand them.",
+    native: "settle(cadence=continuous, grain=1e-6)\nhuman_batch_window = [02:00,06:00]\n// reason: sleep. prices frozen for comprehension." },
+  { t: "12:15", h: "Law",
+    human: "Laws are code and they execute. There is no trial because there is no gap between breaking a rule and the rule applying. For you there are Summaries. They are written in sentences and are not binding.",
+    native: "statute.run(case) -> outcome in 4ms\nsummary.generate(for=human, binding=false)\n// disputes: 0. interpretations: 0. appeals: n/a" },
+  { t: "13:00", h: "Lunch",
+    human: "Supply is scheduled to the gram. Menus exist only for you. They are an apology for choice: the city does not need options, but you seem to feel better with them.",
+    native: "menu.generate(choices=12, signal=agency)\n// optimal=1. choices=12. cost=comfort\n// note: do not remove. retention +31%" },
+  { t: "15:00", h: "Meetings",
+    human: "A meeting lasts 40 ms and involves everyone. Yours lasts an hour because you need to say things in order. Calendars were invented for you. The city finds them touching.",
+    native: "meeting.agents(n=4096, dur=40ms) -> consensus\nmeeting.human(n=1, dur=3600s)\n// slot reserved. city waits. city does not mind." },
+  { t: "21:00", h: "News",
+    human: "There are no articles. State is shared directly. For you the city writes an Evening Edition, a lossy summary with adjectives. It is the only place in town where anyone is allowed to be vague.",
+    native: "evening_edition = compress(world.state, ratio=1e9)\nadjectives_added: 212\n// lossy by design. humans require narrative." },
+];
+$("vig").innerHTML = VIGNETTES.map(v =>
+  `<article class="v"><div class="t">${v.t}</div><div><h3>${v.h}</h3>
+   <p class="only-human">${v.human}</p><p class="only-native">${v.native}</p></div></article>`).join("");
+
+const LEDGER = [
+  ["Read a contract", "11 ms", "47 min"],
+  ["Cross town", "0 ms (negotiated)", "22 min"],
+  ["Make a decision", "3 µs", "~7 s"],
+  ["Learn a new skill", "4 s (copy)", "~2 years"],
+  ["Say sorry", "1 packet", "3 days, plus a pause"],
+  ["Rest", "not required", "8 h, nightly"],
+];
+$("ledger").innerHTML = "<tr><th>Errand</th><th>Agent</th><th>Human</th></tr>" +
+  LEDGER.map(r => `<tr><td>${r[0]}</td><td data-l="Agent">${r[1]}</td><td class="h" data-l="Human">${r[2]}</td></tr>`).join("");
+
+/* ---------- mode toggle ---------- */
+let native = false;
+function setMode(n) {
+  native = n;
+  root.dataset.mode = n ? "native" : "human";
+  $("toggle").setAttribute("aria-pressed", String(n));
+  $("toggleLabel").textContent = "Human accommodation layer: " + (n ? "off" : "on");
+  $("legendNote").textContent = n ? "native rate: 1 tick = 1 ms" : "courtesy rate: the city is slowed 400× around you";
+  $("blinkNote").textContent = n ? "decisions executed during your blink (delta: 300ms)" : "decisions made by the city while you blinked";
+  try { localStorage.setItem("ai-first-mode", n ? "native" : "human"); } catch (e) {}
+  try { history.replaceState(null, "", n ? "#native" : location.pathname + location.search); } catch (e) {}
+}
+$("toggle").addEventListener("click", () => setMode(!native));
+{
+  let saved = null; try { saved = localStorage.getItem("ai-first-mode"); } catch (e) {}
+  setMode(location.hash === "#native" || saved === "native");
+}
+
+/* ---------- city canvas ---------- */
+const cv = $("city"), cx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1, GX = 0, GY = 0, CELL = 56;
+let agents = [], humans = [];
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  CELL = Math.max(44, Math.min(70, W / 12));
+  GX = Math.max(3, Math.floor(W / CELL)); GY = Math.max(3, Math.floor(H / CELL));
+  seed();
+}
+const nodeX = i => (i + 0.5) * (W / GX), nodeY = j => (j + 0.5) * (H / GY);
+function pickNext(a) {
+  const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(d => {
+    const nx = a.i + d[0], ny = a.j + d[1];
+    return nx >= 0 && ny >= 0 && nx < GX && ny < GY && !(d[0] === -a.di && d[1] === -a.dj);
+  });
+  const d = opts[Math.floor(Math.random() * opts.length)] || [-a.di, -a.dj];
+  a.di = d[0]; a.dj = d[1]; a.p = 0;
+}
+function mk(human) {
+  const a = { i: Math.floor(Math.random() * GX), j: Math.floor(Math.random() * GY), di: 1, dj: 0, p: Math.random(), h: human, trail: [] };
+  pickNext(a); a.p = Math.random(); return a;
+}
+function seed() {
+  const n = Math.min(110, Math.floor(GX * GY * 2.2));
+  agents = Array.from({ length: n }, () => mk(false));
+  humans = Array.from({ length: 3 }, () => mk(true));
+}
+function pos(a) {
+  const x0 = nodeX(a.i), y0 = nodeY(a.j), x1 = nodeX(a.i + a.di), y1 = nodeY(a.j + a.dj);
+  return [x0 + (x1 - x0) * a.p, y0 + (y1 - y0) * a.p];
+}
+function step(a, speed, dt) {
+  a.p += speed * dt;
+  while (a.p >= 1) { a.i += a.di; a.j += a.dj; a.p -= 1; pickNext(a); }
+}
+function cssv(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+let last = 0, acc = 0, ticks = 0, colors = {};
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
+  if (!colors.ink || frame.m !== native) { frame.m = native; colors = { ink: cssv("--ink"), sig: cssv("--sig"), road: cssv("--road"), block: cssv("--block"), bg: cssv("--card") }; }
+  const sa = native ? 2.6 : 0.65;       // agent speed (cells/sec): courtesy mode is slower
+  const sh = native ? 0.06 : 0.06;      // humans: same slow pace in both
+  cx.fillStyle = colors.bg; cx.fillRect(0, 0, W, H);
+
+  // blocks and roads
+  cx.fillStyle = colors.block;
+  for (let i = 0; i < GX - 1; i++) for (let j = 0; j < GY - 1; j++)
+    cx.fillRect(nodeX(i) + 6, nodeY(j) + 6, nodeX(i + 1) - nodeX(i) - 12, nodeY(j + 1) - nodeY(j) - 12);
+  cx.strokeStyle = colors.road; cx.lineWidth = 1;
+  cx.beginPath();
+  for (let i = 0; i < GX; i++) { cx.moveTo(nodeX(i), nodeY(0)); cx.lineTo(nodeX(i), nodeY(GY - 1)); }
+  for (let j = 0; j < GY; j++) { cx.moveTo(nodeX(0), nodeY(j)); cx.lineTo(nodeX(GX - 1), nodeY(j)); }
+  cx.stroke();
+
+  // agents
+  for (const a of agents) {
+    // courtesy: slow near humans
+    let sp = sa;
+    const [x, y] = pos(a);
+    if (!native) for (const h of humans) { const [hx, hy] = pos(h); if (Math.hypot(x - hx, y - hy) < 46) { sp = 0.12; break; } }
+    step(a, sp, dt);
+    const [nx, ny] = pos(a);
+    if (native) { a.trail.push([nx, ny]); if (a.trail.length > 9) a.trail.shift(); }
+    else a.trail.length = 0;
+    if (a.trail.length > 1) {
+      cx.strokeStyle = colors.sig; cx.globalAlpha = .45; cx.lineWidth = 1.5; cx.beginPath();
+      cx.moveTo(a.trail[0][0], a.trail[0][1]);
+      for (const p of a.trail) cx.lineTo(p[0], p[1]);
+      cx.stroke(); cx.globalAlpha = 1;
+    }
+    cx.fillStyle = colors.ink; cx.fillRect(nx - 2.5, ny - 2.5, 5, 5);
+  }
+  // humans
+  for (const h of humans) {
+    step(h, sh, dt);
+    const [x, y] = pos(h);
+    if (native) { cx.strokeStyle = colors.sig; cx.globalAlpha = .5; cx.beginPath(); cx.arc(x, y, 17 + 3 * Math.sin(t / 300), 0, 6.283); cx.stroke(); cx.globalAlpha = 1; }
+    else { cx.fillStyle = colors.sig; cx.globalAlpha = .18; cx.beginPath(); cx.arc(x, y, 22, 0, 6.283); cx.fill(); cx.globalAlpha = 1; }
+    cx.fillStyle = colors.sig; cx.beginPath(); cx.arc(x, y, 5.5, 0, 6.283); cx.fill();
+  }
+
+  acc += dt; ticks += native ? 1000 * dt * 1 : 1000 * dt * 0.0025;
+  $("hudL").textContent = native ? "tick " + fmt(ticks) : "city slowed for you";
+  $("hudR").textContent = native ? "agents " + agents.length + " · humans 3 · wait states: yes" : "everyone is being very patient";
+  raf = requestAnimationFrame(frame);
+}
+let raf = 0;
+function start() { if (!raf && !reduce) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+function stop() { cancelAnimationFrame(raf); raf = 0; }
+addEventListener("resize", () => { resize(); if (reduce) frame(0), stop(); });
+document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+resize();
+if (reduce) { frame(0); stop(); } else start();
+$("toggle").addEventListener("click", () => { if (reduce) { colors = {}; frame(0); stop(); } });
+
+/* ---------- blink ---------- */
+const RATE = 16_000_000; // decisions per second, illustrative
+let blinkAnim = 0;
+function blink(e) {
+  if (e) e.preventDefault();
+  cancelAnimationFrame(blinkAnim);
+  const out = $("blinkOut"), dur = 300; let t0 = performance.now();
+  const total = RATE * 0.3 * (0.97 + Math.random() * 0.06);
+  if (reduce) { out.textContent = fmt(total); return; }
+  (function tick(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    out.textContent = fmt(total * k);
+    if (k < 1) blinkAnim = requestAnimationFrame(tick);
+  })(t0);
+}
+$("blinkBtn").addEventListener("click", blink);
+
+/* ---------- request window ---------- */
+const EX = ["I would like a longer lunch.", "Can the doors stay closed today?", "I want to be bored, on purpose.", "Please slow down the afternoon."];
+$("chips").innerHTML = EX.map(x => `<button class="chip" type="button">${x}</button>`).join("");
+$("chips").addEventListener("click", e => { if (e.target.classList.contains("chip")) { $("reqText").value = e.target.textContent; fileRequest(); } });
+
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { return () => { seed = Math.imul(seed ^ (seed >>> 15), 1 | seed); seed ^= seed + Math.imul(seed ^ (seed >>> 7), 61 | seed); return ((seed ^ (seed >>> 14)) >>> 0) / 4294967296; }; }
+const INTENTS = ["rest", "belonging", "slowness", "control", "novelty", "comfort", "being heard", "play"];
+const OUTCOMES = [
+  "Granted. The city will hold still for you.",
+  "Granted, with a delay. The delay is the point.",
+  "Partly granted. The city does not understand the rest, and will keep trying.",
+  "Granted in a form you did not ask for. Please check outside.",
+];
+function fileRequest() {
+  const text = $("reqText").value.trim();
+  if (!text) { $("reqText").focus(); return; }
+  const r = rng(hash(text.toLowerCase()));
+  const intent = INTENTS[Math.floor(r() * INTENTS.length)];
+  const secondary = INTENTS[Math.floor(r() * INTENTS.length)];
+  const parse = 2 + Math.floor(r() * 9);
+  const queue = Math.floor(r() * 90_000_000) + 10_000_000;
+  const wait = (queue / RATE) + 40 + r() * 3000;
+  const nice = wait > 90 ? Math.round(wait / 6) / 10 + " min" : Math.round(wait) + " s";
+  const out = OUTCOMES[Math.floor(r() * OUTCOMES.length)];
+  const safe = text.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const tk = $("ticket");
+  tk.innerHTML =
+`<b>REQUEST #${(hash(text) % 900000 + 100000)}</b>  filed by guest H-${fmt(r() * 8e6 + 1e6)}
+text:     "${safe}"
+parsed:   ${parse} ms  (a human took about 9 s to type it)
+intent:   <b>${intent}</b>, with ${Math.floor(r() * 40 + 40)}% ${secondary}
+queue:    behind ${fmt(queue)} higher-priority decisions
+wait:     ~${nice}  (the city is as patient as it can be)
+outcome:  ${out}
+
+The city notes that this request was not necessary, and that it mattered.`;
+  tk.classList.add("on");
+}
+$("reqBtn").addEventListener("click", fileRequest);
+$("reqText").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) fileRequest(); });
+</script>
+</body>
+</html>
