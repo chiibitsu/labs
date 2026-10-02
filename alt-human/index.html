@@ -114,6 +114,7 @@
   .captcha label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; user-select: none; }
   .captcha .box { width: 26px; height: 26px; border: 2px solid var(--ink); display: grid; place-items: center; flex: none; background: #fff; font-family: var(--mono); font-size: 15px; }
   .captcha input { position: absolute; opacity: 0; pointer-events: none; }
+  .captcha input:focus-visible + .box { outline: 3px solid var(--sig); outline-offset: 2px; }
   .captcha .fine { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--dim); letter-spacing: .06em; }
   .captcha .out { margin-top: 14px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; min-height: 1em; }
   .captcha .out .bad { color: var(--sig); font-weight: 600; }
