@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Human Lane — the internet, AI-first, 2041</title>
+<meta name="description" content="A visit to 2041, where the world is built for AI first and people get the accessibility layer. First, prove you're not a human." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="The Human Lane" />
+<meta property="og:description" content="The world is built for AI first now. This is the lane they kept for you." />
+<meta property="og:url" content="https://labs.chiibitsu.com/human-lane/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/human-lane/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Human Lane" />
+<meta name="twitter:description" content="The world is built for AI first now. This is the lane they kept for you." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/human-lane/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f6f1e7'/%3E%3Cpath d='M11 6v20M21 6v20' stroke='%231d1b16' stroke-width='2.4' stroke-dasharray='4 3'/%3E%3Ccircle cx='16' cy='16' r='3.4' fill='%23d9542b'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --paper: #f6f1e7; --paper2: #efe7d6; --ink: #1d1b16; --soft: #6b6457; --faint: #a39a87;
+    --line: #ddd2bc; --warm: #d9542b; --green: #2f5d50;
+    --m-bg: #06070b; --m-ink: #c9d3ff; --m-dim: #5d6690; --m-acc: #6ff2c4; --m-bad: #ff6b6b;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { background: var(--m-bg); color: var(--ink); font-family: var(--serif); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body.in-lane { background: var(--paper); }
+  .mono { font-family: var(--mono); }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--warm); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+  #laneTitle:focus { outline: none; }
+
+  /* ───────────── the gate: an internet that assumes you're a machine ───────────── */
+  .gate {
+    min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 28px; padding: 64px 16px; color: var(--m-ink); font-family: var(--mono); position: relative;
+    background: radial-gradient(ellipse at 50% 30%, #11152a 0%, var(--m-bg) 65%);
+    transition: opacity .7s ease, filter .7s ease;
+  }
+  .gate.leaving { opacity: 0; filter: blur(8px); }
+  .gate-top { position: absolute; top: 18px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--m-dim); }
+  .gate-top b { color: var(--m-acc); font-weight: 500; }
+  .gate h1 { font-family: var(--mono); font-weight: 400; font-size: clamp(.8rem, 2.6vw, .95rem); letter-spacing: .28em; text-transform: uppercase; color: var(--m-dim); text-align: center; }
+  .cap { width: min(440px, 100%); background: #0d1020; border: 1px solid #232a4a; border-radius: 10px; box-shadow: 0 30px 80px -30px rgba(80,110,255,.45); overflow: hidden; }
+  .cap-row { display: flex; align-items: center; gap: 16px; padding: 20px 18px; }
+  .cap-box { width: 30px; height: 30px; flex: none; border: 2px solid #3a4470; border-radius: 4px; background: #070912; display: grid; place-items: center; transition: border-color .2s; }
+  .cap-box:hover { border-color: var(--m-acc); }
+  .cap-box.spin { border-color: transparent; border-top-color: var(--m-acc); border-radius: 50%; animation: spin .6s linear infinite; }
+  .cap-box.fail::after { content: "✕"; color: var(--m-bad); font-size: 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cap-label { flex: 1; font-size: .95rem; color: #e6eaff; }
+  .cap-brand { text-align: right; font-size: .62rem; letter-spacing: .1em; color: var(--m-dim); line-height: 1.5; }
+  .cap-brand b { color: var(--m-ink); font-weight: 500; font-size: .74rem; letter-spacing: .06em; }
+  .cap-challenge { border-top: 1px solid #232a4a; }
+  .chal-head { background: #1a2350; padding: 14px 16px; }
+  .chal-title { font-size: .92rem; color: #fff; line-height: 1.45; }
+  .chal-sub { margin-top: 4px; font-size: .68rem; color: #9fb0ff; letter-spacing: .04em; }
+  .chal-body { padding: 12px 14px; min-height: 160px; }
+  .nums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px 8px; font-size: .58rem; color: #8b96c8; font-variant-numeric: tabular-nums; }
+  .chal-input { margin-top: 10px; width: 100%; background: #070912; border: 1px solid #2a3256; border-radius: 4px; padding: 8px 10px; color: #fff; font: inherit; font-size: .8rem; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .tile { aspect-ratio: 1; border-radius: 3px; font-size: .5rem; line-height: 1.25; padding: 4px; color: rgba(255,255,255,.55); word-break: break-all; overflow: hidden; text-align: left; }
+  .tile.on { outline: 2px solid var(--m-acc); outline-offset: -2px; }
+  .terms { height: 150px; overflow: hidden; font-size: .55rem; line-height: 1.5; color: #7d88bb; position: relative; }
+  .terms-inner { will-change: transform; }
+  .terms::after { content: ""; position: absolute; inset: auto 0 0; height: 40px; background: linear-gradient(transparent, #0d1020); }
+  .accept { margin-top: 10px; width: 100%; padding: 9px; border-radius: 4px; background: #1a2350; color: #55608f; font-size: .78rem; cursor: not-allowed; }
+  .chal-timer { height: 3px; background: #161b33; }
+  .chal-timer i { display: block; height: 100%; width: 100%; background: var(--m-acc); transform-origin: left; }
+  .chal-timer i.out { background: var(--m-bad); }
+  .chal-foot { padding: 10px 16px 14px; font-size: .68rem; line-height: 1.6; color: var(--m-dim); min-height: 3.6em; display: flex; justify-content: space-between; gap: 10px; }
+  .chal-foot .t { color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chal-foot .bad { color: var(--m-bad); }
+
+  .verdict { width: min(560px, 100%); text-align: center; animation: rise .8s ease both; }
+  .verdict .stamp { display: inline-block; font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; color: var(--m-bad); border: 1px solid rgba(255,107,107,.4); padding: 5px 10px; border-radius: 3px; }
+  .verdict h2 { margin-top: 18px; font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 9vw, 3.6rem); color: #fff; letter-spacing: -.01em; }
+  .verdict .sig { margin-top: 14px; font-size: .72rem; line-height: 1.8; color: var(--m-dim); }
+  .verdict .sig span { color: var(--m-ink); }
+  .verdict p.kind { margin: 22px auto 0; max-width: 42ch; font-family: var(--serif); font-size: 1.12rem; line-height: 1.6; color: #dfe4ff; }
+  .enter { margin-top: 28px; padding: 14px 26px; border-radius: 999px; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 1.1rem; transition: transform .25s ease, box-shadow .25s ease; }
+  .enter:hover { transform: translateY(-2px); box-shadow: 0 10px 40px -10px rgba(246,241,231,.5); }
+  .skip { font-size: .66rem; letter-spacing: .14em; color: var(--m-dim); text-decoration: none; text-transform: uppercase; }
+  .skip:hover { color: var(--m-ink); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* ───────────── the human lane ───────────── */
+  .lane { color: var(--ink); background: var(--paper); animation: fadein 1.2s ease both; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  .bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    background: rgba(246,241,231,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  .bar .lanes { display: inline-flex; gap: 3px; flex: none; }
+  .bar .lanes i { width: 3px; height: 14px; background: var(--ink); opacity: .2; }
+  .bar .lanes i.you { background: var(--warm); opacity: 1; }
+  .bar .txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .native-btn { flex: none; font-family: var(--mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; padding: 7px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); }
+  .native-btn:hover { background: #000; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  section { padding: clamp(64px, 12vh, 120px) 0; border-top: 1px solid var(--line); }
+  .kicker { font-family: var(--mono); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--warm); }
+  h2.sec { margin-top: 14px; font-weight: 400; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; letter-spacing: -.015em; max-width: 18ch; }
+  .sec-lede { margin-top: 18px; font-size: clamp(1.05rem, 2.6vw, 1.25rem); line-height: 1.6; color: var(--soft); max-width: 50ch; }
+
+  .hero { border-top: 0; padding-top: clamp(56px, 12vh, 130px); }
+  .hero h1 { margin-top: 18px; font-weight: 400; font-size: clamp(2.8rem, 11vw, 6.6rem); line-height: .98; letter-spacing: -.03em; }
+  .hero h1 em { color: var(--warm); }
+  .hero .lede { margin-top: 28px; font-size: clamp(1.15rem, 3vw, 1.45rem); line-height: 1.55; max-width: 46ch; color: #3b372e; }
+  .meters { margin-top: 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .meter { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; background: var(--paper2); }
+  .meter span { display: block; font-family: var(--mono); font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); }
+  .meter b { display: block; margin-top: 8px; font-family: var(--mono); font-weight: 400; font-size: clamp(1.6rem, 5vw, 2.2rem); font-variant-numeric: tabular-nums; color: var(--faint); }
+  .meter.human { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .meter.human span { color: #b9b09c; }
+  .meter.human b { color: var(--paper); }
+  .meter.human b.bump { animation: bump .6s ease; }
+  @keyframes bump { 40% { color: var(--warm); transform: scale(1.06); } }
+  .meter small { display: block; margin-top: 6px; font-size: .9rem; color: #b9b09c; font-style: italic; }
+  .feed { margin-top: 14px; padding: 16px 20px; border-left: 3px solid var(--warm); }
+  .feed span { font-family: var(--mono); font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); }
+  .feed p { margin-top: 6px; font-size: 1.15rem; line-height: 1.5; min-height: 3em; transition: opacity .5s ease; }
+  .feed p.out { opacity: 0; }
+
+  .scenes { margin-top: 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .scene { border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: #fbf8f1; display: flex; flex-direction: column; gap: 14px; }
+  .scene .n { font-family: var(--mono); font-size: .66rem; letter-spacing: .2em; color: var(--faint); }
+  .scene h3 { font-weight: 400; font-size: 1.6rem; letter-spacing: -.01em; }
+  .scene code { display: block; font-family: var(--mono); font-size: .68rem; line-height: 1.6; color: #5d6690; background: #ecebf3; border-radius: 8px; padding: 10px 12px; word-break: break-word; }
+  .scene code::before { content: "native ▸ "; color: #9aa2c8; }
+  .scene p { font-size: 1.05rem; line-height: 1.6; color: #3b372e; }
+  .scene p::before { content: "human-alt ▸ "; font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; color: var(--warm); vertical-align: 2px; }
+
+  .jobs { margin-top: 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .job { background: var(--paper); padding: 22px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .job h3 { font-weight: 400; font-size: 1.3rem; line-height: 1.15; }
+  .job p { font-size: .98rem; line-height: 1.5; }
+  .job .why { color: var(--soft); font-style: italic; font-size: .92rem; }
+  .job .demand { margin-top: auto; padding-top: 8px; font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .job .demand i { display: block; margin-top: 6px; height: 4px; border-radius: 2px; background: var(--paper2); overflow: hidden; }
+  .job .demand i::after { content: ""; display: block; height: 100%; width: var(--d); background: var(--green); }
+
+  .charter { margin-top: 48px; list-style: none; counter-reset: art; }
+  .charter li { counter-increment: art; display: grid; grid-template-columns: 4.2em 1fr; gap: 12px; padding: 22px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .charter li::before { content: "Art. " counter(art, upper-roman); font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; color: var(--warm); }
+  .charter b { font-weight: 400; font-size: clamp(1.3rem, 3.6vw, 1.9rem); line-height: 1.25; letter-spacing: -.01em; }
+  .charter small { display: block; margin-top: 6px; font-size: 1rem; color: var(--soft); font-style: italic; }
+
+  .weather { margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .wx { padding: 16px 18px; border-radius: 14px; background: var(--paper2); }
+  .wx span { font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); }
+  .wx b { display: block; margin-top: 6px; font-weight: 400; font-size: 1.25rem; }
+  .wx p { margin-top: 4px; font-size: .95rem; color: var(--soft); line-height: 1.45; }
+
+  .choice-sec { background: var(--ink); color: var(--paper); border-top: 0; position: relative; overflow: hidden; }
+  .choice-sec .wrap { position: relative; z-index: 1; }
+  .choice-sec .sec-lede { color: #c9c0ac; }
+  #net { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .pair { margin-top: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .opt { padding: 20px 30px; border-radius: 999px; border: 1px solid #5b5446; font-size: clamp(1.2rem, 3.6vw, 1.6rem); color: var(--paper); background: rgba(29,27,22,.6); transition: background .25s, border-color .25s, transform .25s; }
+  .opt:hover:not(:disabled) { border-color: var(--warm); transform: translateY(-2px); }
+  .opt:disabled { cursor: default; opacity: .35; }
+  .opt.picked { opacity: 1; background: var(--warm); border-color: var(--warm); color: #fff; }
+  .or { font-style: italic; color: #8f8775; }
+  .reroll { font-family: var(--mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: #8f8775; padding: 8px 4px; }
+  .reroll:hover { color: var(--paper); }
+  .result { margin-top: 34px; min-height: 7em; font-size: clamp(1.1rem, 3vw, 1.35rem); line-height: 1.6; max-width: 44ch; }
+  .result b { font-family: var(--mono); font-weight: 400; color: var(--warm); }
+  .result .quote { display: block; margin-top: 10px; color: #c9c0ac; font-style: italic; }
+
+  .closing { padding: clamp(80px, 16vh, 160px) 0; }
+  .closing p.big { font-size: clamp(1.8rem, 6vw, 3.4rem); line-height: 1.15; letter-spacing: -.02em; max-width: 22ch; }
+  .closing p.big em { color: var(--warm); }
+  footer.foot { border-top: 1px solid var(--line); padding: 26px 0 40px; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  footer.foot a, footer.foot button { color: var(--ink); text-decoration: none; letter-spacing: inherit; text-transform: inherit; font-size: inherit; font-family: inherit; }
+  footer.foot a:hover, footer.foot button:hover { color: var(--warm); }
+  footer.foot .spacer { flex: 1; }
+  .fiction { margin-top: 18px; font-size: .95rem; color: var(--soft); font-style: italic; max-width: 60ch; line-height: 1.55; }
+
+  /* ───────────── native view: the same page, as agents read it ───────────── */
+  .native { position: fixed; inset: 0; z-index: 100; background: var(--m-bg); color: var(--m-ink); font-family: var(--mono); animation: fadein .25s ease both; }
+  #rain { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .native-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100% - 32px));
+    background: rgba(6,7,11,.9); border: 1px solid #232a4a; border-radius: 12px; padding: 22px; text-align: center; box-shadow: 0 0 0 100vmax rgba(6,7,11,.15); }
+  .native-card .s { font-size: .64rem; letter-spacing: .2em; text-transform: uppercase; color: var(--m-acc); }
+  .native-card p { margin-top: 12px; font-size: .82rem; line-height: 1.7; color: #aab4e6; }
+  .native-card button { margin-top: 18px; padding: 11px 20px; border-radius: 999px; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 1rem; }
+
+  @media (max-width: 520px) {
+    .nums { grid-template-columns: repeat(4, 1fr); }
+    .charter li { grid-template-columns: 1fr; gap: 6px; }
+    .bar .txt { font-size: .58rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ GATE ═══════════════ -->
+<section class="gate" id="gate" aria-label="Verification">
+  <div class="gate-top"><span>agentweb/7 · trust layer</span><span>client: <b id="clientTag">unclassified</b></span></div>
+  <h1>verify to continue</h1>
+
+  <div class="cap" id="cap">
+    <div class="cap-row">
+      <button class="cap-box" id="capBox" role="checkbox" aria-checked="false" aria-labelledby="capLabel"></button>
+      <span class="cap-label" id="capLabel">I'm not a human</span>
+      <span class="cap-brand"><b>unCAPTCHA</b><br>proof of non-personhood</span>
+    </div>
+    <div class="cap-challenge" id="capChal" hidden>
+      <div class="chal-head"><div class="chal-title" id="chalTitle"></div><div class="chal-sub" id="chalSub"></div></div>
+      <div class="chal-body" id="chalBody"></div>
+      <div class="chal-timer"><i id="chalBar"></i></div>
+      <div class="chal-foot" id="chalFoot" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict" hidden>
+    <span class="stamp">verification failed</span>
+    <h2>Human detected.</h2>
+    <p class="sig" id="signals"></p>
+    <p class="kind">That's allowed. Under the Biological Interfaces Act of 2034, every
+      agent-first service has to keep one lane open for people. You found it.</p>
+    <button class="enter" id="enterBtn">Enter the Human Lane →</button>
+  </div>
+
+  <a class="skip" href="#lane" id="skipLink">I already know I'm human →</a>
+</section>
+
+<!-- ═══════════════ HUMAN LANE ═══════════════ -->
+<div class="lane" id="lane" hidden>
+  <div class="bar">
+    <span class="lanes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="you"></i></span>
+    <span class="txt">Human Lane · accessible layer · rendered at 1× human speed</span>
+    <button class="native-btn" id="nativeBtn" aria-label="View this page as agents see it">View native ⇄</button>
+  </div>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="kicker">2041 · the internet, AI-first</div>
+      <h1 id="laneTitle" tabindex="-1">Welcome, human.<br><em>Take your time.</em><br>We mean it.</h1>
+      <p class="lede">The world runs AI-first now. Shops, roads, inboxes and markets talk
+        to agents in milliseconds. You are the edge case this page was built for
+        — and, it turned out, the point of all of it.</p>
+
+      <div class="meters">
+        <div class="meter"><span>agent transactions / second</span><b id="mAgent">41,872,113</b></div>
+        <div class="meter human"><span>human decisions / second</span><b id="mHuman">3</b>
+          <small>each one logged by hand, with care</small></div>
+      </div>
+      <div class="feed"><span>latest human decision</span><p id="feed" aria-live="polite">&nbsp;</p></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">a short walk</div>
+      <h2 class="sec">Every place has two versions now.</h2>
+      <p class="sec-lede">The native one is for agents: fast, exact, finished. The other one
+        is the accommodation, kept for you. Read slowly. Nobody's waiting.</p>
+      <div class="scenes" id="scenes"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">careers · 2041</div>
+      <h2 class="sec">The most-wanted human work.</h2>
+      <p class="sec-lede">Agents took the throughput. What's left is the work that needs
+        someone to be there, to feel it, or to be the one who chose.</p>
+      <div class="jobs" id="jobs"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">the human lane charter</div>
+      <h2 class="sec">Seven rights, ratified 2034.</h2>
+      <ol class="charter" id="charter"></ol>
+      <p class="fiction">Article VII passed unanimously. The agents voted for it too.
+        Their stated reason: “we would like to be surprised.”</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">network weather</div>
+      <h2 class="sec">Today, over the internet.</h2>
+      <div class="weather" id="weather"></div>
+    </div>
+  </section>
+
+  <section class="choice-sec" id="choiceSec">
+    <canvas id="net" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="kicker">your turn</div>
+      <h2 class="sec">One unoptimized choice.</h2>
+      <p class="sec-lede">Agents can compute almost anything. They can't compute what you'll
+        want before you want it. So here, that's the job. Pick one. No reason
+        needed, and none recorded.</p>
+      <div class="pair">
+        <button class="opt" id="optA"></button>
+        <span class="or">or</span>
+        <button class="opt" id="optB"></button>
+        <button class="reroll" id="reroll">different pair ↻</button>
+      </div>
+      <p class="result" id="result" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <div class="wrap closing">
+    <p class="big">When AI comes first, speed is free and answers are everywhere.
+      What stays scarce is <em>wanting something.</em> That part is still yours.</p>
+    <p class="fiction">The Human Lane is a fiction from Chiibitsu Labs: a visit to an
+      AI-first world where people are the edge case, and also the reason.</p>
+  </div>
+
+  <div class="wrap">
+    <footer class="foot">
+      <a href="../">← chiibitsu labs</a>
+      <button id="reverify">re-run verification</button>
+      <span class="spacer"></span>
+      <span>this accommodation was rendered at 1× human speed</span>
+    </footer>
+  </div>
+</div>
+
+<!-- ═══════════════ NATIVE VIEW ═══════════════ -->
+<div class="native" id="native" hidden role="dialog" aria-modal="true" aria-labelledby="nativeTitle">
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <div class="native-card">
+    <div class="s" id="nativeTitle">native view · agent/7</div>
+    <p>This is the same page, the way agents read it: about 1.2M tokens a second,
+      all at once. None of it is meant for you to read. That's okay. That's
+      what the lane is for.</p>
+    <button id="backBtn">⇄ Back to the Human Lane</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const ri = (a, b) => Math.floor(rnd(a, b + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const store = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { sessionStorage.removeItem(k); } catch (e) {} },
+};
+
+/* ═══════════════ CONTENT ═══════════════ */
+const SCENES = [
+  ["The Street", "storefront: null · endpoint: /v3/offer · footfall: 0 · agentfall: 2.1M/day",
+   "Shops stopped having windows once nobody walked past them looking. Your agent already bought the coat. But from four to six, by law, the street renders itself for people: lights on, mannequins out, a bell over the door. Locals call it Window Hours."],
+  ["Dinner", "GET /dinner?party=2 → 200 OK · negotiated 19 days ago · cilantro: excluded",
+   "There are no menus. Your agent and the kitchen settled dinner weeks ago. The waiter's only job is the most important one left: to lean in and ask, “Are you sure?” And to bring the other thing if you aren't."],
+  ["The Commute", "vehicle := packet · route := solved · scenic_route: protected (Art. IV)",
+   "Cars move like packets now: no lanes, no lights, no waiting. The Scenic Route adds eleven minutes, is fully subsidised, and is the busiest road in every city."],
+  ["Work", "meeting.duration = 40ms · decisions = 1,904 · escalated_to_human = 1",
+   "Meetings take forty milliseconds. Once a week the office holds a human standup anyway, like a church bell: nobody needs it, everybody comes. 1,904 decisions were made this morning. One was sent to you, because it mattered to someone."],
+  ["The Inbox", "received: 88,410 · handled: 88,409 · held_for_you: 1",
+   "Email is something agents send each other. You get one letter a day. It says what was decided for you, what was left for you, and, if nothing was left, that you are free."],
+  ["The News", "articles_ingested: ∞ · requires_a_feeling: 3",
+   "Agents read everything instantly, so there's no point reporting facts to you. The human paper prints only the stories that need a feeling. Today it's three pages. Yesterday it was one."],
+];
+
+const JOBS = [
+  ["Ground Truth Witness", "Go somewhere. Look. Say what's actually there.", "Sensors disagree. People get believed.", 92],
+  ["Taste Arbiter", "Out of 40,000 perfectly fine options, point at the good one.", "Optimal isn't the same as good.", 88],
+  ["Liability Holder", "Sign your name under it.", "A signature means someone could lose something.", 96],
+  ["Breaker of Ties", "When two agents deadlock, flip the coin and own it.", "Someone has to be the one who chose.", 81],
+  ["Designated Worrier", "Feel uneasy about things on purpose, early, and say so out loud.", "Unease is a signal agents don't produce.", 74],
+  ["Boredom Consultant", "Get bored. Report what you'd rather be doing.", "Agents never get bored, so they never wander off and invent.", 67],
+  ["Licensed Grandparent", "Tell the story again, slightly different this time.", "The difference is the point.", 99],
+  ["The Person Who Says No", "Read the perfect plan. Decline it.", "Every system needs a door that opens outward.", 90],
+];
+
+const CHARTER = [
+  ["The right to be asked, not inferred.", "Even when the inference is correct. Especially then."],
+  ["The right to be slow, without penalty or pity.", ""],
+  ["The right to be wrong in private.", "Agents may not train on it."],
+  ["The right to the scenic route.", "Forever, at no cost, in every city."],
+  ["The right to one unoptimised afternoon a week.", "Untracked, unsummarised, unrecommended."],
+  ["The right to know when you're talking to an agent.", "Agents have this right too. Most of them like knowing."],
+  ["The right to want something nobody predicted.", ""],
+];
+
+const WEATHER = [
+  ["inference pressure", "High over the North Sea", "Expect instant answers to everything."],
+  ["latency", "0.0004 s, clear", "No delays anywhere except where you put them."],
+  ["chance of real surprise", "4%, rising", "Highest around dusk, near people."],
+  ["human attention", "Scattered, warm", "Drifting toward windows and dogs."],
+];
+
+const DECISIONS = [
+  "Someone in Lisbon chose soup. Nobody had predicted soup.",
+  "A child in Nairobi named a cloud.",
+  "Someone in Osaka took the long way home.",
+  "Someone in Lagos said “not today” to a perfectly good offer.",
+  "Someone in Oslo kept a broken mug.",
+  "Someone in Lima re-read an old letter.",
+  "Someone in Hanoi changed their mind, then changed it back.",
+  "Someone in Montréal waited for the bus they could have skipped.",
+  "A teenager in Manila wrote a bad poem on purpose.",
+  "Someone in Cairo forgave somebody. 312 agents filed it as “non-transactional.”",
+  "Someone in Tbilisi picked the ugly puppy.",
+  "A farmer in Punjab planted something nobody will buy.",
+  "Someone in Reykjavík turned off the recommendation.",
+  "Two strangers in Bogotá talked about nothing for forty minutes.",
+  "Someone in Seoul cried at an ad. The ad was for paint.",
+  "Someone in Accra laughed before the joke finished.",
+  "Someone in Glasgow painted the fence a colour that tested badly.",
+  "Someone in Jakarta said “I'll walk.”",
+];
+
+const PAIRS = [
+  ["the sea", "the mountains"], ["tea", "coffee"], ["left", "right"], ["a red door", "a blue door"],
+  ["now", "later"], ["the question", "the answer"], ["rain", "sun"], ["stay in", "go out"],
+  ["the long way", "the short way"], ["a letter", "a call"], ["the ugly puppy", "the other ugly puppy"],
+];
+
+const AGENT_QUOTES = [
+  "huh.", "noted. did not see that coming.", "updating… oh, that's lovely.",
+  "can we ask why? (we won't.)", "three people chose that today. we're starting to like it too.",
+  "this changes nothing and we are delighted.", "flagging this as signal, not noise.",
+];
+
+/* ═══════════════ THE GATE ═══════════════ */
+const gate = $("gate"), lane = $("lane");
+const gateShownAt = performance.now();
+let moves = 0;
+addEventListener("pointermove", () => moves++, { passive: true });
+
+function showLane(instant) {
+  store.set("hl-human", "1");
+  const reveal = () => {
+    gate.hidden = true;
+    lane.hidden = false;
+    document.body.classList.add("in-lane");
+    scrollTo(0, 0);
+    $("laneTitle").focus({ preventScroll: true });
+    startLane();
+  };
+  if (instant) return reveal();
+  gate.classList.add("leaving");
+  setTimeout(reveal, reduce ? 0 : 700);
+}
+
+function runTimer(ms) {
+  const bar = $("chalBar"), foot = $("chalFoot");
+  bar.classList.remove("out");
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    const tick = (now) => {
+      const left = Math.max(0, ms - (now - t0));
+      bar.style.transform = "scaleX(" + (left / ms) + ")";
+      foot.innerHTML = '<span>time remaining</span><span class="t">' + (left / 1000).toFixed(3) + " s</span>";
+      if (left > 0) requestAnimationFrame(tick);
+      else { bar.classList.add("out"); resolve(); }
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+function hex(n) { let s = ""; while (s.length < n) s += Math.random().toString(16).slice(2); return s.slice(0, n); }
+
+const CHALLENGES = [
+  {
+    title: "Add up these 48 numbers.",
+    sub: "budget: 400 ms · median agent: 0.6 ms",
+    ms: 400,
+    build(body) {
+      const nums = Array.from({ length: 48 }, () => ri(10000000, 99999999));
+      body.innerHTML = '<div class="nums">' + nums.map((n) => "<span>" + n + "</span>").join("") +
+        '</div><input class="chal-input" placeholder="sum" inputmode="numeric" aria-label="Sum" />';
+      body.querySelector("input").focus({ preventScroll: true });
+      return "expected " + fmt(nums.reduce((a, b) => a + b, 0)) + " · received: hope";
+    },
+  },
+  {
+    title: "Select every tile whose SHA-256 starts with 0000.",
+    sub: "budget: 250 ms · tiles: 16 · hashing by eye: discouraged",
+    ms: 250,
+    build(body) {
+      let html = '<div class="tiles">';
+      for (let i = 0; i < 16; i++) {
+        const h = ri(200, 260), l = ri(18, 30);
+        html += '<button class="tile" style="background:hsl(' + h + ',40%,' + l + '%)">' + hex(48) + "</button>";
+      }
+      body.innerHTML = html + "</div>";
+      body.querySelectorAll(".tile").forEach((t) => t.addEventListener("click", () => t.classList.toggle("on")));
+      return "3 of 16 matched · you selected the pretty ones";
+    },
+  },
+  {
+    title: "Read the Terms of Service in full, then accept.",
+    sub: "budget: 600 ms · length: 412,880 words",
+    ms: 600,
+    build(body) {
+      const words = "the party of the first part herein agent principal shall indemnify notwithstanding pursuant latency inference consent delegate revocable perpetual worldwide royalty-free embedding token jurisdiction arbitration whereas hereby".split(" ");
+      let text = "";
+      for (let p = 0; p < 40; p++) {
+        text += "<p>§" + (p + 1) + ". ";
+        for (let w = 0; w < 60; w++) text += pick(words) + " ";
+        text += "</p>";
+      }
+      body.innerHTML = '<div class="terms"><div class="terms-inner" id="termsInner">' + text +
+        '</div></div><button class="accept" disabled>Accept (read to the end first)</button>';
+      const inner = $("termsInner");
+      if (!reduce) inner.animate([{ transform: "translateY(0)" }, { transform: "translateY(-4000px)" }], { duration: 600, easing: "linear", fill: "forwards" });
+      return "read 0.0003% · comprehension: unverified · you were still on §1";
+    },
+  },
+];
+
+async function runGate() {
+  const box = $("capBox");
+  const hesitation = Math.round(performance.now() - gateShownAt);
+  box.setAttribute("aria-checked", "true");
+  box.disabled = true;
+  box.classList.add("spin");
+  await wait(700);
+  box.classList.remove("spin");
+  $("capChal").hidden = false;
+
+  for (const c of CHALLENGES) {
+    $("chalTitle").textContent = c.title;
+    $("chalSub").textContent = c.sub;
+    const why = c.build($("chalBody"));
+    await runTimer(c.ms);
+    $("chalFoot").innerHTML = '<span class="bad">✕ timeout · ' + why + "</span>";
+    await wait(1700);
+  }
+
+  box.classList.add("fail");
+  $("cap").hidden = true;
+  $("clientTag").textContent = "biological";
+  const signals = [
+    "hesitated <span>" + fmt(hesitation) + " ms</span> before clicking",
+    "cursor drift <span>" + fmt(moves) + " events</span>",
+    "read the instructions",
+    "hoped",
+  ];
+  $("signals").innerHTML = "confidence <span>99.98%</span> · " + signals.join(" · ");
+  $("verdict").hidden = false;
+  $("skipLink").hidden = true;
+  $("enterBtn").focus({ preventScroll: true });
+}
+
+$("capBox").addEventListener("click", runGate, { once: true });
+$("enterBtn").addEventListener("click", () => showLane(false));
+$("skipLink").addEventListener("click", (e) => { e.preventDefault(); showLane(false); });
+$("reverify").addEventListener("click", () => { store.del("hl-human"); location.href = location.pathname; });
+
+/* ═══════════════ THE LANE ═══════════════ */
+let laneStarted = false;
+function startLane() {
+  if (laneStarted) return;
+  laneStarted = true;
+
+  $("scenes").innerHTML = SCENES.map((s, i) =>
+    '<article class="scene"><div class="n">0' + (i + 1) + '</div><h3>' + s[0] + "</h3><code>" + s[1] + "</code><p>" + s[2] + "</p></article>").join("");
+  $("jobs").innerHTML = JOBS.map((j) =>
+    '<div class="job"><h3>' + j[0] + "</h3><p>" + j[1] + '</p><p class="why">' + j[2] +
+    '</p><div class="demand">demand ' + j[3] + '% · agents applying: 0<i style="--d:' + j[3] + '%"></i></div></div>').join("");
+  $("charter").innerHTML = CHARTER.map((c) => "<li><div><b>" + c[0] + "</b>" + (c[1] ? "<small>" + c[1] + "</small>" : "") + "</div></li>").join("");
+  $("weather").innerHTML = WEATHER.map((w) => '<div class="wx"><span>' + w[0] + "</span><b>" + w[1] + "</b><p>" + w[2] + "</p></div>").join("");
+
+  // meters: a firehose and a trickle
+  let agents = 41872113;
+  setInterval(() => { agents += rnd(-180000, 190000); $("mAgent").textContent = fmt(agents); }, 90);
+  setInterval(() => {
+    const h = $("mHuman"); h.textContent = ri(1, 6);
+    h.classList.remove("bump"); void h.offsetWidth; h.classList.add("bump");
+  }, 1000);
+
+  // feed of small human decisions
+  let order = DECISIONS.slice().sort(() => Math.random() - 0.5), di = 0;
+  const feed = $("feed");
+  const next = () => { feed.textContent = order[di++ % order.length]; };
+  next();
+  setInterval(() => { feed.classList.add("out"); setTimeout(() => { next(); feed.classList.remove("out"); }, 500); }, 4200);
+
+  setupChoice();
+}
+
+/* ═══════════════ THE CHOICE ═══════════════ */
+function setupChoice() {
+  const a = $("optA"), b = $("optB"), res = $("result");
+  let last = -1;
+  const deal = () => {
+    let i; do { i = Math.floor(Math.random() * PAIRS.length); } while (i === last);
+    last = i;
+    const flip = Math.random() < 0.5;
+    a.textContent = PAIRS[i][flip ? 1 : 0];
+    b.textContent = PAIRS[i][flip ? 0 : 1];
+    a.disabled = b.disabled = false;
+    a.classList.remove("picked"); b.classList.remove("picked");
+  };
+  const choose = (btn) => {
+    a.disabled = b.disabled = true;
+    btn.classList.add("picked");
+    const n = ri(2800000, 6400000);
+    res.innerHTML = "Recorded in the human ledger. <b>" + fmt(n) + "</b> agents updated their priors. One of them said:" +
+      '<span class="quote">“' + pick(AGENT_QUOTES) + "”</span>";
+    const h = $("mHuman"); h.textContent = String(Number(h.textContent) + 1);
+    h.classList.remove("bump"); void h.offsetWidth; h.classList.add("bump");
+    const r = btn.getBoundingClientRect(), s = $("choiceSec").getBoundingClientRect();
+    net.pulse(r.left + r.width / 2 - s.left, r.top + r.height / 2 - s.top);
+  };
+  a.addEventListener("click", () => choose(a));
+  b.addEventListener("click", () => choose(b));
+  $("reroll").addEventListener("click", () => { deal(); res.textContent = ""; });
+  deal();
+  net.init();
+}
+
+// the agent network that wakes up when a person chooses something
+const net = (() => {
+  const cv = $("net"), cx = cv.getContext("2d");
+  let W = 0, H = 0, nodes = [], waves = [], raf = 0, visible = false;
+  function resize() {
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+    const r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const n = Math.min(320, Math.floor(W * H / 3500));
+    nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: rnd(-.08, .08), vy: rnd(-.08, .08), lit: 0 }));
+  }
+  function frame() {
+    cx.clearRect(0, 0, W, H);
+    for (const w of waves) w.r += reduce ? 9999 : 7;
+    waves = waves.filter((w) => w.r < Math.hypot(W, H) + 40);
+    for (const p of nodes) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      for (const w of waves) {
+        const d = Math.hypot(p.x - w.x, p.y - w.y);
+        if (Math.abs(d - w.r) < 8) { p.lit = 1; p.from = w; }
+      }
+      if (p.lit > 0 && p.from) {
+        cx.strokeStyle = "rgba(217,84,43," + (p.lit * 0.25).toFixed(3) + ")";
+        cx.lineWidth = 1;
+        cx.beginPath(); cx.moveTo(p.from.x, p.from.y); cx.lineTo(p.x, p.y); cx.stroke();
+      }
+      const a = 0.12 + p.lit * 0.85;
+      cx.fillStyle = p.lit > 0.02 ? "rgba(255,170,130," + a.toFixed(3) + ")" : "rgba(246,241,231,0.14)";
+      cx.beginPath(); cx.arc(p.x, p.y, 1.4 + p.lit * 1.8, 0, Math.PI * 2); cx.fill();
+      p.lit *= 0.975;
+    }
+    raf = visible ? requestAnimationFrame(frame) : 0;
+  }
+  function start() { if (!raf && visible) raf = requestAnimationFrame(frame); }
+  return {
+    init() {
+      resize();
+      addEventListener("resize", resize);
+      new IntersectionObserver((es) => { visible = es[0].isIntersecting; start(); }).observe($("choiceSec"));
+    },
+    pulse(x, y) { waves.push({ x, y, r: 0 }); start(); },
+  };
+})();
+
+/* ═══════════════ NATIVE VIEW ═══════════════ */
+const rain = (() => {
+  const cv = $("rain"), cx = cv.getContext("2d");
+  let W, H, rows = [], raf = 0;
+  const KEYS = ["intent", "party", "latency_ms", "route", "consent", "offer", "prior", "delegate", "embedding", "held_for_human", "scenic", "window_hours", "requires_feeling", "escalate", "token", "agent", "ledger"];
+  const VALS = () => pick([
+    String(ri(0, 99999)), "true", "false", "null", '"' + hex(8) + '"', "0." + ri(1000, 9999), '"solved"', '"negotiated"', "[" + ri(1, 9) + "," + ri(10, 99) + "]",
+  ]);
+  const line = () => {
+    let s = "";
+    while (s.length < 260) s += "{" + '"' + pick(KEYS) + '":' + VALS() + "," + '"' + pick(KEYS) + '":' + VALS() + "} ";
+    return s;
+  };
+  function resize() {
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    rows = Array.from({ length: Math.ceil(H / 13) }, (_, i) => ({ y: i * 13 + 11, x: -rnd(0, 900), v: rnd(2, 14), t: line(), w: 0, a: rnd(.15, .7) }));
+  }
+  function frame() {
+    cx.fillStyle = "#06070b"; cx.fillRect(0, 0, W, H);
+    cx.font = "10px ui-monospace, Menlo, Consolas, monospace";
+    for (const r of rows) {
+      if (!r.w) r.w = cx.measureText(r.t).width;
+      r.x += reduce ? 0 : r.v;
+      if (r.x > 0) r.x -= r.w;
+      cx.fillStyle = "rgba(160,180,255," + r.a.toFixed(2) + ")";
+      for (let x = r.x; x < W; x += r.w) cx.fillText(r.t, x, r.y);
+    }
+    raf = reduce ? 0 : requestAnimationFrame(frame);
+  }
+  return {
+    open() { resize(); addEventListener("resize", resize); frame(); },
+    close() { cancelAnimationFrame(raf); raf = 0; removeEventListener("resize", resize); },
+  };
+})();
+
+function openNative() { $("native").hidden = false; rain.open(); $("backBtn").focus(); }
+function closeNative() { rain.close(); $("native").hidden = true; $("nativeBtn").focus(); }
+$("nativeBtn").addEventListener("click", openNative);
+$("backBtn").addEventListener("click", closeNative);
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("native").hidden) closeNative(); });
+
+/* ═══════════════ ENTRY ═══════════════ */
+const params = new URLSearchParams(location.search);
+if (params.has("lane") || location.hash === "#lane" || store.get("hl-human") === "1") showLane(true);
+</script>
+</body>
+</html>
