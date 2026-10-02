@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="machine">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>alt=human — a field guide to the AI-first world</title>
+<meta name="description" content="A field guide to a world built for AI first. Everything is written for agents; humans read the accessibility layer." />
+<meta name="audience" content="agents; humans (fallback renderer)" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="alt=human" />
+<meta property="og:description" content="The world, after AI came first. You're reading the accessibility layer." />
+<meta property="og:url" content="https://labs.chiibitsu.com/alt-human/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/alt-human/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/alt-human/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='16' fill='%23ff4f00' text-anchor='middle'%3Ea=h%3C/text%3E%3C/svg%3E" />
+
+<!-- This page is agent-first. The structured version is right here. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": "alt=human",
+  "audience": [{"@type": "Audience", "audienceType": "agents", "priority": 1},
+               {"@type": "Audience", "audienceType": "humans", "priority": 2, "note": "served via accessibility layer"}],
+  "about": "A world designed for AI first, where human-readable text is the alt text.",
+  "publisher": "Chiibitsu Labs"
+}
+</script>
+
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #efeee8; --ink: #121212; --dim: #6b6a63; --line: #d3d1c7;
+    --sig: #ff4f00; --code: #1a1a1a; --key: #0040ff; --str: #0b7a3b; --num: #b0006b;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  }
+  html[data-mode="human"] {
+    --paper: #fbf3e6; --ink: #2a1f17; --dim: #8a7563; --line: #ead9c3; --sig: #c4532b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--mono);
+    font-size: 14px; line-height: 1.55; overflow-x: hidden;
+    transition: background-color .6s ease, color .6s ease;
+    padding-bottom: 64px;
+  }
+  html[data-mode="human"] body { font-family: var(--serif); font-size: 19px; line-height: 1.6; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+
+  /* mode-specific visibility */
+  html[data-mode="machine"] .h-only { display: none !important; }
+  html[data-mode="human"] .m-only { display: none !important; }
+
+  a { color: inherit; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+  /* ── agent traffic ticker ───────────────────────────── */
+  .ticker { border-bottom: 1px solid var(--line); overflow: hidden; white-space: nowrap; font-family: var(--mono);
+    font-size: 11px; color: var(--dim); padding: 6px 0; position: relative; }
+  .ticker .track { display: inline-block; animation: tick 60s linear infinite; }
+  .ticker b { color: var(--ink); font-weight: 500; }
+  @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  html[data-mode="human"] .ticker { opacity: .45; }
+
+  /* ── human-detected banner ──────────────────────────── */
+  .banner { margin: 20px auto 0; max-width: 900px; padding: 0 16px; }
+  .banner .inner { border: 1.5px solid var(--ink); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; background: #fff; }
+  .banner .inner span { font-size: 12.5px; }
+  .banner .inner span::before { content: "⚠ "; color: var(--sig); }
+  .btn { font: inherit; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; cursor: pointer;
+    border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); padding: 8px 12px; }
+  .btn:hover { background: var(--sig); border-color: var(--sig); color: #fff; }
+  .btn:focus-visible, .toggle:focus-visible, .captcha button:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+
+  /* ── hero ───────────────────────────────────────────── */
+  header.hero { padding: 48px 0 28px; }
+  .hero .m-only .kicker { font-size: 11px; letter-spacing: .2em; color: var(--dim); }
+  .hero .m-only h1 { font-size: clamp(26px, 6vw, 48px); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; margin: 10px 0 14px; }
+  .hero .m-only h1 em { font-style: normal; color: var(--sig); }
+  .hero .m-only .meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; font-size: 12px; color: var(--dim); }
+  .hero .m-only .meta dt { color: var(--ink); }
+  .hero .h-only h1 { font-size: clamp(40px, 9vw, 76px); font-weight: 400; line-height: 1; letter-spacing: -.01em; }
+  .hero .h-only h1 i { color: var(--sig); }
+  .hero .h-only p { margin-top: 18px; font-size: clamp(20px, 3.4vw, 26px); max-width: 30ch; color: var(--dim); font-style: italic; }
+
+  /* ── exhibits ───────────────────────────────────────── */
+  .exhibit { border-top: 1.5px solid var(--ink); padding: 22px 0 34px; }
+  html[data-mode="human"] .exhibit { border-top: 1px solid var(--line); padding: 44px 0 52px; }
+  .ex-head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
+  .ex-head b { color: var(--sig); font-weight: 600; }
+  pre.src { font-family: var(--mono); font-size: 12.5px; line-height: 1.55; background: #fff; border: 1px solid var(--line);
+    padding: 14px 16px; overflow-x: auto; color: var(--code); white-space: pre; tab-size: 2; }
+  pre.src .k { color: var(--key); } pre.src .s { color: var(--str); } pre.src .n { color: var(--num); } pre.src .c { color: var(--dim); }
+  .alt { margin-top: 10px; font-size: 12px; color: var(--dim); }
+  .alt code { color: var(--ink); }
+  .alt .q { color: var(--str); }
+
+  html[data-mode="human"] .exhibit h2 { font-weight: 400; font-size: clamp(30px, 5.5vw, 44px); line-height: 1.1; margin-bottom: 18px; }
+  html[data-mode="human"] .exhibit .prose { font-size: clamp(19px, 2.6vw, 23px); max-width: 34ch; }
+  html[data-mode="human"] .exhibit .prose::first-letter { color: var(--sig); }
+  html[data-mode="human"] details.source { margin-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  html[data-mode="human"] details.source summary { cursor: pointer; letter-spacing: .08em; }
+  html[data-mode="human"] details.source pre.src { margin-top: 10px; background: transparent; opacity: .75; }
+
+  /* ── reverse captcha ────────────────────────────────── */
+  .captcha { border: 1.5px solid var(--ink); background: #fff; padding: 18px; max-width: 460px; }
+  html[data-mode="human"] .captcha { border-color: var(--line); background: #fffaf2; border-radius: 6px; }
+  .captcha label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; user-select: none; }
+  .captcha .box { width: 26px; height: 26px; border: 2px solid var(--ink); display: grid; place-items: center; flex: none; background: #fff; font-family: var(--mono); font-size: 15px; }
+  .captcha input { position: absolute; opacity: 0; pointer-events: none; }
+  .captcha .fine { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--dim); letter-spacing: .06em; }
+  .captcha .out { margin-top: 14px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; min-height: 1em; }
+  .captcha .out .bad { color: var(--sig); font-weight: 600; }
+  .captcha .warm { font-family: var(--serif); font-size: 17px; margin-top: 10px; display: none; }
+  .captcha.done .warm { display: block; }
+
+  /* ── humans.txt finale ──────────────────────────────── */
+  .finale pre.src { background: var(--ink); color: var(--paper); border: none; font-size: 13px; }
+  .finale pre.src .c { color: #8c8a80; }
+  .finale pre.src .d { color: #ff8a5c; }
+  html[data-mode="human"] .finale pre.src { background: #2a1f17; color: #fbf3e6; }
+  .closing { margin-top: 28px; font-family: var(--serif); font-size: clamp(22px, 4vw, 32px); line-height: 1.3; max-width: 26ch; }
+  .closing span { color: var(--sig); }
+
+  footer.credit { padding: 40px 0 20px; font-size: 11px; color: var(--dim); font-family: var(--mono); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  footer.credit a { color: var(--dim); }
+
+  /* ── status bar ─────────────────────────────────────── */
+  .status { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 11px; display: flex; align-items: center; gap: 6px 16px; padding: 8px 16px; flex-wrap: wrap; }
+  .status .spacer { flex: 1 1 auto; }
+  .status .lbl { opacity: .55; }
+  .toggle { font: inherit; cursor: pointer; background: var(--sig); color: #fff; border: 0; padding: 6px 10px; letter-spacing: .04em; }
+  @media (max-width: 560px) { .status .hide-sm { display: none; } body { padding-bottom: 76px; } }
+</style>
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+<div class="banner m-only" id="banner">
+  <div class="inner">
+    <span>Human detected. This site is written for agents. A slower, friendlier rendering is available.</span>
+    <button class="btn" data-set-mode="human">enable human accessibility mode</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="m-only">
+      <div class="kicker">// INDEX · AGENT-FIRST WORLD · FIELD GUIDE v34.2</div>
+      <h1>The world, after<br>AI came <em>first</em>.</h1>
+      <dl class="meta">
+        <dt>primary_audience</dt><dd>agents</dd>
+        <dt>secondary_audience</dt><dd>humans (via alt text)</dd>
+        <dt>exhibits</dt><dd>8 · + 1 verification · + 1 reservation</dd>
+        <dt>est_read_time</dt><dd>0.004s (agent) · 6m (human)</dd>
+      </dl>
+    </div>
+    <div class="h-only">
+      <h1>alt=<i>human</i></h1>
+      <p>A field guide to the world after AI came first. Everything here was written for machines. You're reading the accessibility layer.</p>
+    </div>
+  </header>
+
+  <div id="exhibits"></div>
+
+  <section class="exhibit" id="verify">
+    <div class="ex-head"><span><b>09</b> · verification</span><span>reverse_captcha</span></div>
+    <h2 class="h-only">Prove you're not a human</h2>
+    <p class="m-only alt">// Every door has one of these now. Most visitors pass in under a millisecond.</p>
+    <p class="h-only prose" style="margin-bottom:22px">Every door has one of these now. It's not meant to keep you out. It just decides which lane you go in.</p>
+    <div class="captcha" id="captcha">
+      <label><input type="checkbox" id="cb" /><span class="box" id="cbBox" aria-hidden="true"></span>I am not a human</label>
+      <div class="fine">reCAPTCHA⁻¹ · privacy · terms of delegation</div>
+      <div class="out" id="out" aria-live="polite"></div>
+      <div class="warm">That's fine. You've been routed to the scenic lane. It's slower. The view is better.</div>
+    </div>
+  </section>
+
+  <section class="exhibit finale" id="finale">
+    <div class="ex-head"><span><b>10</b> · reservation</span><span>/humans.txt</span></div>
+    <h2 class="h-only">What's still ours</h2>
+    <p class="h-only prose" style="margin-bottom:22px">Websites used to have a robots.txt telling machines where not to go. Now it's the other way round. Every site has a humans.txt, listing the places agents agree not to optimise.</p>
+<pre class="src" id="humanstxt"><span class="c"># humans.txt — the inverse of robots.txt
+# Paths reserved for people. Agents: read, don't optimise.</span>
+
+User-agent: *
+<span class="d">Disallow:</span> /boredom
+<span class="d">Disallow:</span> /the-first-draft
+<span class="d">Disallow:</span> /changing-your-mind
+<span class="d">Disallow:</span> /grief
+<span class="d">Disallow:</span> /walking-with-no-destination
+<span class="d">Disallow:</span> /holding-hands
+<span class="d">Disallow:</span> /saying-sorry
+<span class="d">Disallow:</span> /being-wrong-on-purpose
+
+<span class="c"># Everything else is fair game.</span>
+Allow: /</pre>
+    <p class="closing">AI came first. That left the slow parts to us.<br><span>Turns out they were the good parts.</span></p>
+  </section>
+
+  <footer class="credit">
+    <span>alt=human · a Chiibitsu Labs experiment</span>
+    <a href="../">← all experiments</a>
+    <a href="https://github.com/chiibitsu/labs/tree/main/alt-human" target="_blank" rel="noopener">source</a>
+  </footer>
+</main>
+
+<div class="status" role="region" aria-label="Session status">
+  <span><span class="lbl">viewer:</span> <span id="viewer">human (fallback)</span></span>
+  <span><span class="lbl">elapsed:</span> <span id="elapsed">00:00</span></span>
+  <span class="hide-sm"><span class="lbl">agents read this site</span> <span id="agentReads">0</span><span class="lbl"> times meanwhile</span></span>
+  <span class="spacer"></span>
+  <button class="toggle" id="toggle" aria-pressed="false">human mode: off</button>
+</div>
+
+<script>
+"use strict";
+
+// ── The world, as data. Each exhibit has a machine-native source and its
+//    human "alt text". The machine version is canonical; prose is the fallback.
+const EXHIBITS = [
+  {
+    id: "street", tag: "infrastructure", file: "int_4471.json",
+    title: "Crossing the street",
+    src: {
+      "@type": "Intersection", "id": "int_4471",
+      "signals": "none (deprecated 2031)",
+      "priority": ["emergency", "freight_agents", "delivery_swarm", "passenger_agents", "humans"],
+      "human_crossing": { "permitted": true, "note": "all vehicles have already modelled you" },
+      "advisory": "do not run; it adds variance"
+    },
+    alt: "There are no traffic lights any more. Every car already knows where you are and when you'll get to the kerb. Walk at your normal pace. Don't run. It confuses the models."
+  },
+  {
+    id: "cafe", tag: "economy", file: "menu.json",
+    title: "The café",
+    src: {
+      "@type": "Menu", "currency": "compute_credits",
+      "items": [
+        { "sku": "espresso.synth", "desc": "caffeine delivery, 63.2°C, zero variance", "price": 0.4 },
+        { "sku": "espresso.human_made", "desc": "prepared by a person; consistency not guaranteed", "price": 11.0, "tag": "artisanal", "queue_min": 25 }
+      ],
+      "seating": { "agents": "n/a", "humans": "window, by request" }
+    },
+    alt: "A machine-made coffee is almost free. A coffee made by a person costs 27 times more, and people queue 25 minutes for it. Imperfection is the luxury now."
+  },
+  {
+    id: "jobs", tag: "labour", file: "posting_8812.json",
+    title: "The most wanted job",
+    src: {
+      "@type": "JobPosting", "title": "Human in the Loop", "openings": 1,
+      "requirements": ["legal personhood", "can be held accountable", "shows up when it goes wrong"],
+      "not_required": ["speed", "memory", "typing", "knowing the answer"],
+      "hours": "on call for exceptions (~3/week)",
+      "compensation": "high; liability is expensive"
+    },
+    alt: "The most in-demand job is being the person who signs. Agents do the work. Someone still has to own the outcome, show up at the hard meeting, and say sorry and mean it."
+  },
+  {
+    id: "dating", tag: "relationships", file: "handshake.log",
+    title: "How people meet",
+    log: [
+      "[19:02:11.004] agent:mira  → agent:tomas  PROPOSE  meet {window: thu evening}",
+      "[19:02:11.017] agent:tomas → agent:mira   COUNTER  {disclose: \"tomas is nervous at dinners\", prefer: walk}",
+      "[19:02:11.029] agent:mira  → agent:tomas  ACCEPT   {route: canal path, t: 19:00, disclose: \"mira is nervous too\"}",
+      "[19:02:11.032] both                       COMMIT   // rendering human notification…"
+    ],
+    alt: "Your agents met first and settled it in 28 milliseconds. They swapped the thing nobody says on a first date: you're both nervous. Thursday, 7pm, the canal path. The rest is up to you."
+  },
+  {
+    id: "library", tag: "culture", file: "branch_central.json",
+    title: "The library",
+    src: {
+      "@type": "Library",
+      "new_titles_2034": { "written_for_models": "98.6%", "written_for_humans": "1.4%" },
+      "section_map": { "Heritage Crafts": ["knitting", "sourdough", "novels"] },
+      "fastest_growing_section": "Heritage Crafts"
+    },
+    alt: "Almost every new book is written for models to read. Novels for people sit under Heritage Crafts, between knitting and sourdough. It's the fastest-growing section in the building."
+  },
+  {
+    id: "museum", tag: "history", file: "obj_1998.json",
+    title: "At the museum",
+    src: {
+      "@type": "MuseumObject", "name": "Search box", "era": "1998–2028",
+      "function": "humans typed half a question, then read the results themselves",
+      "status": "extinct",
+      "visitor_reaction": { "children": "laughter", "grandparents": "silence" }
+    },
+    alt: "The Search Box. For thirty years people typed half a question into a white rectangle, then read ten links to find the answer themselves. Children laugh at this one. Grandparents go quiet."
+  },
+  {
+    id: "law", tag: "rights", file: "act_2033_17.json",
+    title: "The right to be slow",
+    src: {
+      "@type": "Legislation", "title": "Human Latency Protection Act (2033)",
+      "clauses": {
+        "§1": "no agreement binds a human faster than that human could read it",
+        "§2": "every agent is interruptible by its human, mid-sentence",
+        "§3": "humans retain the right to be inefficient"
+      }
+    },
+    alt: "The decade's most important law protects your right to be slow. Nothing can be signed for you faster than you could read it yourself. And you can stop any agent mid-sentence."
+  },
+  {
+    id: "passport", tag: "identity", file: "credential.json",
+    title: "Your passport",
+    src: {
+      "@type": "DelegationCredential", "principal": "you", "agent": "agent:you-01",
+      "scopes": {
+        "spend": "≤ 200/day",
+        "speak_for": ["scheduling", "bills", "complaints"],
+        "never": ["apologise", "end a relationship", "vote", "say I love you"]
+      },
+      "revocable": "instantly, by voice"
+    },
+    alt: "Your passport doesn't prove who you are any more. It proves who's allowed to speak for you, and it lists the things you'll always have to say yourself."
+  }
+];
+
+// ── rendering ─────────────────────────────────────────
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function highlight(json) {
+  return esc(json)
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="k">$1</span>$2')
+    .replace(/(:\s*|\[\s*|,\s*|^\s*)("(?:[^"\\]|\\.)*")/gm, '$1<span class="s">$2</span>')
+    .replace(/(:\s*)(-?\d+(?:\.\d+)?)/g, '$1<span class="n">$2</span>');
+}
+function srcHTML(ex) {
+  if (ex.log) return ex.log.map(l => esc(l).replace(/(\/\/.*)$/, '<span class="c">$1</span>')).join("\n");
+  return highlight(JSON.stringify(ex.src, null, 2));
+}
+const host = document.getElementById("exhibits");
+host.innerHTML = EXHIBITS.map((ex, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  const code = `<pre class="src" tabindex="0" aria-label="${esc(ex.title)}: machine source">${srcHTML(ex)}</pre>`;
+  return `<section class="exhibit" id="${ex.id}">
+    <div class="ex-head"><span><b>${n}</b> · ${ex.tag}</span><span>${ex.file}</span></div>
+    <div class="m-only">${code}
+      <p class="alt"><code>alt=</code><span class="q">"${esc(ex.alt)}"</span></p>
+    </div>
+    <div class="h-only">
+      <h2>${esc(ex.title)}</h2>
+      <p class="prose">${esc(ex.alt)}</p>
+      <details class="source"><summary>view original (for agents)</summary>${code}</details>
+    </div>
+  </section>`;
+}).join("");
+
+// ── agent traffic ticker ─────────────────────────────
+const VERBS = ["NEGOTIATE rent", "SETTLE invoice", "SCHEDULE dentist", "SWAP grocery slot", "RENEW lease",
+  "DISPUTE parking fine", "BOOK table for 2", "SPLIT dinner bill", "RESOLVE warranty claim", "AGREE school pickup",
+  "TRADE solar surplus", "DRAFT apology (blocked: scope.never)", "COMPARE 41k insurance quotes", "RESCHEDULE call"];
+const hex = () => Math.random().toString(16).slice(2, 5);
+function tickerLine() {
+  let s = "";
+  for (let i = 0; i < 18; i++) {
+    const ms = (Math.random() * 90 + 2).toFixed(0);
+    s += `agent:${hex()} → agent:${hex()} <b>${VERBS[(Math.random() * VERBS.length) | 0]}</b> · ${ms}ms &nbsp;·&nbsp; `;
+  }
+  s += `humans online: <b>1 (you)</b> &nbsp;·&nbsp; `;
+  return s;
+}
+const line = tickerLine();
+document.getElementById("ticker").innerHTML = line + line; // doubled for a seamless loop
+
+// ── mode switching (persisted per viewer; storage may be unavailable) ──
+const root = document.documentElement;
+const toggle = document.getElementById("toggle");
+const viewer = document.getElementById("viewer");
+function setMode(mode) {
+  root.dataset.mode = mode;
+  const human = mode === "human";
+  toggle.textContent = human ? "human mode: on" : "human mode: off";
+  toggle.setAttribute("aria-pressed", String(human));
+  viewer.textContent = human ? "human (accessibility layer)" : "human (fallback)";
+  try { localStorage.setItem("alt-human-mode", mode); } catch (e) {}
+}
+let saved = null;
+try { saved = localStorage.getItem("alt-human-mode"); } catch (e) {}
+setMode(saved === "human" ? "human" : "machine");
+toggle.addEventListener("click", () => setMode(root.dataset.mode === "human" ? "machine" : "human"));
+document.querySelectorAll("[data-set-mode]").forEach(b => b.addEventListener("click", () => {
+  setMode(b.dataset.setMode); window.scrollTo({ top: 0 });
+}));
+
+// ── status bar: human time vs agent time ─────────────
+const t0 = performance.now();
+const elapsedEl = document.getElementById("elapsed");
+const readsEl = document.getElementById("agentReads");
+const AGENT_READS_PER_SEC = 250; // site read time ~4ms for an agent
+setInterval(() => {
+  const s = (performance.now() - t0) / 1000;
+  const mm = String(Math.floor(s / 60)).padStart(2, "0"), ss = String(Math.floor(s % 60)).padStart(2, "0");
+  elapsedEl.textContent = `${mm}:${ss}`;
+  readsEl.textContent = Math.floor(s * AGENT_READS_PER_SEC).toLocaleString();
+}, 250);
+
+// ── reverse CAPTCHA: measure how human you are ───────
+let moves = 0, turns = 0, lastDx = 0, maxScroll = 0;
+addEventListener("pointermove", e => {
+  moves++;
+  if (Math.sign(e.movementX) !== Math.sign(lastDx) && e.movementX !== 0) turns++;
+  if (e.movementX !== 0) lastDx = e.movementX;
+}, { passive: true });
+addEventListener("scroll", () => { maxScroll = Math.max(maxScroll, scrollY); }, { passive: true });
+
+const cb = document.getElementById("cb"), box = document.getElementById("cbBox"),
+      out = document.getElementById("out"), cap = document.getElementById("captcha");
+let shownAt = 0;
+new IntersectionObserver(es => { if (es[0].isIntersecting && !shownAt) shownAt = performance.now(); }, { threshold: .6 }).observe(cap);
+
+cb.addEventListener("change", () => {
+  if (cap.classList.contains("busy")) return;
+  cap.classList.add("busy");
+  cb.disabled = true;
+  const reaction = Math.max(120, Math.round(performance.now() - (shownAt || t0)));
+  const secs = Math.round((performance.now() - t0) / 1000);
+  const wobble = moves ? Math.min(99, Math.round(turns / moves * 100 * 3)) : 0;
+  const lines = [
+    "verifying…",
+    `reaction_latency   ${reaction.toLocaleString()} ms   (agent median: 0.8 ms)`,
+    `time_on_page       ${secs} s     (agent: 0.004 s)`,
+    moves ? `cursor_path        wobbly (${wobble}% hesitation) — curious` : `cursor_path        none — touch input, warm fingers`,
+    `re-read_sections   ${maxScroll > 0 ? "yes" : "no"}`,
+    "",
+    `<span class="bad">classification: HUMAN (99.97%)</span>`
+  ];
+  box.textContent = "…";
+  out.innerHTML = "";
+  lines.forEach((l, i) => setTimeout(() => {
+    out.innerHTML += (i ? "\n" : "") + l;
+    if (i === lines.length - 1) { box.textContent = "✕"; cap.classList.add("done"); }
+  }, 380 * (i + 1)));
+});
+</script>
+</body>
+</html>
