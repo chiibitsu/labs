@@ -93,7 +93,14 @@
   .ledger td { padding: 11px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   .ledger td:first-child { font-family: var(--f-body); font-size: .95rem; }
   .ledger .h { color: var(--sig); }
-  @media (max-width: 560px) { .ledger th:nth-child(3), .ledger td:nth-child(3) { display: none; } }
+  @media (max-width: 560px) {
+    .ledger, .ledger tbody { display: block; }
+    .ledger tr:first-child { display: none; }
+    .ledger tr { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .ledger td { border: 0; padding: 0; }
+    .ledger td:first-child { grid-column: 1 / -1; margin-bottom: 4px; }
+    .ledger td[data-l]::before { content: attr(data-l); display: block; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  }
 
   /* request */
   .req { border: 1px solid var(--ink); background: var(--card); padding: 22px; display: grid; gap: 14px; }
@@ -209,7 +216,7 @@ const LEDGER = [
   ["Rest", "not required", "8 h, nightly"],
 ];
 $("ledger").innerHTML = "<tr><th>Errand</th><th>Agent</th><th>Human</th></tr>" +
-  LEDGER.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="h">${r[2]}</td></tr>`).join("");
+  LEDGER.map(r => `<tr><td>${r[0]}</td><td data-l="Agent">${r[1]}</td><td class="h" data-l="Human">${r[2]}</td></tr>`).join("");
 
 /* ---------- mode toggle ---------- */
 let native = false;
