@@ -12,6 +12,7 @@ root is a landing page that lists them.
 |---|---|---|
 | **[Sigil](./sigil/)** | [`labs.chiibitsu.com/sigil/`](https://labs.chiibitsu.com/sigil/) | Type a name, watch its universe grow — a generative cosmos of colour, glyph, motion, and sound, all from one word. Single file, zero dependencies. |
 | **[Ghost Office](./ghost-team/)** | [`labs.chiibitsu.com/ghost-team/`](https://labs.chiibitsu.com/ghost-team/) | Pitch a company in one sentence and watch a team of Claude Code sub-agents ship the founding plan, live. A playable demo of a sub-agent team for solo founders — then [run it for real](./ghost-team/). |
+| **[Guest Mode](./ai-first/)** | [`labs.chiibitsu.com/ai-first/`](https://labs.chiibitsu.com/ai-first/) | A city where AI came first and humans are accommodated guests. One switch flips the same town between courtesy time and machine-native time. Single file, zero dependencies. |
 
 ## Layout
 
