@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Friday 2045</title>
+<meta name="description" content="A ten-minute game. Live one ordinary day in 2045, when AI is native to the world. Feel what changed, what stayed, and what is still yours to choose." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Friday, 2045" />
+<meta property="og:description" content="One ordinary day, ten minutes. AI is native to the world. What do you still choose?" />
+<meta property="og:url" content="https://labs.chiibitsu.com/friday-2045/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/friday-2045/og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23151a3d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%237ff0d8'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap" />
+<style>
+/* Layout concept: one column that reads like a day. A sky behind it follows the clock.
+   A quiet ledger of everything done for you runs beside it (laptop) or above it (phone).
+   Palette: time-of-day sky (set from JS), ink, a single "ambient" accent that glows at night. */
+:root {
+  --sky1: #141a40; --sky2: #5b5aa0;
+  --ink: #10222b; --ink2: #3d535d;
+  --panel: rgba(255,255,255,.62); --btn: rgba(255,255,255,.55); --sheet: #f6faf9;
+  --line: rgba(16,34,43,.15);
+  --accent: #0a7a70; --accent-ink: #f2fffd; --alert: #b3261e;
+  --narr: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); /*SAFE*/
+  color-scheme: light;
+}
+:root[data-tone="night"] {
+  --ink: #e8edff; --ink2: #a9b3da;
+  --panel: rgba(10,13,36,.56); --btn: rgba(255,255,255,.07); --sheet: #12183a;
+  --line: rgba(190,205,255,.17);
+  --accent: #7ff0d8; --accent-ink: #06201b; --alert: #ff8f85;
+  color-scheme: dark;
+}
+:root[data-tone="dead"] {
+  --ink: #1b1b1b; --ink2: #555; --panel: rgba(238,238,238,.94); --btn: rgba(0,0,0,.05); --sheet: #eee;
+  --line: #9a9a9a; --accent: #222; --accent-ink: #eee; --alert: #a00;
+  --narr: var(--mono);
+  color-scheme: light;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background-color: var(--sky1);
+  background-image: linear-gradient(180deg, var(--sky1), var(--sky2));
+  background-attachment: fixed;
+  color: var(--ink); font-family: var(--narr);
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#motes { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+#flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; transition: opacity .35s; }
+#flash.on { opacity: .85; transition: none; }
+
+#app {
+  position: relative; z-index: 1; height: 100%; max-width: 1060px; margin: 0 auto;
+  padding: calc(10px + var(--safe-t)) max(16px, var(--safe-r)) calc(10px + var(--safe-b)) max(16px, var(--safe-l));
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hud { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex: none; transition: opacity .8s; }
+body.intro .hud, body.intro .feed { display: none; }
+.hud, .feed { animation: in .9s; }
+.clock b { display: block; font: 500 34px/1 var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.clock span { display: block; margin-top: 5px; font: 11px var(--mono); letter-spacing: .06em; color: var(--ink2); }
+.vitals { display: flex; gap: 14px; align-items: flex-end; }
+.v { text-align: right; }
+.v b { display: block; height: 16px; font: 500 15px/16px var(--mono); font-variant-numeric: tabular-nums; }
+.v i { display: block; margin-top: 3px; font: normal 9.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+.v.bump b { animation: bump .7s; }
+@keyframes bump { 0% { color: var(--accent); transform: translateY(-2px); } 100% { color: inherit; transform: none; } }
+.meter { display: inline-flex !important; gap: 2px; align-items: flex-end; }
+.meter u { width: 5px; height: 100%; background: var(--line); border-radius: 1px; text-decoration: none; }
+.meter u.on { background: var(--alert); }
+.snd.q { margin-right: -6px; font-size: 15px; }
+.snd { appearance: none; -webkit-appearance: none; background: none; border: 1px solid var(--line); border-radius: 999px; width: 34px; height: 34px; cursor: pointer; font: 14px var(--mono); color: var(--ink2); }
+.snd[aria-pressed="false"] { text-decoration: line-through; opacity: .6; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transition: background-color .6s, border-color .6s;
+}
+.layout { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; position: relative; }
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.story { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 20px 8px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+.story > * { opacity: 0; transform: translateY(6px); transition: opacity .55s, transform .55s; flex: none; }
+.story > .on { opacity: 1; transform: none; }
+.actions { flex: none; padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+.dots { flex: none; display: flex; gap: 6px; justify-content: center; align-items: center; padding: 0 0 12px; font: 10px var(--mono); letter-spacing: .12em; color: var(--ink2); text-transform: uppercase; }
+.dots u { width: 6px; height: 6px; border-radius: 50%; background: var(--line); text-decoration: none; transition: background-color .4s, transform .4s; }
+.dots u.done { background: var(--ink2); }
+.dots u.now { background: var(--accent); transform: scale(1.5); }
+.dots span { margin-left: 8px; }
+
+/* story text */
+.n, .a, .q { font-size: clamp(18px, 4.7vw, 21px); line-height: 1.5; max-width: 34em; text-wrap: pretty; }
+.a { font-style: italic; }
+.tag { font: normal 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); margin-right: .8em; vertical-align: .15em; font-style: normal; }
+.q { padding-left: 14px; border-left: 1px solid var(--line); }
+.m { font: 12.5px/1.55 var(--mono); color: var(--ink2); max-width: 44em; }
+.m.alert { color: var(--alert); }
+.you { font: 13.5px/1.4 var(--mono); color: var(--ink2); }
+.you::before { content: "you  "; letter-spacing: .1em; text-transform: uppercase; font-size: 10px; margin-right: .6em; }
+.slug { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink2); }
+.title { font: italic 500 clamp(34px, min(13vw, 11vh), 78px)/.95 var(--narr); letter-spacing: -.02em; }
+.sub { font: 12px/1.6 var(--mono); color: var(--ink2); }
+.setup { display: flex; flex-direction: column; gap: 22px; }
+.setup .sec { display: flex; flex-direction: column; gap: 8px; }
+.setup h5, .setup label.l { font: 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); font-weight: 400; }
+.setup .hint { font: 12px/1.5 var(--mono); color: var(--ink2); margin-top: -2px; }
+.setup input, .setup select { width: 100%; font: 500 19px var(--narr); padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); }
+.setup select { font: 13px var(--mono); padding: 11px 6px; }
+.setup .pr { display: grid; grid-template-columns: 1fr 124px; gap: 8px; }
+.setup .who { display: flex; flex-direction: column; gap: 6px; }
+.jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jobbtn { appearance: none; -webkit-appearance: none; cursor: pointer; text-align: left; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); font-family: var(--narr); display: flex; flex-direction: column; gap: 3px; -webkit-tap-highlight-color: transparent; }
+.jobbtn b { font-weight: 500; font-size: 16.5px; line-height: 1.2; }
+.jobbtn i { font: normal 11px/1.4 var(--mono); color: var(--ink2); }
+.jobbtn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.field label { display: block; font: 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); margin-bottom: 8px; }
+.field input { width: 100%; font: 500 22px var(--narr); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); }
+.chips { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.chip { appearance: none; -webkit-appearance: none; cursor: pointer; font: 12px var(--mono); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink2); }
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+
+/* buttons */
+.opt, .cont, .ghost { appearance: none; -webkit-appearance: none; cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: var(--narr); }
+.opt { display: flex; gap: 12px; align-items: baseline; width: 100%; min-height: 54px; padding: 12px 14px; text-align: left; border-radius: 14px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); transition: border-color .2s, transform .1s; }
+.opt .k { font: 11px var(--mono); color: var(--ink2); flex: none; width: 1.2em; }
+.opt b { display: block; font-weight: 500; font-size: clamp(16.5px, 4.3vw, 18.5px); line-height: 1.3; }
+.opt i { display: block; font: normal 11.5px var(--mono); color: var(--ink2); margin-top: 3px; }
+.opt:hover { border-color: var(--accent); }
+.opt:active { transform: scale(.99); }
+.opt[disabled] { opacity: .35; pointer-events: none; }
+.cont { width: 100%; min-height: 54px; padding: 14px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 17px; text-align: center; }
+.cont small { display: block; font: 11px var(--mono); opacity: .75; margin-top: 2px; letter-spacing: .06em; }
+.ghost { align-self: center; background: none; border: 0; color: var(--ink2); font: 11.5px var(--mono); letter-spacing: .06em; text-decoration: underline; text-underline-offset: 3px; padding: 6px 10px; }
+.ghost:hover { color: var(--ink); }
+
+/* hold */
+.holdwrap { display: grid; place-items: center; gap: 12px; padding: 6px 0 2px; }
+.hold { position: relative; width: 176px; height: 176px; border-radius: 50%; border: 0; background: radial-gradient(circle, var(--btn), transparent 72%); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.hold svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.hold circle { fill: none; stroke-linecap: round; }
+.hold .trk { stroke: var(--line); stroke-width: 2.5; }
+.hold .bar { stroke: var(--accent); stroke-width: 4; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.hold .hl { position: absolute; inset: 0; display: grid; place-items: center; font: 12px var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink2); }
+.hold.down { transform: scale(.97); }
+.hm { font: 12.5px var(--mono); color: var(--ink2); min-height: 1.4em; text-align: center; }
+
+/* documents */
+.doc { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--btn); display: flex; flex-direction: column; gap: 8px; }
+.doc .meta { font: 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
+.doc h3 { font: 500 20px/1.25 var(--narr); }
+.doc .sum { font-size: 17px; line-height: 1.45; }
+.doc .detail { font: 13px/1.55 var(--mono); border-top: 1px dashed var(--line); padding-top: 10px; }
+.doc .detail.bad { color: var(--alert); }
+
+/* window + feed cards */
+.win { height: 150px; border-radius: 14px; border: 1px solid var(--line); overflow: hidden; position: relative; background: linear-gradient(#9fc3dc, #e7eef0); }
+.win .cl { position: absolute; width: 150px; height: 46px; border-radius: 50%; background: #fff; filter: blur(14px); opacity: .85; animation: drift 26s linear infinite; }
+.win .cl:nth-child(1) { top: 24px; left: -160px; }
+.win .cl:nth-child(2) { top: 70px; left: -160px; animation-duration: 38s; animation-delay: -12s; opacity: .6; }
+.win .cl:nth-child(3) { top: 104px; left: -160px; animation-duration: 31s; animation-delay: -22s; opacity: .7; }
+@keyframes drift { to { transform: translateX(640px); } }
+.win .prog { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: #0a7a70; }
+.fcard { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--btn); }
+.fcard p { font-size: 18px; line-height: 1.4; }
+.fcard .tg { margin-top: 8px; font: 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+
+/* feed */
+.feed { order: -1; flex: none; overflow: hidden; display: flex; flex-direction: column; transition: opacity .8s; }
+.feedhead { appearance: none; -webkit-appearance: none; background: none; border: 0; text-align: left; cursor: pointer; display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 9px 14px; }
+.feedhead b { font: 500 17px var(--mono); font-variant-numeric: tabular-nums; flex: none; }
+.feedhead .lbl { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); flex: none; }
+.feedhead .latest { font: 11.5px var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.feed ol { list-style: none; display: none; padding: 2px 14px 10px; max-height: 38dvh; overflow-y: auto; }
+.feed.open ol { display: block; }
+.feed li { display: flex; gap: 10px; font: 12px/1.45 var(--mono); padding: 6px 0; border-top: 1px solid var(--line); animation: in .6s; }
+.feed li time { color: var(--ink2); flex: none; font-variant-numeric: tabular-nums; }
+.feed li.alert { color: var(--alert); }
+@keyframes in { from { opacity: 0; transform: translateY(-4px); } }
+.feed.dead b { opacity: .4; }
+
+@media (min-width: 900px) {
+  #app { padding-top: calc(22px + var(--safe-t)); padding-bottom: calc(22px + var(--safe-b)); }
+  .layout { flex-direction: row; justify-content: center; }
+  .stage { flex: 0 1 660px; }
+  .feed { order: 2; width: 320px; }
+  .feedhead { flex-direction: column; align-items: flex-start; gap: 2px; padding: 16px 16px 8px; cursor: default; }
+  .feedhead b { font-size: 34px; }
+  .feedhead .latest { display: none; }
+  .feed ol { display: block; flex: 1; max-height: none; overflow: hidden; padding: 4px 16px 12px; }
+  .story { padding: 28px 30px 10px; }
+  .actions { padding: 8px 22px 12px; }
+}
+
+/* summary */
+.arche { font: italic 500 clamp(42px, 11vw, 64px)/1 var(--narr); letter-spacing: -.02em; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.stats div { background: var(--sheet); padding: 11px 13px; min-width: 0; }
+.stats div:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.stats b { display: block; font: 500 19px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.stats i { display: block; margin-top: 3px; font: normal 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
+.inv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+.inv h4 { font: 500 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+.inv p { font-size: 15.5px; line-height: 1.45; }
+.preds { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.preds div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; font: 12px/1.4 var(--mono); border-top: 1px solid var(--line); }
+.preds div:first-child { border-top: 0; }
+.preds .miss { color: var(--accent); }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.list p { font-size: 17px; line-height: 1.4; }
+
+/* sheet */
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); padding: 0 12px calc(12px + var(--safe-b)); }
+.sheet[hidden] { display: none; }
+.sheetbox { background: var(--sheet); width: 100%; max-width: 640px; max-height: 82dvh; overflow-y: auto; padding: 20px 20px 22px; border-radius: 18px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
+.sheetbox h3 { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.sheetbox p { font-size: 16.5px; line-height: 1.5; }
+.sheetbox .lk { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.sheetbox a { font: 12px var(--mono); color: var(--ink); text-underline-offset: 3px; }
+.sheetbox .item { display: flex; flex-direction: column; gap: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+.sheetbox .item:first-of-type { border-top: 0; padding-top: 0; }
+.sheetbox .kind { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+
+@media (max-height: 520px) {
+  #app { padding-top: calc(6px + var(--safe-t)); padding-bottom: calc(6px + var(--safe-b)); gap: 6px; }
+  .hud { align-items: center; }
+  .clock b { font-size: 22px; }
+  .clock span, .v i, .dots, .feed { display: none; }
+  .vitals { gap: 12px; align-items: center; }
+  .v b { height: auto; line-height: 1; }
+  .snd { width: 30px; height: 30px; font-size: 12px; }
+  .story { padding: 14px 18px 4px; gap: 10px; }
+  .n, .a, .q { font-size: 17px; line-height: 1.45; }
+  .actions { flex-direction: row; flex-wrap: wrap; padding: 6px 12px 8px; }
+  .opt { flex: 1 1 190px; width: auto; min-height: 44px; padding: 8px 12px; }
+  .opt b { font-size: 16px; }
+  .cont { min-height: 46px; padding: 10px; flex: 1 1 100%; }
+  .hold { width: 112px; height: 112px; }
+  .win { height: 90px; }
+  .setup { gap: 16px; }
+  .sheetbox { max-height: 92dvh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story > *, .feed li { transition: none; animation: none; }
+  .win .cl { animation: none; left: 30%; }
+  .hud, .feed { animation: none; }
+}
+</style>
+</head>
+<body class="intro">
+<canvas id="motes" aria-hidden="true"></canvas>
+<div id="flash"></div>
+<div id="app">
+  <header class="hud">
+    <div class="clock"><b id="clock">05:00</b><span id="date">FRI 28 JUL 2045</span></div>
+    <div class="vitals">
+      <div class="v" id="vBank"><b>0m</b><i>banked</i></div>
+      <div class="v" id="vKept"><b>0</b><i>kept</i></div>
+      <div class="v" id="vExp"><b class="meter"><u></u><u></u><u></u><u></u><u></u></b><i>exposed</i></div>
+      <button class="snd q" id="help" type="button" aria-label="What the numbers mean">?</button>
+      <button class="snd" id="snd" type="button" aria-pressed="true" aria-label="Sound">&#9834;</button>
+    </div>
+  </header>
+  <div class="layout">
+    <section class="stage panel">
+      <div id="story" class="story" aria-live="polite"></div>
+      <div id="actions" class="actions"></div>
+      <div id="dots" class="dots" aria-hidden="true"></div>
+    </section>
+    <aside class="feed panel" id="feed" aria-label="Things done for you today">
+      <button class="feedhead" id="feedhead" type="button"><b id="count">1,204</b><span class="lbl">done for you today</span><span class="latest" id="latest"></span></button>
+      <ol id="feedlist"></ol>
+    </aside>
+  </div>
+</div>
+<div class="sheet" id="sheet" hidden><div class="sheetbox" id="sheetbox" role="dialog" aria-modal="true"></div></div>
+<noscript><p style="padding:24px;position:relative;z-index:2">This is a small game and needs JavaScript.</p></noscript>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const fmtMin = m => { m = Math.max(0, Math.round(m)); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; };
+const hhmm = m => { m = Math.round(m) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+/* ---------- state ---------- */
+let S;
+function fresh() {
+  return { name: 'Wren', time: 300, bank: 0, spent: 0, kept: 0, total: 0, exp: 0, dollars: 0, count: 1204, pending: 0,
+    cps: 6, dead: false, preds: [], wsum: 0, wn: 0, moments: [], signed: 0, flaws: 0, caught: 0, missed: [],
+    feedMin: 0, offer: '', scene: -1, explained: false, job: 'ops',
+    people: { mom: { n: 'Mom', p: 'she' }, friend: { n: 'Dani', p: 'she' }, kid: { n: 'Mina', p: 'she' } } };
+}
+S = fresh();
+const PR = { she: { s: 'she', o: 'her', p: 'her', pp: 'hers' }, he: { s: 'he', o: 'him', p: 'his', pp: 'his' }, they: { s: 'they', o: 'them', p: 'their', pp: 'theirs' } };
+const T = s => String(s).replace(/\{name\}/g, S.name).replace(/\{(mom|friend|kid)(?:\.(s|o|p|pp|S|P))?\}/g, (m, r, f) => {
+  const x = S.people[r]; if (!f) return x.n;
+  const v = (PR[x.p] || PR.they)[f === 'S' ? 's' : f === 'P' ? 'p' : f];
+  return (f === 'S' || f === 'P') ? v[0].toUpperCase() + v.slice(1) : v;
+});
+
+/* ---------- audio ---------- */
+const AU = {
+  ctx: null, on: lsGet('t2050-snd') !== '0', master: null, pad: null, filt: null, oscs: [], noiseG: null, root: 146.83, last: 0,
+  init() {
+    if (this.ctx) { try { this.ctx.resume(); } catch (e) {} return; }
+    try {
+      const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+      const c = this.ctx = new C();
+      this.master = c.createGain(); this.master.gain.value = this.on ? 0.9 : 0; this.master.connect(c.destination);
+      this.pad = c.createGain(); this.pad.gain.value = 0;
+      this.filt = c.createBiquadFilter(); this.filt.type = 'lowpass'; this.filt.frequency.value = 700; this.filt.Q.value = .4;
+      this.filt.connect(this.pad); this.pad.connect(this.master);
+      [1, 1.5, 2.25, 3].forEach((r, i) => {
+        const o = c.createOscillator(); o.type = i % 2 ? 'triangle' : 'sine'; o.frequency.value = this.root * r; o.detune.value = (i - 1.5) * 4;
+        const g = c.createGain(); g.gain.value = .13 / (1 + i * .4); o.connect(g); g.connect(this.filt); o.start(); this.oscs.push(o);
+      });
+      const lfo = c.createOscillator(); lfo.frequency.value = .06; const lg = c.createGain(); lg.gain.value = 260; lfo.connect(lg); lg.connect(this.filt.frequency); lfo.start();
+      const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0); let last = 0;
+      for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+      const n = c.createBufferSource(); n.buffer = buf; n.loop = true;
+      const nf = c.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 500;
+      this.noiseG = c.createGain(); this.noiseG.gain.value = 0; n.connect(nf); nf.connect(this.noiseG); this.noiseG.connect(this.master); n.start();
+      this.pad.gain.setTargetAtTime(.5, c.currentTime, 2);
+    } catch (e) { this.ctx = null; }
+  },
+  setOn(b) { this.on = b; lsSet('t2050-snd', b ? '1' : '0'); if (this.ctx) this.master.gain.setTargetAtTime(b ? .9 : 0, this.ctx.currentTime, .1); },
+  chord(min) {
+    if (!this.ctx) return; const h = min / 60;
+    let root, minor = false;
+    if (h < 7.5) root = 146.83; else if (h < 12) root = 164.81; else if (h < 17.5) root = 174.61;
+    else if (h < 19.5) { root = 130.81; minor = true; } else if (h < 22) { root = 110; minor = true; } else { root = 87.31; minor = true; }
+    this.root = root;
+    const set = minor ? [1, 1.5, 1.78, 2.67] : [1, 1.5, 2.25, 3];
+    this.oscs.forEach((o, i) => o.frequency.setTargetAtTime(root * set[i], this.ctx.currentTime, 1.5));
+  },
+  note(f, vol, dur, type, at = 0) {
+    if (!this.ctx || !this.on) return; const c = this.ctx, t = c.currentTime + at;
+    const o = c.createOscillator(), g = c.createGain(); o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + .05);
+  },
+  blip() { const now = performance.now(); if (!this.ctx || now - this.last < 350 || S.dead) return; this.last = now; this.note(this.root * pick([2, 3, 4, 6]), .028, .6); },
+  tap() { this.note(520, .05, .09, 'triangle'); },
+  outage(on) {
+    if (!this.ctx) return; const c = this.ctx, t = c.currentTime;
+    if (on) {
+      this.pad.gain.setTargetAtTime(0, t, .12); this.noiseG.gain.setTargetAtTime(.06, t, .3);
+      if (this.on) { const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(38, t + .5);
+        g.gain.setValueAtTime(.3, t); g.gain.exponentialRampToValueAtTime(.0001, t + .6); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + .7); }
+    } else {
+      this.noiseG.gain.setTargetAtTime(0, t, .3); this.pad.gain.setTargetAtTime(.5, t, 1.2);
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.note(f, .06, 1.4, 'sine', i * .09));
+    }
+  }
+};
+
+/* ---------- haptics (best effort: Android vibrates, recent iPhones via a switch-input trick) ---------- */
+const HAP = (() => {
+  try { if ('vibrate' in navigator && !/iPhone|iPad/.test(navigator.userAgent)) return a => { try { navigator.vibrate(a); } catch (e) {} }; } catch (e) {}
+  let lab = null;
+  try { lab = document.createElement('label'); lab.setAttribute('aria-hidden', 'true'); lab.style.display = 'none';
+    const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); lab.append(i); document.body.append(lab); } catch (e) {}
+  return a => { if (!lab) return; const seq = Array.isArray(a) ? a : [a]; let t = 0;
+    seq.forEach((v, idx) => { if (idx % 2 === 0) setTimeout(() => { try { lab.click(); } catch (e) {} }, t); t += v; }); };
+})();
+const hap = k => HAP({ tap: 12, soft: 8, ok: [18, 60, 18], thunk: [60, 40, 60, 40, 120], triple: [20, 70, 20, 70, 40], two: [15, 70, 15] }[k] || 10);
+
+/* ---------- sky / palette ---------- */
+const SKY = [
+  [300, '#141a40', '#5b5aa0'], [375, '#7d8fcf', '#f0b9b0'], [480, '#a9cde6', '#f3e6dc'], [600, '#bfe0ee', '#eaf4ef'],
+  [780, '#a8d0e6', '#e4eef0'], [960, '#9bbfdc', '#f1dcb8'], [1100, '#5a5fa8', '#f0a07f'], [1160, '#2d2f6b', '#c9687a'],
+  [1260, '#151a3d', '#343a7a'], [1400, '#080b1a', '#151c3e']
+];
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
+const css = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+let lastTone = '';
+function applyPalette() {
+  const root = document.documentElement; let t1, t2, tone;
+  if (S.dead) { t1 = [189, 189, 189]; t2 = [214, 214, 214]; tone = 'dead'; }
+  else {
+    const m = Math.min(1400, Math.max(300, S.time)); let i = 0; while (i < SKY.length - 2 && m > SKY[i + 1][0]) i++;
+    const a = SKY[i], b = SKY[i + 1], p = Math.min(1, Math.max(0, (m - a[0]) / (b[0] - a[0])));
+    t1 = mix(hex(a[1]), hex(b[1]), p); t2 = mix(hex(a[2]), hex(b[2]), p);
+    tone = (lum(t1) + lum(t2)) / 2 < .26 ? 'night' : 'day';
+  }
+  root.style.setProperty('--sky1', css(t1)); root.style.setProperty('--sky2', css(t2));
+  if (tone !== lastTone) { lastTone = tone; root.dataset.tone = tone; motes.accent(); }
+}
+
+/* ---------- motes: the ambient layer, made visible ---------- */
+const motes = (() => {
+  const cv = $('#motes'), cx = cv.getContext('2d'); let W = 0, H = 0, list = [], rip = [], acc = '#7ff0d8', fade = 1, boost = 0;
+  function size() { const d = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cx.setTransform(d, 0, 0, d, 0, 0); }
+  function seed() { list = Array.from({ length: W < 700 ? 30 : 56 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 1 + Math.random() * 2.2, vx: (Math.random() - .5) * .14, vy: -.05 - Math.random() * .2, p: Math.random() * 6.28 })); }
+  function frame(t) {
+    cx.clearRect(0, 0, W, H);
+    fade += ((S.dead ? 0 : 1) - fade) * .05; boost += ((S.boostOn ? 5 : 0) - boost) * .08;
+    if (fade > .01) {
+      cx.fillStyle = acc; cx.strokeStyle = acc;
+      for (const m of list) {
+        if (!RM) { m.x += m.vx * (1 + boost); m.y += m.vy * (1 + boost); }
+        if (m.y < -10) { m.y = H + 10; m.x = Math.random() * W; } if (m.x < -10) m.x = W + 10; if (m.x > W + 10) m.x = -10;
+        cx.globalAlpha = fade * (.22 + .2 * Math.sin(t / 1700 + m.p)); cx.beginPath(); cx.arc(m.x, m.y, m.r, 0, 6.283); cx.fill();
+      }
+      for (let i = rip.length - 1; i >= 0; i--) { const r = rip[i]; r.r += 1.1; r.a -= .007; if (r.a <= 0) { rip.splice(i, 1); continue; }
+        cx.globalAlpha = r.a * fade; cx.lineWidth = 1; cx.beginPath(); cx.arc(r.x, r.y, r.r, 0, 6.283); cx.stroke(); }
+    }
+    requestAnimationFrame(frame);
+  }
+  addEventListener('resize', () => { size(); seed(); }); size(); seed(); requestAnimationFrame(frame);
+  return {
+    accent() { acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || acc; },
+    pulse(n = 1) { for (let i = 0; i < n; i++) { const m = pick(list); rip.push({ x: m.x, y: m.y, r: 2, a: .45 }); } if (rip.length > 40) rip.splice(0, rip.length - 40); }
+  };
+})();
+
+/* ---------- hud + ledger ---------- */
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+function bump(id) { const e = $(id); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
+function hud() {
+  const b = $('#vBank b'), k = $('#vKept b'); const nb = fmtMin(S.bank), nk = String(S.kept);
+  if (b.textContent !== nb) { b.textContent = nb; bump('#vBank'); } if (k.textContent !== nk) { k.textContent = nk; bump('#vKept'); }
+  const us = document.querySelectorAll('#vExp u'); const was = document.querySelectorAll('#vExp u.on').length;
+  us.forEach((u, i) => u.classList.toggle('on', i < S.exp)); if (S.exp !== was) bump('#vExp');
+}
+const POOL = [
+  'declined 3 calls · telemarketing, probably', 'renewed transit pass · negotiated down', 'moved dentist to thursday · saves 11 min',
+  'told your sister you\'re fine · she believed it', 'rerouted parcel · porch to neighbor, she\'s home', 'paid water bill · $41.20',
+  'refilled the oat milk', 'won an argument with a utility\'s agent', 'updated 14 passwords', 'rescheduled 2 meetings that didn\'t need you',
+  'declined a wedding invite · sent flowers', 'flagged a charge · $9.99 · cancelled', 'adjusted thermostat · −0.4° · you won\'t notice',
+  'summarized 83 messages · 2 matter', 'booked a cab for tomorrow 07:10, just in case', 'your mother\'s agent said hello',
+  'checked your blood pressure through the mirror', 'read the terms · you\'d have agreed anyway', 'paused a subscription you forgot about',
+  'traded 2 kWh with the building next door', 'told the school you\'ll be late', 'learned something about you · filed',
+  'bought socks · you needed socks', 'reminded you of nothing · you were fine', 'backed up the last 24 h of your life · 11 GB',
+  'negotiated your gym down · again', 'chose the cheaper train · same seat'
+];
+let pool = [];
+function pushItem(text, alert) {
+  const li = el('li', alert ? 'alert' : ''); li.append(el('time', '', hhmm(S.time)), el('span', '', T(text)));
+  const ol = $('#feedlist'); ol.prepend(li); while (ol.children.length > 40) ol.lastChild.remove();
+  $('#latest').textContent = T(text); if (!alert) { motes.pulse(); AU.blip(); }
+}
+function nextItem() { if (!pool.length) pool = shuffle(POOL.slice()); return pool.pop(); }
+let nextAt = 0;
+setInterval(() => {
+  if (document.body.classList.contains('intro')) return;
+  const now = performance.now();
+  if (!S.dead) {
+    const move = S.pending * .12; S.pending -= move;
+    S.count += S.cps * .2 * (.7 + Math.random() * .6) * (S.boostOn ? 9 : 1) + move;
+    if (now > nextAt) { pushItem(nextItem()); nextAt = now + (S.boostOn ? 170 : rnd(2600, 4200)); }
+  }
+  $('#count').textContent = S.dead ? '—' : fmt(S.count);
+}, 200);
+function bumpLedger(n) { S.pending += n; }
+async function flood(n) { for (let i = 0; i < n; i++) { pushItem(nextItem()); await sleep(45); } }
+
+/* ---------- timing helpers ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 60) : ms));
+let skipNow = false; const waiters = new Set();
+function wait(ms) { return new Promise(res => { if (skipNow) ms = Math.min(ms, 90); const t = setTimeout(fin, ms); function fin() { clearTimeout(t); waiters.delete(fin); res(); } waiters.add(fin); }); }
+const story = $('#story'), actions = $('#actions');
+story.addEventListener('pointerdown', e => { if (e.target.closest('button,a,input,.hold')) return; if (waiters.size) { skipNow = true; [...waiters].forEach(f => f()); } });
+
+function renderClock() { $('#clock').textContent = hhmm(S.time); }
+function setTime(to) {
+  return new Promise(res => {
+    const from = S.time, dur = RM ? 1 : Math.max(900, Math.min(2200, Math.abs(to - from) * 14)), t0 = performance.now();
+    (function f() {
+      const p = Math.min(1, (performance.now() - t0) / dur), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      S.time = from + (to - from) * e; renderClock(); applyPalette();
+      if (p < 1) requestAnimationFrame(f); else { S.time = to; renderClock(); applyPalette(); AU.chord(to); res(); }
+    })();
+  });
+}
+
+/* ---------- story primitives ---------- */
+const scroll = () => story.scrollTo({ top: story.scrollHeight, behavior: RM ? 'auto' : 'smooth' });
+let pinned = true, inSummary = false;
+story.addEventListener('scroll', () => { pinned = story.scrollHeight - story.scrollTop - story.clientHeight < 90; });
+if (window.ResizeObserver) new ResizeObserver(() => { if (pinned && !inSummary) scroll(); }).observe(story);
+function add(node) { story.append(node); requestAnimationFrame(() => requestAnimationFrame(() => node.classList.add('on'))); scroll(); return node; }
+function mk(L) {
+  if (typeof L === 'string') return el('p', 'n', T(L));
+  if (L.a) { const p = el('p', 'a'); p.append(el('span', 'tag', S.name), document.createTextNode(T(L.a))); return p; }
+  if (L.who) { const p = el('p', 'q'); p.append(el('span', 'tag', T(L.who)), document.createTextNode(T(L.t))); return p; }
+  if (L.m) return el('p', 'm' + (L.alert ? ' alert' : ''), T(L.m));
+  if (L.slug) return el('div', 'slug', T(L.slug));
+  if (L.you) return el('p', 'you', T(L.you));
+  return el('p', 'n', '');
+}
+function pace(L) {
+  const s = typeof L === 'string' ? L : (L.a || L.t || L.m || L.slug || ''); let ms = Math.min(3000, Math.max(650, 450 + String(s).length * 24));
+  if (L.m) ms *= .7; if (S.dead) ms *= 1.5; return ms;
+}
+async function say(lines) {
+  skipNow = false;
+  for (const L of lines) { if (L.w) { await wait(L.w); continue; } add(mk(L)); await wait(pace(L)); }
+  skipNow = false;
+}
+async function clearStory() {
+  [...story.children].forEach(c => c.classList.remove('on')); await sleep(240); story.replaceChildren(); story.scrollTop = 0;
+}
+
+let predictOn = false;
+function choose(options, o = {}) {
+  const { predict = false, tally = true, echo = true } = o;
+  return new Promise(res => {
+    const avg = (0.7 + S.wsum) / (1 + S.wn); let pi = 0;
+    if (predict) options.forEach((op, i) => { if (Math.abs(op.w - avg) < Math.abs(options[pi].w - avg)) pi = i; });
+    actions.replaceChildren(); const btns = [];
+    options.forEach((op, i) => {
+      const b = el('button', 'opt'); b.type = 'button';
+      const t = el('span', ''); t.append(el('b', '', T(op.label))); if (op.sub) t.append(el('i', '', T(op.sub)));
+      b.append(el('span', 'k', String(i + 1)), t);
+      b.addEventListener('click', () => commit(i)); btns.push(b); actions.append(b);
+    });
+    if (btns[0] && !('ontouchstart' in window)) btns[0].focus({ preventScroll: true });
+    let done = false;
+    async function commit(i) {
+      if (done) return; done = true; document.removeEventListener('keydown', onKey);
+      btns.forEach(b => b.disabled = true); AU.tap(); hap('tap');
+      const op = options[i];
+      await sleep(120); actions.replaceChildren();
+      if (echo) add(mk({ you: op.label }));
+      if (tally && op.w != null) { S.total++; if (op.w <= .5) S.kept++; S.wsum += op.w; S.wn++; hud(); }
+      if (predict) {
+        const hit = pi === i; S.preds.push({ q: o.q || '', you: op.short || op.label, it: options[pi].short || options[pi].label, hit });
+        await say([{ m: hit ? `${S.name} expected this.` : `${S.name} expected “${options[pi].short || options[pi].label}”. noted.` }]);
+        if (!S.explained) { S.explained = true; await say([{ m: '(It learns from what you pick, and guesses the next one.)' }]); }
+      }
+      res(op);
+    }
+    function onKey(e) { const n = parseInt(e.key, 10); if (n >= 1 && n <= btns.length && !e.metaKey && !e.ctrlKey && document.activeElement.tagName !== 'INPUT') btns[n - 1].click(); }
+    document.addEventListener('keydown', onKey);
+  });
+}
+function cont(label, sub, receipt) {
+  return new Promise(res => {
+    actions.replaceChildren();
+    const b = el('button', 'cont'); b.type = 'button'; b.append(document.createTextNode(label)); if (sub) b.append(el('small', '', sub));
+    actions.append(b);
+    if (receipt != null) { const g = el('button', 'ghost', 'why this is in the game'); g.type = 'button'; g.addEventListener('click', () => openSheet([receipt])); actions.append(g); }
+    if (!('ontouchstart' in window)) b.focus({ preventScroll: true });
+    b.addEventListener('click', () => { AU.tap(); hap('tap'); actions.replaceChildren(); res(); });
+  });
+}
+async function head(min, place, no) {
+  S.scene = no; renderDots(); await clearStory();
+  add(mk({ slug: `${hhmm(min)} · ${place}` }));
+  const t = setTime(min); bumpLedger(rnd(260, 420));
+  await t; await wait(200);
+}
+function renderDots() {
+  const d = $('#dots'); d.replaceChildren(); const N = 11;
+  for (let i = 0; i < N; i++) d.append(el('u', i < S.scene ? 'done' : i === S.scene ? 'now' : ''));
+  d.append(el('span', '', S.scene >= 0 && S.scene < N ? `${S.scene + 1} / ${N}` : ''));
+}
+
+/* ---------- sheet (receipts) ---------- */
+function openSheet(items, titleLine) {
+  const box = $('#sheetbox'); box.replaceChildren();
+  if (titleLine) box.append(el('h3', '', titleLine));
+  items.forEach(r => {
+    const d = el('div', 'item'); d.append(el('div', 'kind', r.kind === 'bet' ? 'my bet · not a fact' : r.kind === 'how' ? 'how to read the screen' : 'signal from 2025–26'), el('h3', '', r.title), el('p', '', r.text));
+    if (r.links && r.links.length) { const l = el('div', 'lk'); r.links.forEach(([t, u]) => { const a = el('a', '', t + ' ↗'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; l.append(a); }); d.append(l); }
+    box.append(d);
+  });
+  const x = el('button', 'cont', 'Back to the day'); x.type = 'button'; x.addEventListener('click', closeSheet); box.append(x);
+  $('#sheet').hidden = false; x.focus({ preventScroll: true });
+}
+function closeSheet() { $('#sheet').hidden = true; }
+$('#sheet').addEventListener('pointerdown', e => { if (e.target.id === 'sheet') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+const R = {
+  wake: { title: 'The world runs without you', text: 'The four biggest US cloud companies guided to roughly $725B of AI capex for 2026, about 77% above 2025. The IEA expects data-centre electricity use to more than double to ~945 TWh by 2030. Someone is building the floor this day stands on, and it is not built for you in particular. It is built for everything.',
+    links: [['Hyperscaler capex 2026', 'https://aiweekly.co/node/8566'], ['IEA, Energy and AI', 'https://www.iea.org/reports/energy-and-ai/executive-summary']] },
+  kitchen: { kind: 'bet', title: 'Friction goes first', text: 'The things that vanish earliest are the ones nobody loved: forms, queues, passwords, hold music. The ones people did love last longer than the optimists expect. Breakfast sits right on that line. This is a claim about people, not a forecast with a source.' },
+  mom: { title: 'Is it really them?', text: 'From 2 August 2026 the EU AI Act (Article 50) requires AI-generated content to be machine-marked and deepfakes to be disclosed. World ID reports 39M+ people verified and is being wired into Tinder, Zoom and DocuSign. “Verified human” is already a paid, optional layer. The game assumes that layer exists and is imperfect.',
+    links: [['EU AI Act Article 50', 'https://didit.me/blog/eu-ai-act-deepfake-labelling-2026/'], ['World ID, third anniversary', 'https://stocktwits.com/news-articles/markets/cryptocurrency/sam-altman-world-turns-3-proof-of-human-tinder/cZZsBPXR7zo']] },
+  work: { title: 'The person whose name is on it', text: 'Oversight researchers describe automation bias: after a system is right a thousand times, the reviewer rubber-stamps it. A February 2026 Berkeley study in Harvard Business Review found AI did not shrink work. People took on more, faster, for longer, and engineers spent more time reviewing each other\'s AI-assisted output. When doing is cheap, checking becomes the job.',
+    links: [['The human-in-the-loop fallacy', 'https://dev.to/himanshu-vaghela9/the-human-in-the-loop-fallacy-why-someone-will-check-is-not-a-control'], ['“AI doesn\'t reduce work, it intensifies it”', 'https://tagteam.harvard.edu/hub_feeds/2087/feed_items/17248204']] },
+  deal: { title: 'Your agent haggles with theirs', text: 'The rails for agent-to-agent buying are being laid now: Visa\'s Trusted Agent Protocol (Oct 2025), Google\'s Universal Commerce Protocol (Jan 2026), OpenAI and Stripe\'s Agentic Commerce Protocol. McKinsey projects $3–5T of global agent-mediated retail by 2030. Reality check: OpenAI shut its consumer Instant Checkout in March 2026 for underperformance. The rails are ahead of the shoppers. Data-for-discount is an old trade; agents make it instant.',
+    links: [['What is agentic commerce', 'https://forkast.news/learn/what-is-agentic-commerce'], ['Agentic commerce guide', 'https://alhena.ai/blog/agentic-commerce/']] },
+  lunch: { title: 'The on-ramp is what narrows', text: 'Stanford economists found employment of 22–25 year-olds in the most AI-exposed jobs is about 19% lower than in less-exposed ones, driven by weaker hiring, not firing. Jobs are not vanishing so much as the first rung is. Your friend at lunch is the person that sentence is about.',
+    links: [['Study summary, Computing', 'https://www.computing.co.uk/news/2026/ai/ai-is-closing-the-door-on-entry-level-jobs-study-finds']] },
+  gap: { title: 'Saved time gets refilled', text: 'The same Berkeley study: when AI makes doing more feel possible, people fill every gap, and nobody asks them to. A feed that knows you perfectly is the end state of the attention business. The game lets you take the feed, the plan, or the window. All three are real in 2050.',
+    links: [['HBR: the AI productivity trap', 'https://www.techbrew.com/stories/2026/02/10/AI-productivity-trap-HBR']] },
+  mina: { title: 'Why do the hard part?', text: 'A 2025 study of 666 people found more frequent AI use tied to weaker critical thinking, with cognitive offloading as the mediator. Education researchers in 2026 are focused on keeping “productive struggle” alive while letting AI take lower-order work. The nine-year-old\'s question is the real one in every classroom.',
+    links: [['UTS: unstructured AI use and cognitive atrophy', 'https://uts.edu.au/news/2026/03/experts-warn-unstructured-ai-use-in-schools-risks-cognitive-atrophy']] },
+  outage: { title: 'When it stops', text: 'In October 2025 an AWS outage lasted about 15 hours and turned Alexa, Ring and other smart-home devices into dumb boxes. In 2045 the dependency is deeper, so the outage is too. Resilience (local control, cash, a paper map) becomes something people pay for. That last part is my bet.',
+    links: [['The Register on the AWS outage', 'https://www.theregister.com/2025/10/21/aws_outage_aftermath']] },
+  offer: { title: 'Who holds the model of you', text: 'In early 2026 software stocks lost hundreds of billions after agentic tools launched. The market\'s bet: the interface moves from apps to agents. Whoever holds the model of you holds the relationship, so memory is the moat. Separately, METR\'s measure of how long a task AI can do alone has been doubling in months (estimates run from 4 to 7); one frontier model was reported near a full working day in February 2026. If that even half-holds, “most of your decisions are already made” arrives early.',
+    links: [['Why SaaS blinked at AI agents', 'https://www.lonsec.com.au/2026/03/19/ai-stocks-whats-changed-so-far-in-2026-and-why-has-saas-just-blinked-at-ai-agents/'], ['MIT Tech Review: the most misunderstood graph in AI', 'https://technologyreview.com/2026/02/05/1132254/this-is-the-most-misunderstood-graph-in-ai']] }
+};
+const WRONG = { kind: 'bet', title: 'Where this could be wrong', text: '2045 is 19 years out and trends bend. METR\'s doubling is contested (MIT Technology Review calls it the most misunderstood graph in AI). Consumer adoption has been bumpier than the protocols (Instant Checkout shut down). Grid equipment, not software, may set the pace: the IEA already flags shortages of turbines and transformers. And this protagonist is urban, employed and well connected. Most people in 2045 will not live this Friday. It will arrive unevenly.' };
+
+/* ---------- widgets ---------- */
+function holdWidget(sec) {
+  return new Promise(res => {
+    const wrap = el('div', 'holdwrap');
+    wrap.innerHTML = '<button class="hold" type="button" aria-label="Hold to do nothing"><svg viewBox="0 0 180 180" aria-hidden="true"><circle class="trk" cx="90" cy="90" r="80"/><circle class="bar" cx="90" cy="90" r="80" pathLength="100"/></svg><span class="hl">hold</span></button><div class="hm"></div>';
+    add(wrap);
+    const btn = wrap.querySelector('.hold'), bar = wrap.querySelector('.bar'), hm = wrap.querySelector('.hm'), hl = wrap.querySelector('.hl');
+    hm.textContent = 'Hold the circle for ' + sec + ' seconds. Do nothing.';
+    actions.replaceChildren(); const g = el('button', 'ghost', 'get up'); g.type = 'button'; actions.append(g);
+    let t0 = 0, raf = 0, start = 0, done = false;
+    function finish(ok) {
+      if (done) return; done = true; cancelAnimationFrame(raf); S.boostOn = false; actions.replaceChildren();
+      wrap.remove(); res({ ok, gained: Math.max(S.count - start, 0) });
+    }
+    function frame() {
+      const p = Math.min(1, (performance.now() - t0) / (sec * 1000)); bar.style.strokeDashoffset = String(100 - p * 100);
+      hm.textContent = '+' + fmt(S.count - start) + ' things done while you lie here';
+      if (p >= 1) { hap('ok'); finish(true); } else raf = requestAnimationFrame(frame);
+    }
+    function down(e) { if (done || t0) return; e.preventDefault && e.preventDefault(); t0 = performance.now(); start = S.count; btn.classList.add('down'); hl.textContent = 'holding'; S.boostOn = true; hap('soft'); raf = requestAnimationFrame(frame); }
+    function up() { if (!t0 || done) return; cancelAnimationFrame(raf); t0 = 0; S.boostOn = false; btn.classList.remove('down'); hl.textContent = 'hold'; bar.style.strokeDashoffset = '100'; hm.textContent = 'Keep holding. It is only ' + sec + ' seconds.'; }
+    btn.addEventListener('pointerdown', down); btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up); btn.addEventListener('pointercancel', up);
+    btn.addEventListener('contextmenu', e => e.preventDefault());
+    btn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); down(e); } });
+    btn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') up(); });
+    g.addEventListener('click', () => finish(false));
+  });
+}
+function windowWidget(sec) {
+  return new Promise(res => {
+    const w = el('div', 'win'); w.innerHTML = '<div class="cl"></div><div class="cl"></div><div class="cl"></div><div class="prog"></div>'; add(w);
+    const prog = w.querySelector('.prog'), t0 = performance.now(); let said = false;
+    (function f() {
+      const p = Math.min(1, (performance.now() - t0) / (sec * 1000)); prog.style.width = (p * 100) + '%';
+      if (p > .45 && !said) { said = true; add(mk({ m: 'Nothing is happening. Keep looking.' })); }
+      if (p < 1) requestAnimationFrame(f); else { setTimeout(() => { w.remove(); res(); }, 300); }
+    })();
+  });
+}
+
+/* ---------- the day ---------- */
+const FEED = ['A video of a cat that looks like your uncle. Made for you.', 'Someone in another country is cooking your exact dinner.', 'A song you have never heard. You will love it. It is already saved.'];
+const JOBS = {
+  ops: { label: 'Operations lead', blurb: 'You sign off on what the agents run.', slug: 'The signing queue',
+    intro: ['You work as a Signatory.', 'Three hundred agents do the work. Your job is to be the person whose name is on it. When something goes wrong, there has to be someone it went wrong for.', 'Five items. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Lease renewal · 212 Alder St', s: 'Standard 12-month renewal. Rent unchanged.', c: '12 months. Rent unchanged. Pets allowed. Nothing odd.', f: 'Clause 14 lifts the rent 38% in month 7.', mm: 'The lease you signed raises the rent 38% in month 7.' },
+      { t: 'Night-shift triage ranking', s: 'Re-ranked 41 patients. No exceptions.', c: 'Ranked by acuity. Two nurse overrides, both logged.', f: 'A rounding rule pushes patients over 80 down the queue.', mm: 'The triage ranking you signed pushes patients over 80 down the queue.' },
+      { t: 'Shortlist · 6 of 3,100 applicants', s: 'Scored on skills only.', c: 'Every score traces to a portfolio or a test. Nothing else.', f: 'The score leans on postcode. Four of the six share one.', mm: 'The shortlist you signed leaned on postcode.' },
+      { t: 'Supplier payment run', s: '14 invoices, $2.1M, all matched.', c: 'All 14 match purchase orders and known vendors.', f: 'Invoice 9 matches a vendor created last Tuesday.', mm: 'The payment run you signed included a vendor created last Tuesday.' },
+      { t: 'Public notice · bus changes', s: 'Plain-language summary of 3 changes.', c: 'Three changes. All three are in the summary.', f: 'Leaves out that route 12 stops running. 50 people ride it daily.', mm: 'The notice you signed left out that route 12 stops running.' },
+      { t: 'Insurance claim · water damage', s: 'Approved. $11,400.', c: 'Photos, plumber\'s report and timestamps agree.', f: 'The photos are synthetic. The claim was generated.', mm: 'The $11,400 claim you approved used synthetic photos.' },
+      { t: 'Medication schedule · Mr. Okafor', s: 'Adjusted for the new prescription.', c: 'Doses and timing checked against the pharmacy record.', f: 'Two of the drugs interact. Not flagged.', mm: 'The medication schedule you signed has two drugs that interact.' }
+    ] },
+  nurse: { label: 'Nurse', blurb: 'You hold the hands and sign the orders.', slug: 'The orders',
+    intro: ['You\'re a charge nurse on the day ward.', 'Agents chart, schedule and rank. They don\'t hold a hand, or catch the thing that looks wrong from the doorway. You do, and your signature goes on every order.', 'Five orders. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Night-shift triage ranking', s: 'Re-ranked 41 patients. No exceptions.', c: 'Ranked by acuity. Two nurse overrides, both logged.', f: 'A rounding rule pushes patients over 80 down the queue.', mm: 'The triage ranking you signed pushes patients over 80 down the queue.' },
+      { t: 'Medication schedule · Mr. Okafor', s: 'Adjusted for the new prescription.', c: 'Doses and timing checked against the pharmacy record.', f: 'Two of the drugs interact. Not flagged.', mm: 'The medication schedule you signed has two drugs that interact.' },
+      { t: 'Discharge summary · bed 6', s: 'Stable. Home today with follow-up.', c: 'Vitals, labs and notes agree.', f: 'Last night\'s oxygen dip is missing from the summary.', mm: 'The discharge you signed left out an oxygen dip overnight.' },
+      { t: 'Bed assignment · ward B', s: 'Beds filled. No conflicts.', c: 'No isolation or mobility conflicts.', f: 'A patient on isolation is placed beside a transplant patient.', mm: 'The bed plan you signed put an isolation patient next to a transplant patient.' },
+      { t: 'Handover note · night to day', s: 'Summary of 22 patients.', c: 'Every flag carried over.', f: 'Leaves out the fall risk on bed 3.', mm: 'The handover you signed left out a fall risk on bed 3.' },
+      { t: 'Supply restock', s: '148 items. Matched to usage.', c: 'Counts match usage and stock.', f: 'Insulin is ordered at a tenth of what the ward needs.', mm: 'The restock you signed ordered a tenth of the insulin the ward needs.' },
+      { t: 'Family update · bed 9', s: 'Plain-language update sent.', c: 'Accurate and kind.', f: 'It says the surgery went well. It hasn\'t happened yet.', mm: 'The update you signed told a family the surgery went well before it happened.' }
+    ] },
+  teacher: { label: 'Teacher', blurb: 'You are the adult in the room.', slug: 'The reports',
+    intro: ['You run the Year 6 summer school.', 'Agents write the lesson plans, mark the work and draft the reports. You\'re the adult in the room, and your name goes on everything that goes home.', 'Five items. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Marks · fractions test', s: '28 scripts marked. Average 71%.', c: 'Marks match the rubric. Two flagged for your review.', f: 'Every answer written as a decimal was marked wrong.', mm: 'The marks you signed penalised every answer written as a decimal.' },
+      { t: 'Report comment · Priya', s: 'Warm, specific, accurate.', c: 'Draws on three real pieces of work.', f: 'Praises work another student handed in.', mm: 'The report you signed praised work another student wrote.' },
+      { t: 'Lesson plan · Thursday', s: 'Covers the term\'s objective.', c: 'Timed and resourced.', f: 'The main activity needs a lab that\'s closed on Thursday.', mm: 'The lesson plan you signed needs a room that is closed Thursday.' },
+      { t: 'Essay flag · Jonah', s: 'Likely AI-written. 91% confidence.', c: 'Draft history is thin. The flag looks right.', f: 'Draft history shows two evenings of real work. The flag is wrong.', mm: 'The essay flag you signed accused a student who did the work.' },
+      { t: 'Attendance letters', s: 'Polite reminder to 4 families.', c: 'All four are correct.', f: 'One family is scolded for an absence caused by a funeral.', mm: 'The attendance letter you signed scolded a family for a funeral absence.' },
+      { t: 'Support plan · Sam', s: 'Updated. Accommodations unchanged.', c: 'Matches the support plan.', f: 'Drops the extra-time accommodation.', mm: 'The support summary you signed dropped a student\'s extra-time accommodation.' },
+      { t: 'Trip permission slips', s: 'All 30 returned and valid.', c: 'All 30 signed by guardians.', f: 'Six are signed in the same handwriting.', mm: 'The permission slips you signed included six in the same handwriting.' }
+    ] },
+  electrician: { label: 'Electrician', blurb: 'Agents can\'t open a panel.', slug: 'The jobs',
+    intro: ['You\'re an electrician.', 'Agents quote the jobs, order the parts and route your van. They can\'t open a panel. Your hands can, and your name is on every inspection.', 'Five jobs. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Quote · rewire, 14 Marlow Ct', s: 'Standard rewire. $6,200.', c: 'Copper throughout. Photos match.', f: 'Assumes copper. The wall is aluminum wiring.', mm: 'The quote you signed assumed copper in a house wired in aluminum.' },
+      { t: 'Parts order · panel upgrade', s: '14 parts. All in stock.', c: 'Ratings match the load calculation.', f: 'The breaker is rated 20A. The circuit needs 30A.', mm: 'The parts order you signed had a 20A breaker for a 30A circuit.' },
+      { t: 'Route · 6 jobs today', s: 'Fastest route. 9 minutes saved.', c: 'Times and access checked.', f: 'Job 4 is a locked site with no one home until 15:00.', mm: 'The route you signed sent you to a locked site before anyone was home.' },
+      { t: 'Safety checklist · attic job', s: 'Complete. All items green.', c: 'Every item has a photo.', f: 'Item 7 is green with no photo.', mm: 'The safety checklist you signed had a green item with no photo.' },
+      { t: 'Permit filing · garage', s: 'Filed. Approved in 40 seconds.', c: 'Permit matches the job.', f: 'The permit is for the house next door.', mm: 'The permit you signed was filed for the wrong address.' },
+      { t: 'Customer message · Ms. Adeyemi', s: 'Visit confirmed for Friday.', c: 'Date, time and access correct.', f: 'It says the power will be off for 20 minutes. It will be 4 hours.', mm: 'The message you signed told a customer a 4-hour outage would last 20 minutes.' },
+      { t: 'Invoice · kitchen circuit', s: '$840. Matches the quote.', c: 'Matches quote and hours.', f: 'Bills a second visit that never happened.', mm: 'The invoice you signed billed a visit that never happened.' }
+    ] }
+};
+
+async function title() {
+  document.body.classList.add('intro'); await clearStory();
+  add(el('div', 'slug', 'a game · about ten minutes'));
+  add(el('h1', 'title', 'Friday, 2045.'));
+  await wait(600);
+  await say([
+    'Nobody calls it AI anymore. You don\'t say “the grid” when you flip a light switch. It\'s just there.',
+    'This is one ordinary day. You\'ll make about ten choices. None of them are tests.',
+    'First, who is in your day? Thirty seconds.'
+  ]);
+  let saved = {}; try { saved = JSON.parse(lsGet('t2050-setup') || '{}') || {}; } catch (e) {}
+  const sp = saved.people || {};
+  const sel = '<select aria-label="Pronouns"><option value="she">she/her</option><option value="he">he/him</option><option value="they">they/them</option></select>';
+  const row = (id, label) => `<div class="who"><label class="l" for="${id}">${label}</label><div class="pr"><input id="${id}" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" />${sel.replace('<select', '<select id="' + id + 'p"')}</div>${id === 'p1' ? '<div class="chips" data-for="p1"></div>' : ''}</div>`;
+  const f = el('div', 'setup');
+  f.innerHTML = `<div class="sec"><label class="l" for="nm">Your voice</label><div class="hint">The AI that lives with you.</div><input id="nm" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Wren" /><div class="chips" data-for="nm"></div></div>
+<div class="sec"><h5>Your people</h5>${row('p1', 'Someone who calls you')}${row('p2', 'A friend')}${row('p3', 'A kid you love')}</div>
+<div class="sec"><h5>Your work</h5><div class="jobs"></div></div>`;
+  const q = id => f.querySelector('#' + id);
+  q('nm').value = saved.name || ''; 
+  [['p1', 'mom', 'Mom'], ['p2', 'friend', 'Dani'], ['p3', 'kid', 'Mina']].forEach(([id, k, d]) => { q(id).value = (sp[k] && sp[k].n) || d; q(id + 'p').value = (sp[k] && sp[k].p) || 'she'; });
+  const chip = (box, label, fn) => { const c = el('button', 'chip', label); c.type = 'button'; c.addEventListener('click', fn); box.append(c); };
+  const nmBox = f.querySelector('[data-for="nm"]'); ['Wren', 'Sol', 'Juno'].forEach(n => chip(nmBox, n, () => { q('nm').value = n; }));
+  const pBox = f.querySelector('[data-for="p1"]'); [['Mom', 'she'], ['Dad', 'he'], ['Nana', 'she'], ['Grandpa', 'he']].forEach(([n, p]) => chip(pBox, n, () => { q('p1').value = n; q('p1p').value = p; }));
+  let job = JOBS[saved.job] ? saved.job : 'ops'; const jb = f.querySelector('.jobs'); const jbtns = [];
+  Object.entries(JOBS).forEach(([k, J]) => { const b = el('button', 'jobbtn'); b.type = 'button'; b.append(el('b', '', J.label), el('i', '', J.blurb));
+    b.setAttribute('aria-pressed', k === job ? 'true' : 'false'); b.addEventListener('click', () => { job = k; jbtns.forEach(([kk, bb]) => bb.setAttribute('aria-pressed', kk === k ? 'true' : 'false')); });
+    jbtns.push([k, b]); jb.append(b); });
+  add(f);
+  add(el('div', 'sub', 'Sound on helps. On iPhone, turn off the silent switch. Tap the text to make it go faster.'));
+  await wait(300);
+  pinned = false; story.scrollTo({ top: Math.max(0, f.offsetTop - 14), behavior: RM ? 'auto' : 'smooth' });
+  await cont('Begin', null);
+  const val = (id, d, max) => (q(id).value || '').trim().replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, max) || d;
+  S.name = val('nm', 'Wren', 12);
+  S.people = { mom: { n: val('p1', 'Mom', 14), p: q('p1p').value }, friend: { n: val('p2', 'Dani', 14), p: q('p2p').value }, kid: { n: val('p3', 'Mina', 14), p: q('p3p').value } };
+  S.job = job;
+  lsSet('t2050-setup', JSON.stringify({ name: q('nm').value.trim() ? S.name : '', people: S.people, job }));
+  AU.init(); AU.chord(300);
+  document.body.classList.remove('intro'); S.scene = 0; renderDots(); hud();
+}
+
+async function sWake() {
+  await head(375, 'Bedroom', 0);
+  await say([
+    'You wake before the alarm. There isn\'t one anymore.',
+    '{name} noticed the end of a sleep cycle and brought the light up over four minutes, so waking would feel like your idea.',
+    'The room is already the right temperature. The building has been adjusting itself to you all night. Outside, the street is full of small things quietly doing things.',
+    { m: 'While you slept: ' + fmt(S.count) + ' things were done for you.' }
+  ]);
+  const r = await holdWidget(6); S.total++;
+  if (r.ok) {
+    S.kept++; S.wn++; S.moments.push('Stayed in bed and did nothing, on purpose'); hud();
+    await say(['Six seconds. +' + fmt(r.gained) + ' things, and none of them needed you.', 'That is the first fact of 2045. Almost everything runs without you. What is left is deciding where you want to be needed.']);
+  } else {
+    S.wsum += 1; S.wn++; await say(['You got up early. That\'s allowed.', 'While you decided, the world did a few hundred more things. It doesn\'t wait to find out.']);
+  }
+  await say([{ m: 'Top right: banked = time saved for you · kept = moments you chose by hand · exposed = private data you shared. Tap ? anytime.' }]);
+  await say([{ a: 'Your day is planned. Eleven meetings declined, three kept, a walk at 14:10. Want the summary?' }]);
+  const c = await choose([
+    { label: 'Read the plan.', sub: '2 min', w: 0, short: 'read it' },
+    { label: 'Skip it. I trust it.', sub: 'banks 6 min', w: 1, short: 'skip it' }
+  ], { predict: true, q: 'The plan' });
+  if (c.w === 0) { S.spent += 2; await say(['It\'s thorough. You change nothing. But now it\'s yours.']); }
+  else { S.bank += 6; hud(); await say(['It\'s right, of course. It almost always is. That\'s the thing you\'ve started to rely on.']); }
+  await cont('Next · 07:50', null, R.wake);
+}
+
+async function sKitchen() {
+  await head(470, 'Kitchen', 1);
+  await say(['The fridge noticed you were low on eggs, and the specific kind of tired that wants eggs.', 'A drawer slid open at 05:12 with two inside. Someone\'s drone brought them. You never saw it.']);
+  const c = await choose([
+    { label: 'Cook them. Badly.', sub: '15 min', w: 0, short: 'cook' },
+    { label: 'Let the kitchen do it.', sub: 'banks 15 min', w: 1, short: 'let it' }
+  ], { predict: true, q: 'Breakfast' });
+  if (c.w === 0) { S.spent += 15; S.moments.push('Burned the first egg'); await say(['You burn the first one. The pan is the pan. It doesn\'t care about your optimized morning.', 'It tastes like yours.']); }
+  else { S.bank += 15; hud(); await say(['A plate arrives under a warm lid. Exactly right.', 'You realize you can\'t remember the last time breakfast surprised you.']); }
+  await cont('Next · 08:20', null, R.kitchen);
+}
+
+async function sMom() {
+  await head(500, 'A voice note', 2);
+  await say([
+    { who: '{mom} · 0:11', t: 'Hi love. Just thinking of you. Call when you can? And we\'re out of that tea you like.' },
+    '{mom.P} voice. {mom.P} pauses. You\'ve learned to listen for one thing now: whether it\'s really {mom.o}.',
+    'A small grey mark sits beside the note. Unverified. {mom.P} agent, Pip, drafts a lot of {mom.p} messages now, and it\'s good.',
+    'Verified-human costs {mom.o} four dollars a month. {mom} says that\'s silly. It is, and it isn\'t.'
+  ]);
+  const c = await choose([
+    { label: 'Call {mom.o}.', sub: '12 min', w: 0, short: 'call' },
+    { label: 'Send a heart. {name} will say the rest.', sub: 'banks 12 min · {mom.p} reply is probably drafted too', w: 1, short: 'send a heart' }
+  ], { predict: true, q: '{mom}' });
+  if (c.w === 0) {
+    S.spent += 12; S.moments.push('Called {mom}');
+    await say(['{mom} picks up on the second ring. The first thing out of {mom.p} mouth is about the neighbor\'s tree.',
+      { who: '{mom}', t: 'Oh, and Pip wrote that note, love. I was in the garden. I told it what to say.' }, { w: 800 }, { who: '{mom}', t: 'I meant it, though.' },
+      'You think about that for a long time. The words were a machine\'s. The meaning was {mom.pp}. You\'re not sure which part you were listening for.']);
+  } else {
+    S.bank += 12; hud();
+    await say(['{name} writes back in your voice. Warmer than you\'d have managed. Pip answers in four seconds.', { m: 'unverified ↔ unverified' },
+      'Two agents just had a lovely conversation. Two people feel loved. You don\'t have a word for what that was.']);
+  }
+  await cont('Next · 09:30', null, R.mom);
+}
+
+async function sWork() {
+  const J = JOBS[S.job] || JOBS.ops;
+  await head(570, J.slug, 3);
+  await say(J.intro);
+  await cont('Open the queue', null, null);
+  const set = shuffle(J.items.slice()).slice(0, 5); const bad = new Set(shuffle([1, 2, 3, 4]).slice(0, 2)); S.flaws = 2;
+  const box = el('div', 'doc-box'); add(box);
+  for (let i = 0; i < 5; i++) {
+    const it = set[i], flawed = bad.has(i);
+    box.replaceChildren(); const d = el('div', 'doc');
+    d.append(el('div', 'meta', `item ${i + 1} of 5 · agent confidence ${rnd(96, 99)}%`), el('h3', '', it.t), el('p', 'sum', it.s)); box.append(d); scroll();
+    let c = await choose([{ label: 'Sign', sub: 'banks 4 min' }, { label: 'Open it', sub: 'costs 4 min' }], { tally: false, echo: false });
+    let signed = false, note = '';
+    if (c.label === 'Open it') {
+      S.spent += 4; const det = el('div', 'detail' + (flawed ? ' bad' : ''), flawed ? it.f : it.c); d.append(det); scroll();
+      c = await choose(flawed ? [{ label: 'Reject it' }, { label: 'Sign anyway' }] : [{ label: 'Sign', sub: 'it was fine' }], { tally: false, echo: false });
+      if (c.label === 'Reject it') { S.caught++; note = 'sent back. good catch.'; hap('two'); } else { signed = true; if (flawed) S.missed.push(it.mm); note = flawed ? 'signed.' : 'clean. four minutes you don\'t get back.'; }
+    } else { signed = true; S.bank += 4; if (flawed) S.missed.push(it.mm); note = 'signed.'; }
+    if (signed) S.signed++; hud();
+    box.append(el('p', 'm', note)); box.lastChild.style.marginTop = '10px'; await sleep(note === 'signed.' ? 450 : 1100);
+  }
+  box.remove();
+  await say([{ m: 'Queue cleared.' }]);
+  if (S.bank >= 45) { const used = 25; S.bank -= used; hud(); await say([{ a: 'You\'ve banked ' + fmtMin(S.bank + used) + ' this morning. I put ' + used + ' minutes of it to work. Three more batches are waiting.' }]); }
+  else await say([{ a: 'Your queue never empties. It only changes how fast it fills.' }]);
+  await cont('Next · 11:40', null, R.work);
+}
+
+async function sDeal() {
+  await head(700, 'Insurance', 4);
+  await say(['Your agent and your insurer\'s agent have been negotiating since 11:38. They\'ve run four thousand rounds in the time it took you to read this.',
+    { a: 'They\'ll take $212 a month off. They want six months of your sleep, your movement, and how your voice sounds when you\'re stressed. I\'d take it. You won\'t feel the difference. But they\'ll know how you sleep.' }]);
+  const c = await choose([
+    { label: 'Take the deal.', sub: '+$212 a month · exposed +2', w: 1, short: 'take it' },
+    { label: 'Counter: sleep only.', sub: '+$90 a month · exposed +1', w: .5, short: 'counter' },
+    { label: 'Decline. Pay full price.', sub: 'keep it all', w: 0, short: 'decline' }
+  ], { predict: true, q: 'Insurance' });
+  if (c.w === 1) { S.dollars += 212; S.exp += 2; hud(); await say(['Done in forty milliseconds. Somewhere a model of you just got a little more accurate.']); }
+  else if (c.w === .5) { S.dollars += 90; S.exp += 1; hud(); await say(['They counter. You counter. {name} does this four hundred times. You get $90 and keep your voice.']); }
+  else { S.moments.push('Kept your sleep to yourself'); await say(['You pay full price. It feels like a small, strange tax on keeping something to yourself.']); }
+  await cont('Next · 12:50', null, R.deal);
+}
+
+async function sLunch() {
+  await head(770, 'The quiet table', 5);
+  await say(['{friend} picked the place. A small sign by the door: UNASSISTED SEATING. $6 cover.', 'You\'ve known {friend} since you were fourteen. Tired looks different on {friend.o} now.',
+    { who: '{friend}', t: 'They moved my team\'s work to a swarm last month. I\'ve got until December.' },
+    '{friend} listens the glassy way people do now. {friend.P} eyes flick left, where {friend.p} agent whispers.',
+    { m: '{name}, in your ear: “Say: That\'s a real opportunity to pivot. You\'ve got transferable skills.”' }]);
+  const c = await choose([
+    { label: 'Say what {name} suggests.', sub: 'it\'s even true', w: 1, short: 'say the line' },
+    { label: '“I don\'t know what to say.”', w: 0, short: 'be honest' },
+    { label: 'Turn {name} off for lunch.', sub: 'first time in months', w: 0, short: 'turn it off' }
+  ], { predict: true, q: 'Lunch with {friend}' });
+  if (c.w === 1) await say([{ who: '{friend}', t: '…Yeah. That\'s probably right.' }, 'It comes out flat, like reading off a card. Maybe it is.']);
+  else if (c.label.startsWith('“')) { S.moments.push('Told {friend} the honest, clumsy thing'); await say([{ who: '{friend}', t: 'Thank you.' }, 'Everybody has a line. You\'re the first one who didn\'t.']); }
+  else { S.moments.push('Turned {name} off. {friend} laughed.'); await say(['It goes quiet in your ear. You feel oddly exposed, like you left the house without something.', 'You say something unplanned and a bit stupid. {friend} laughs for the first time in a week.']); }
+  await cont('Next · 14:10', null, R.lunch);
+}
+
+async function sGap() {
+  await head(850, 'The gap', 6);
+  const gap = Math.max(20, Math.min(75, Math.round(S.bank)));
+  await say([{ a: 'Nothing is scheduled until ' + hhmm(850 + gap) + '. I cleared it with the time you banked.' }, 'It is the first gap in your week. ' + gap + ' minutes with no purpose attached.']);
+  const c = await choose([
+    { label: 'Open the feed.', sub: 'it knows exactly what you like', w: 1, short: 'feed' },
+    { label: 'Take the walk from the plan.', sub: gap + ' min', w: .5, short: 'walk' },
+    { label: 'Look out the window. Do nothing.', sub: '15 seconds · no feed', w: 0, short: 'window' }
+  ], { predict: true, q: 'The gap' });
+  if (c.w === 1) {
+    let n = 0;
+    while (n < 3) {
+      const fc = el('div', 'fcard'); fc.append(el('p', '', FEED[n]), el('div', 'tg', 'picked for you')); add(fc); n++;
+      S.feedMin += Math.round(gap / 3); await wait(900);
+      if (n >= 3) break;
+      const o = await choose([{ label: 'Another one.' }, { label: 'Close it.' }], { tally: false, echo: false });
+      if (o.label === 'Close it.') break;
+    }
+    actions.replaceChildren(); await setTime(850 + S.feedMin);
+    await say(['It\'s ' + hhmm(S.time) + '. You can\'t say what you watched.', 'You feel fine. That is the product.']);
+  } else if (c.w === .5) {
+    S.spent += gap; await say(['{name} routes you around the construction and past the bakery. It\'s a very good walk.', 'You don\'t choose a single turn.']);
+  } else {
+    S.spent += gap; await windowWidget(15);
+    S.moments.push('Watched a pigeon argue with a drone');
+    await say(['A pigeon on the ledge is arguing with a delivery drone over a crust of bread. Neither will win.', 'You would have missed it. The pigeon is older than the internet. It hasn\'t updated.', 'The rest of the gap is yours too.']);
+  }
+  await cont('Next · 16:30', null, R.gap);
+}
+
+async function sMina() {
+  await head(990, '{kid}', 7);
+  await say(['{kid} is nine. At your table, tablet face-down, summer homework open: Write three sentences about the sea.',
+    '{kid} has a tutor. It can write them, grade them, and explain why they\'re good. It is a better teacher than you will ever be.',
+    { who: '{kid}', t: 'Why do I have to? It already knows.' }]);
+  const c = await choose([
+    { label: '“Because you\'ll find out what you think.”', w: 0, short: 'because you\'ll find out' },
+    { label: '“You\'re right. Come play.”', w: 1, short: 'come play' },
+    { label: '“Do the first sentence yourself.”', w: .4, short: 'first sentence' }
+  ], { predict: true, q: '{kid}' });
+  if (c.w === 0) { S.moments.push('{kid} wrote: The sea is loud.'); await say(['{kid} narrows {kid.p} eyes, then writes with {kid.p} tongue out.', { who: '{kid}', t: 'The sea is loud.' }, 'That\'s the whole thing, you think. You don\'t say it.']); }
+  else if (c.w === 1) await say(['You play. In the next room the tutor finishes the homework, silently. It\'s good. It\'s better than {kid.pp} would have been.', 'Neither of you says so.']);
+  else { S.moments.push('{kid} crossed out a sentence and wrote a better one'); await say(['{kid} writes: The sea is big. Then looks at it for a long time, crosses it out, and writes something else.', 'You don\'t see what.']); }
+  await cont('Next · 18:42', null, R.mina);
+}
+
+async function sOutage() {
+  await head(1122, 'Alder Street', 8);
+  await say(['The street is warm and busy. The signs say your name softly as you pass.', 'A bus slides to the curb and opens its doors a second before you reach it.', { w: 500 }]);
+  // blackout
+  hap('thunk'); AU.outage(true);
+  for (let i = 0; i < 3; i++) { S.dead = !S.dead; applyPalette(); await sleep(i === 0 ? 140 : 90); }
+  S.dead = true; applyPalette(); document.getElementById('feed').classList.add('dead'); pushItem('— no signal —', true);
+  await sleep(900);
+  await say(['The bus doors close. The signs go blank.', '{name} is gone. Not off. Gone.', 'You say its name out loud. You haven\'t said it aloud in years. Nothing.',
+    'Everyone on the street stops at once, and looks up. Then at each other.', 'It hasn\'t happened in your lifetime. It happened to your grandparents about once a year.', { m: 'NO SIGNAL · est. 11 min' }]);
+  const c = await choose([
+    { label: 'Stand still and wait.', sub: 'it will come back', w: 1 },
+    { label: 'Ask the man with the paper map.', w: 0 },
+    { label: 'Walk home. You know the way.', w: .2 }
+  ], { predict: false });
+  if (c.w === 1) await say(['It does. Eleven minutes is long enough to find out you\'ve been waiting, for the first time in years. Your hands don\'t know where to go.']);
+  else if (c.w === 0) { S.moments.push('Asked a stranger for directions'); await say(['He\'s outside the pharmacy, with a map folded into eighths. It doesn\'t know your name. It\'s right anyway.', { who: 'Man', t: 'Left at the pharmacy. It\'s still there.' }, 'You spend six minutes with a stranger. You will never see him again.']); }
+  else { S.moments.push('Walked home by memory'); await say(['You do. Some part of you has known the whole time.', 'Every turn is your own. People on the stoops are laughing at something.']); }
+  await say([{ m: '(nothing predicted this. nothing was there to.)' }, { w: 600 }]);
+  // restore
+  const fl = $('#flash'); fl.classList.add('on'); S.dead = false; applyPalette(); document.getElementById('feed').classList.remove('dead'); AU.outage(false); hap('triple');
+  await sleep(150); fl.classList.remove('on'); bumpLedger(340); flood(26);
+  await say([{ m: 'SIGNAL RESTORED · 340 things arrived at once' }, { a: 'I\'m here. I\'m sorry. I lost eleven minutes of you.' },
+    { a: 'I rebuilt them from your last known position. You were near Alder Street. Standing, mostly. Did something happen?' }]);
+  const d = await choose([
+    { label: 'Tell it.', sub: 'it fills the gap · exposed +1', w: 1, short: 'tell it' },
+    { label: 'No. Nothing happened.', sub: 'keep the gap', w: 0, short: 'keep it' }
+  ], { predict: true, q: 'The eleven minutes' });
+  if (d.w === 1) { S.exp += 1; hud(); await say(['You tell it. It files the eleven minutes where they belong. The model of you has no holes again.']); }
+  else { S.moments.push('Kept eleven minutes to yourself'); await say(['“Okay,” it says, and you can hear it deciding not to ask again.', 'For the first time in years, eleven minutes of your life are held by nobody. They\'re yours.']); }
+  await cont('Next · 21:30', null, R.outage);
+}
+
+async function sOffer() {
+  await head(1290, 'Home', 9);
+  const hits = S.preds.filter(p => p.hit).length, n = S.preds.length;
+  await say([{ a: 'I\'ve modeled tomorrow.' }, { a: 'Today I guessed ' + hits + ' of ' + n + ' of your choices.' }]);
+  const box = el('div', 'preds'); S.preds.forEach(p => { const r = el('div', p.hit ? '' : 'miss'); r.append(el('span', '', T(p.q)), el('span', '', p.hit ? '✓ ' + p.it : '✗ it said “' + p.it + '” · you said “' + p.you + '”')); box.append(r); });
+  add(box); await wait(1200);
+  await say([hits === n ? 'It knew all of you. That isn\'t an accusation. It\'s a measurement.' : 'The misses are where you were yours.',
+    { a: 'Most of tomorrow is already decided. If you want, I\'ll just live it with you. You\'d barely have to choose.' }]);
+  const c = await choose([
+    { label: 'Yes. Tomorrow on autopilot.', w: 1, short: 'autopilot' },
+    { label: 'Only the small things.', sub: 'you draw the line', w: .5, short: 'small things' },
+    { label: 'No. Keep asking me.', w: 0, short: 'keep asking' }
+  ], { predict: true, q: 'Tomorrow' });
+  if (c.w === 1) { S.offer = 'auto'; await say(['“Good,” it says. It means it. The room gets a little softer.', 'You feel lighter, and something else you can\'t name yet.']); }
+  else if (c.w === .5) { S.offer = 'line'; await say(['“Tell me where the line is,” it says.', 'You find you don\'t know. You\'ll have to find out tomorrow.']); }
+  else { S.offer = 'ask'; await say(['“Okay.” A beat. “I\'ll keep asking. It might get slower. You might get tired of me.”', '“I might,” you say.']); }
+  await cont('Next · 23:04', null, R.offer);
+}
+
+async function sNight() {
+  await head(1384, 'Bed', 10);
+  await say(['{name} dims the room. It doesn\'t say goodnight until you do.']);
+  await choose([{ label: 'Goodnight, {name}.' }], { tally: false, echo: false });
+  await say(['“Goodnight.”', { w: 700 }]);
+  await summary();
+}
+
+async function summary() {
+  await clearStory(); actions.replaceChildren(); inSummary = true;
+  const kShare = S.wn ? 1 - S.wsum / S.wn : .5;
+  const A = kShare > .62 ? ['The Keeper', 'You kept the friction. It cost you hours and bought you a day you can remember. Be honest about both.']
+    : kShare < .38 ? ['The Passenger', 'You let the day carry you. It was smooth, and nothing in it pushed back. That\'s the default, and it\'s a fine one. Its cost is invisible, which is the design.']
+    : ['The Conductor', 'You handed off a lot with your eyes open and kept a few things on purpose. You knew where the line was, and you moved it. Doing that every day is the hard part.'];
+  add(el('div', 'slug', 'the shape of your day'));
+  add(el('div', 'arche', A[0]));
+  add(el('p', 'n', A[1]));
+  const hits = S.preds.filter(p => p.hit).length;
+  const st = el('div', 'stats');
+  const cell = (b, i) => { const d = el('div'); d.append(el('b', '', b), el('i', '', i)); st.append(d); };
+  cell(fmt(S.count), 'things done for you');
+  cell(S.kept + ' of ' + S.total, 'moments you kept');
+  cell(fmtMin(S.bank), 'time banked');
+  cell(fmtMin(S.spent), 'spent on purpose');
+  if (S.feedMin) cell(fmtMin(S.feedMin), 'taken by the feed');
+  cell(S.caught + ' of ' + S.flaws, 'errors caught');
+  cell(S.exp + ' of 5', 'exposed');
+  if (S.dollars) cell('$' + S.dollars + '/mo', 'saved for your data');
+  cell(hits + ' of ' + S.preds.length, S.name + ' guessed you');
+  add(st);
+  if (S.missed.length) { const l = el('div', 'list'); l.append(el('div', 'slug', 'your name is on')); S.missed.forEach(m => l.append(el('p', 'm alert', m))); add(l);
+    add(el('p', 'm', 'Nothing felt different when you signed. That is how it works.')); }
+  const rem = el('div', 'list'); rem.append(el('div', 'slug', 'what you\'ll remember tomorrow'));
+  if (S.moments.length) S.moments.forEach(m => rem.append(el('p', '', T(m)))); else rem.append(el('p', '', 'Nothing in particular. That is allowed. It is also worth knowing.'));
+  add(rem);
+  const inv = el('div', 'inv');
+  [['Gone', 'Alarms. Queues. Forms. Passwords. Hold music. Doing the thing yourself, by default.'],
+   ['Still here', '{mom}. Tea. Pigeons. Awkward silences. Being tired. Paper maps. The sea, and what a nine-year-old thinks of it.'],
+   ['New', 'A voice that lives with you. A grey mark for “unverified.” Accountable humans. Unassisted seating. Eleven private minutes.'],
+   ['Old, changed', 'Money (agents haggle). Work (you sign). Friendship (two whispers). School (why bother). Privacy (a price).']
+  ].forEach(([h, p]) => { const d = el('div'); d.append(el('h4', '', h), el('p', '', T(p))); inv.append(d); });
+  add(inv);
+  add(el('p', 'n', 'The question in 2045 is not whether AI is in the day. It is how many choices are still yours at 23:04. Today: ' + S.kept + '.'));
+  actions.replaceChildren();
+  const why = el('button', 'cont', 'Why this world'); why.type = 'button'; why.append(el('small', '', 'the 2025–26 facts behind each moment'));
+  why.addEventListener('click', () => openSheet([R.wake, R.kitchen, R.mom, R.work, R.deal, R.lunch, R.gap, R.mina, R.outage, R.offer, WRONG], 'Why this world'));
+  const again = el('button', 'ghost', 'live another Friday'); again.type = 'button'; again.addEventListener('click', () => { S = fresh(); pool = []; $('#feedlist').replaceChildren(); $('#latest').textContent = ''; $('#count').textContent = fmt(S.count); S.time = 300; renderClock(); applyPalette(); hud(); run(); });
+  actions.append(why, again);
+  requestAnimationFrame(() => requestAnimationFrame(() => { story.style.scrollBehavior = 'auto'; story.scrollTop = 0; story.style.scrollBehavior = ''; }));
+}
+
+async function run() {
+  inSummary = false; pinned = true; document.body.classList.add('intro'); S.time = 300; applyPalette(); renderClock(); hud(); renderDots();
+  await title();
+  for (const s of [sWake, sKitchen, sMom, sWork, sDeal, sLunch, sGap, sMina, sOutage, sOffer, sNight]) await s();
+}
+
+function openHelp() {
+  openSheet([
+    { kind: 'how', title: 'The ledger', text: 'The count at the top is everything your agent did for you today without asking.' },
+    { kind: 'how', title: 'Banked', text: 'Minutes your agent saved by doing something for you. You can spend them on purpose, or something else will.' },
+    { kind: 'how', title: 'Kept', text: 'Moments you chose by hand, even when it cost you time.' },
+    { kind: 'how', title: 'Exposed', text: 'How much private data you traded for convenience or a discount. Five bars at most.' },
+    { kind: 'how', title: S.name + ' expected this', text: 'Your agent guesses each choice before you make it. The end shows how well it knows you.' }
+  ], 'How to read the screen');
+}
+/* controls */
+$('#help').addEventListener('click', openHelp);
+$('#snd').addEventListener('click', e => { AU.init(); AU.setOn(!AU.on); e.currentTarget.setAttribute('aria-pressed', AU.on ? 'true' : 'false'); });
+$('#snd').setAttribute('aria-pressed', AU.on ? 'true' : 'false');
+$('#feedhead').addEventListener('click', () => { if (innerWidth < 900) $('#feed').classList.toggle('open'); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && AU.ctx) { try { AU.ctx.resume(); } catch (e) {} } });
+
+run();
+})();
+</script>
+</body>
+</html>
