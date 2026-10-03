@@ -21,6 +21,19 @@ Parkinson's law can't quietly fill it with more work.
 
 Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/chatgpt-and-codex.md).
 
+**Any Claude Code repo without the plugin** (the canon rule in vibeOS points here): with
+`LEDGER_TOKEN` in the environment, fetch the client and record the entry. It finds the
+session's transcript itself, so time, cost and tokens still come from the real record:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/main/ledger/plugin/scripts/ledger.py -o /tmp/ledger.py
+python3 /tmp/ledger.py keep            # the keep list, before starting work
+python3 /tmp/ledger.py entry <<'JSON'  # when the work is done
+{"title": "...", "human_minutes": 180, "human_low": 120, "human_high": 240,
+ "estimate_basis": "...", "actions": [{"kind": "did", "line": "..."}]}
+JSON
+```
+
 ## One-time setup (about 10 minutes)
 
 1. **Allow the login link.** Supabase → `chiibitsu-labs` → Authentication → URL

@@ -9,6 +9,9 @@
                           logging command as session context.
   ledger.py entry         Reads an entry JSON on stdin (title, human estimate,
                           actions...) and records it against the current session.
+                          Works without the plugin: it then finds the session's
+                          transcript itself (the newest one under ~/.claude/projects).
+  ledger.py keep          Prints the keep list, for sessions without the hooks.
 
 Writes go to the Supabase RPC public.ledger_ingest, gated by your intake token
 (LEDGER_TOKEN, or the plugin's ledger_token option). Never blocks Claude: every
@@ -136,6 +139,31 @@ def measure(path):
     return out
 
 
+def newest_transcript():
+    """Without the plugin's hooks there is no state file. The running session's transcript
+    is the most recently written one under ~/.claude/projects; its filename is the session id."""
+    root = os.path.join(os.path.expanduser("~"), ".claude", "projects")
+    best = None
+    for dirpath, _, files in os.walk(root):
+        for name in files:
+            if name.endswith(".jsonl"):
+                p = os.path.join(dirpath, name)
+                t = os.path.getmtime(p)
+                if not best or t > best[0]:
+                    best = (t, p)
+    if not best:
+        return {}
+    return {"session_id": os.path.basename(best[1])[:-6], "transcript_path": best[1]}
+
+
+def keep():
+    """Print the active keep list (tasks the AI hands back). For sessions without the hooks."""
+    if not TOKEN:
+        print("ledger: no LEDGER_TOKEN set.")
+        return
+    print(keep_context() or "Keep list: empty or unreachable.")
+
+
 def keep_context():
     try:
         rows = rpc("ledger_keep_for", {"p_token": TOKEN}, timeout=5) or []
@@ -196,17 +224,19 @@ def entry():
         return
     e.setdefault("source", "claude-code")
     cwd = os.getcwd()
+    st = {}
     try:
         with open(state_file(cwd)) as f:
             st = json.load(f)
-        e.setdefault("external_id", st.get("session_id"))
-        if st.get("transcript_path") and os.path.exists(st["transcript_path"]):
-            m = measure(st["transcript_path"]) or {}
-            m.pop("first_prompt", None)
-            for k, v in m.items():
-                e.setdefault(k, v)
     except Exception:
-        pass
+        st = newest_transcript()  # no plugin hooks here: find this session's transcript ourselves
+    if st.get("session_id"):
+        e.setdefault("external_id", st["session_id"])
+    if st.get("transcript_path") and os.path.exists(st["transcript_path"]):
+        m = measure(st["transcript_path"]) or {}
+        m.pop("first_prompt", None)
+        for k, v in m.items():
+            e.setdefault(k, v)
     e.setdefault("project", os.path.basename(cwd.rstrip("/")))
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
@@ -219,4 +249,4 @@ def entry():
 
 
 if __name__ == "__main__":
-    {"hook": hook, "entry": entry}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: None)()
+    {"hook": hook, "entry": entry, "keep": keep}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: None)()
