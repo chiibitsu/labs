@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Say It Well — a human way to say no, ask, and own it</title>
+<meta name="description" content="Machines say “Rejected.” You can do better. Pick a moment, answer a few questions in your own words, and get a message that is clear, kind and yours." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Say It Well — a human way to say no, ask, and own it" />
+<meta property="og:description" content="Machines say “Rejected.” You can do better. Answer a few questions, get a message that is clear, kind and yours." />
+<meta property="og:url" content="https://labs.chiibitsu.com/receipt/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/receipt/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Say It Well — a human way to say no, ask, and own it" />
+<meta name="twitter:description" content="Machines say “Rejected.” You can do better. Answer a few questions, get a message that is clear, kind and yours." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/receipt/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23f6f0e4'/%3E%3Cpath d='M9 11h14v9H14l-4 3v-3H9z' fill='%23b8532c'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #f6f0e4; --card: #fffaf0; --ink: #2b2218; --dim: #6a5d4c; --faint: #9a8d78; --line: rgba(43,34,24,.16);
+    --acc: #b8532c; --ok: #3f7d4e; --mine: rgba(184,83,44,.14);
+    --slip: #e7eaee; --slip-ink: #3b4350;
+    --f-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17130d; --card: #211b12; --ink: #f1e7d0; --dim: #b8ab90; --faint: #7d725c; --line: rgba(241,231,208,.16);
+      --acc: #e8855a; --ok: #7fc18d; --mine: rgba(232,133,90,.2); --slip: #232a33; --slip-ink: #b4bdca; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.65; overflow-x: hidden; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+  .bar { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line);
+    font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  .bar a { text-decoration: none; color: var(--dim); } .bar a:hover { color: var(--acc); }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
+  :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+  .hero { padding: clamp(30px, 7vh, 70px) 0 6px; }
+  .eyebrow { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--acc); }
+  h1 { font-weight: 400; font-size: clamp(2.2rem, 7.5vw, 4.2rem); line-height: 1.04; letter-spacing: -.02em; margin: .3em 0 .35em; max-width: 16ch; }
+  h1 em { color: var(--acc); }
+  .lede { max-width: 56ch; color: var(--dim); font-size: clamp(1.02rem, 2.5vw, 1.2rem); }
+  .how { display: flex; gap: 8px 26px; flex-wrap: wrap; margin-top: 18px; font-family: var(--f-mono); font-size: .72rem; color: var(--dim); }
+  .how b { color: var(--acc); font-weight: 400; margin-right: 6px; }
+
+  .label { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .26em; text-transform: uppercase; color: var(--faint); margin: 44px 0 12px; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; padding: 9px 16px; border: 1px solid var(--ink);
+    background: transparent; border-radius: 99px; cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+  .modeline { color: var(--dim); margin: 10px 0 14px; min-height: 1.6em; }
+  .picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .sc { text-align: left; padding: 14px 15px; background: var(--card); border: 1px solid var(--line); cursor: pointer; border-radius: 3px; }
+  .sc:hover { border-color: var(--ink); }
+  .sc[aria-pressed="true"] { border-color: var(--acc); box-shadow: inset 0 0 0 1px var(--acc); }
+  .sc b { display: block; font-weight: 400; font-size: 1.12rem; }
+  .sc span { display: block; color: var(--dim); font-size: .9rem; line-height: 1.4; margin-top: 2px; }
+
+  .build { display: none; margin-top: 34px; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 28px; align-items: start; }
+  .build.on { display: grid; }
+  @media (max-width: 820px) { .build.on { grid-template-columns: 1fr; } }
+  .qcard { background: var(--card); border: 1px solid var(--ink); padding: 20px 20px 18px; position: sticky; top: 12px; }
+  @media (max-width: 820px) { .qcard { position: static; } }
+  .prog { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .14em; color: var(--faint); text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+  .dots { display: flex; gap: 4px; flex-wrap: wrap; }
+  .dots i { width: 14px; height: 4px; background: var(--line); border-radius: 2px; }
+  .dots i.d { background: var(--acc); }
+  .qcard h2 { font-weight: 400; font-size: 1.35rem; line-height: 1.3; margin: 12px 0 4px; }
+  .hint { color: var(--dim); font-size: .92rem; margin-bottom: 10px; }
+  input[type=text], textarea { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--ink); padding: 11px 12px; font: inherit; font-size: 1.02rem; }
+  textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+  .opts { display: grid; gap: 8px; }
+  .opt { text-align: left; padding: 11px 13px; background: var(--bg); border: 1px solid var(--line); cursor: pointer; border-radius: 3px; }
+  .opt:hover { border-color: var(--ink); }
+  .opt[aria-pressed="true"] { border-color: var(--acc); background: var(--mine); }
+  .cliche { margin-top: 8px; font-size: .88rem; color: var(--acc); display: none; }
+  .cliche.on { display: block; }
+  .nav { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+  .btn { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; padding: 10px 16px; cursor: pointer;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--bg); border-radius: 2px; }
+  .btn:hover { background: var(--acc); border-color: var(--acc); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn[disabled] { opacity: .35; pointer-events: none; }
+  .nav .sp { flex: 1; }
+  .voice h3 { font-weight: 400; font-size: .98rem; margin: 14px 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--f-mono); font-size: .72rem; padding: 7px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 99px; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--acc); background: var(--mine); color: var(--ink); }
+  .chipnote { color: var(--dim); font-size: .88rem; margin-top: 6px; min-height: 1.4em; }
+  .safety { margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--ok); background: var(--bg); color: var(--dim); font-size: .9rem; }
+
+  .letter { background: var(--card); border: 1px solid var(--line); padding: 26px 26px 22px; box-shadow: 0 14px 30px -22px rgba(0,0,0,.6); min-height: 240px; }
+  .letter p { margin-bottom: 14px; font-size: 1.06rem; overflow-wrap: anywhere; }
+  .letter p:last-child { margin-bottom: 0; }
+  .letter mark { background: var(--mine); color: inherit; padding: 0 2px; border-radius: 2px; }
+  .letter .ph { color: var(--faint); font-style: italic; }
+  .letter .empty { color: var(--faint); font-style: italic; }
+  .letter textarea.edit { min-height: 280px; font-size: 1.04rem; }
+  .legend { font-family: var(--f-mono); font-size: .66rem; color: var(--faint); margin: 8px 2px 0; }
+  .legend mark { background: var(--mine); color: var(--dim); padding: 0 4px; border-radius: 2px; }
+  .slip { margin-top: 14px; background: var(--slip); color: var(--slip-ink); font-family: var(--f-mono); font-size: .76rem; padding: 12px 14px 12px; border-top: 2px dashed var(--faint); }
+  .slip b { display: block; font-weight: 400; letter-spacing: .14em; font-size: .62rem; opacity: .75; margin-bottom: 3px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-family: var(--f-mono); font-size: .72rem; }
+  .checks span { color: var(--faint); } .checks span.ok { color: var(--ok); }
+  .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .push { margin-top: 18px; padding: 14px 16px; border: 1px dashed var(--line); font-size: .95rem; color: var(--dim); display: none; }
+  .push.on { display: block; }
+  .push b { color: var(--ink); font-weight: 400; display: block; margin-bottom: 4px; font-family: var(--f-mono); font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; }
+
+  .suggest { background: var(--card); border: 1px solid var(--ink); padding: 20px; display: grid; gap: 12px; max-width: 640px; }
+  .suggest select { background: var(--bg); color: var(--ink); border: 1px solid var(--ink); padding: 10px 12px; font: inherit; }
+  .note { color: var(--dim); max-width: 60ch; font-size: .95rem; }
+  .more { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+  .more a { display: block; flex: 1 1 260px; padding: 16px 18px; border: 1px solid var(--line); background: var(--card); text-decoration: none; }
+  .more a:hover { border-color: var(--acc); }
+  .more b { display: block; font-weight: 400; font-size: 1.1rem; } .more span { color: var(--dim); font-size: .92rem; }
+  footer { margin-top: 70px; padding-top: 16px; border-top: 1px solid var(--ink); font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; color: var(--dim); display: flex; flex-wrap: wrap; gap: 8px 22px; }
+</style>
+</head>
+<body>
+<div class="bar"><a href="../">← labs</a><a href="standard/">the standard (draft) →</a></div>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Chiibitsu Labs · a human-first skill</div>
+    <h1>Machines say <em>“Rejected.”</em> You can do better.</h1>
+    <p class="lede">Saying no, asking for something hard, or owning a mistake is awkward, so people ghost, over-explain or send two cold lines. Pick a moment, answer a few questions in your own words, and get a message that is clear, kind and yours.</p>
+    <div class="how"><span><b>1</b>Pick a moment</span><span><b>2</b>Answer a few questions</span><span><b>3</b>Choose how you sound</span><span>Nothing you type leaves this page.</span></div>
+  </section>
+
+  <div class="label">Pick a moment</div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <p class="modeline" id="modeline"></p>
+  <div class="picker" id="picker"></div>
+
+  <section class="build" id="build" aria-live="polite">
+    <div class="qcard" id="qcard"></div>
+    <div>
+      <div class="letter" id="letter"></div>
+      <p class="legend"><mark>highlighted</mark> = your own words. The rest is scaffolding, and you can edit all of it.</p>
+      <div class="slip" id="slip"></div>
+      <div class="checks" id="checks"></div>
+      <div class="acts" id="acts" hidden>
+        <button class="btn" id="copy" type="button">Copy message</button>
+        <button class="btn ghost" id="edit" type="button">Edit it</button>
+        <button class="btn ghost" id="another" type="button">Another way to say it</button>
+        <button class="btn ghost" id="restart" type="button">Start over</button>
+      </div>
+      <div class="push" id="push"></div>
+    </div>
+  </section>
+
+  <div class="label">Not on the list?</div>
+  <div class="suggest">
+    <label class="note" for="sgText">Tell us a moment you wish you had the words for. What people ask for decides what gets built next.</label>
+    <textarea id="sgText" placeholder="e.g. telling a friend I can’t afford the trip"></textarea>
+    <select id="sgMode" aria-label="Which kind of moment"><option>Say no</option><option>Ask</option><option>Own it</option><option>Something else</option></select>
+    <div><button class="btn" id="sgBtn" type="button">Suggest it</button></div>
+    <p class="note" id="sgNote">This opens a public suggestion on GitHub. Don’t include names or private details.</p>
+  </div>
+
+  <div class="label">And when it happens to you</div>
+  <div class="more">
+    <a href="check/"><b>Check a message you received →</b><span>Paste a cold rejection or decline. See which of the five things it left out.</span></a>
+    <a href="standard/"><b>The same five things, for institutions →</b><span>A draft standard: what every automated decision about a person should carry.</span></a>
+  </div>
+
+  <footer><span>Chiibitsu Labs</span><span>Single file. No dependencies. No AI model.</span><span>The way we say it is the last human thing worth getting right.</span></footer>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- text helpers ---------- */
+const fin = s => { s = (s || "").trim().replace(/\s+/g, " "); return /[.!?…"”)]$/.test(s) ? s : s + "."; };
+const M = s => ({ m: fin(s) });          // the person's own words
+const PH = s => ({ ph: s });             // a visible placeholder
+const P = (...parts) => parts.filter(Boolean);
+const pick = (v, c) => Array.isArray(v) ? v[c.v % v.length] : v;
+const W = (m, c) => pick(m[c.t] !== undefined ? m[c.t] : m.warm, c);
+const has = (a, k) => !!(a[k] && a[k].trim());
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const hello = (a, c) => { const n = has(a, "name") ? " " + a.name.trim() : ""; return W({ warm: "Hi" + n + ",", plain: "Hi" + n + ",", playful: "Hey" + n + ",", formal: n ? "Dear" + n + "," : "Hello," }, c); };
+const optMeta = (sc, key, val) => { const q = sc.q.find(x => x.k === key); const o = q && q.opts && q.opts.map(x => typeof x === "string" ? { l: x } : x).find(x => x.l === val); return o || {}; };
+
+/* ---------- words everyone sends ---------- */
+const CLICHES = [
+  [/it'?s not you,? it'?s me/i, "“It’s not you, it’s me”"],
+  [/not ready for a relationship/i, "“I’m not ready for a relationship”"],
+  [/you deserve (better|someone|more)/i, "“You deserve better”"],
+  [/(still )?want to be friends|stay friends|let'?s be friends/i, "“Let’s be friends”"],
+  [/no hard feelings/i, "“No hard feelings”"],
+  [/(i'?m|i am|i'?ve been) (just )?(so )?busy/i, "“I’m just so busy”"],
+  [/focus on myself|work on myself/i, "“I need to focus on myself”"],
+  [/different (places|stages)/i, "“We’re in different places”"],
+  [/not the right time/i, "“It’s not the right time”"],
+  [/great (guy|girl|person)|too (nice|good) for me/i, "“You’re a great person, but…”"],
+  [/hard worker|team player|go above and beyond|work really hard/i, "“I work hard / team player”"],
+  [/just wanted to (check in|reach out)/i, "“Just wanted to reach out”"],
+];
+
+/* ---------- the shared builders ---------- */
+const DOORS = {
+  closed: { warm: ["I don’t expect that to change, and I’d rather tell you now than leave you hoping.", "I’m saying this clearly because it wouldn’t be kind to leave the door half open."],
+    plain: ["That won’t change, so I’m telling you now.", "I’d rather be clear than leave it open."],
+    playful: ["I don’t see that changing, so I’d rather be upfront than leave you wondering.", "I’m closing the loop now so you don’t have to wonder."],
+    formal: ["I do not expect this to change, and I would rather be clear than leave the matter open.", "This is final, and I wanted you to hear it plainly."] },
+};
+const OWNED = {
+  warm: ["This is about what I want, not about anything being wrong with you.", "This is my decision, and it says more about my own needs than about you."],
+  plain: ["This is my decision.", "This is about me, not a verdict on you."],
+  playful: ["This is about my preferences, not a review of you.", "It’s my call, and it isn’t a judgment of you."],
+  formal: ["This decision is mine, and it is not a reflection on you.", "The decision rests with me alone and carries no judgment of you."],
+};
+function declineBuild(sc, a, c) {
+  const open = !!optMeta(sc, "door", a.door).open;
+  const t = sc.thanksFor(a);
+  const out = [P(hello(a, c))];
+  out.push(P(W(sc.clear ? sc.clear(t) : {
+    warm: ["Thank you for " + t + ". I want to be honest with you: my answer is no.", "I appreciate you reaching out, and you deserve a clear answer: it’s a no."],
+    plain: ["Thanks for " + t + ". My answer is no.", "I’ll be direct so you’re not left guessing: the answer is no."],
+    playful: ["Thanks for " + t + ", genuinely. The answer is no, and I’d rather say it plainly than dance around it.", "Okay, no dancing around it: it’s a no. Thank you for " + t + "."],
+    formal: ["Thank you for " + t + ". After considering it, I have decided to decline.", "I appreciate you " + t + ". I am writing to say clearly that my answer is no."],
+  }, c)));
+  const lead = W({ warm: "Here’s the honest part:", plain: "The reason:", playful: "The real reason:", formal: "The reason is simple:" }, c);
+  out.push(has(a, "kernel") ? P(lead, M(a.kernel)) : (sc.reasonOptional ? null : P(lead, M("It’s not the right fit for me"))));
+  if (has(a, "valued") && !c.short) out.push(P(W({ warm: "Something I genuinely appreciated:", plain: "For what it’s worth:", playful: "A genuinely nice thing I noticed:", formal: "I do want to acknowledge:" }, c), M(a.valued)));
+  if (sc.extra) { const e = sc.extra(a, c); if (e) out.push(e); }
+  if (!c.short) out.push(P(sc.owned ? W(sc.owned, c) : W(OWNED, c)));
+  const dm = optMeta(sc, "door", a.door);
+  out.push(P(open ? sc.openLine(a) : (dm.say ? dm.say : W(sc.closed || DOORS.closed, c))));
+  if (!c.short) out.push(P(W({ warm: "I wish you well, truly.", plain: "Take care.", playful: "Wishing you all the best.", formal: "I wish you every success." }, c), sc.private ? "This stays between us." : ""));
+  return out.filter(Boolean);
+}
+
+/* ---------- the moments ---------- */
+const SC = [];
+const add = o => SC.push(o);
+const choice = (k, label, opts, hint) => ({ k, label, type: "choice", opts, hint });
+const text = (k, label, ph, o = {}) => Object.assign({ k, label, type: "text", ph }, o);
+const long = (k, label, ph, o = {}) => Object.assign({ k, label, type: "long", ph }, o);
+const NAME = (label) => text("name", label || "Their first name", "Sam", { opt: true });
+
+/* ---- say no ---- */
+add({ id: "dating", mode: "no", title: "Dating", blurb: "They like you. You don’t feel the same.", machine: "Rejected.", private: true,
+  note: "You don’t owe anyone an explanation. If someone keeps pushing after a clear no, say it once more and stop replying. If you feel unsafe, block them and tell someone you trust.",
+  q: [NAME(), choice("what", "What did they do?", ["Asked me out", "Told me they like me", "Keeps messaging me", "Asked for another date"]),
+    text("kernel", "What’s true for you, in one line?", "I just don’t feel that way.", { cl: true, hint: "A feeling, not a flaw in them. This is what keeps it kind and keeps it closed." }),
+    text("valued", "One real thing you liked about them", "You’re easy to laugh with.", { opt: true, hint: "Only if it’s true. Skip it if it isn’t." }),
+    choice("door", "Do you want to stay in touch?", [{ l: "No, a clean break is kinder", open: false }, { l: "Friends is fine", open: true }])],
+  thanksFor: a => ({ "Asked me out": "asking me out", "Told me they like me": "telling me how you feel", "Keeps messaging me": "reaching out", "Asked for another date": "wanting to see me again" })[a.what] || "being honest with me",
+  openLine: a => "If you’d like to stay friends, I’d be glad to, only if that feels okay for you too.", pushback: true });
+add({ id: "invite", mode: "no", title: "An invite", blurb: "You’re invited. You don’t want to go.", machine: "Declined.",
+  q: [NAME("Who invited you?"), text("what", "What are they inviting you to?", "Saturday night drinks"),
+    text("kernel", "Your honest reason", "I need a quiet weekend.", { cl: true }),
+    text("alt", "Anything you would do instead?", "Coffee next week?", { opt: true }),
+    choice("door", "Do you want to be invited again?", [{ l: "Yes, just not this time", open: true }, { l: "I’d rather not go to these", open: false, say: "I’d rather not come to events like this, so please don’t count me in. I’m still glad you thought of me." }])],
+  thanksFor: a => "inviting me" + (has(a, "what") ? " to " + a.what.trim().replace(/[.!]$/, "") : ""),
+  extra: a => has(a, "alt") ? P("What I’d love instead:", M(a.alt)) : null,
+  openLine: () => "Please do keep asking. It means a lot to be included.", pushback: true });
+add({ id: "favor", mode: "no", title: "A favor or money", blurb: "They asked for something you won’t give.", machine: "Request denied.",
+  q: [NAME("Who asked?"), text("what", "What did they ask for?", "to borrow $500"),
+    text("kernel", "Your honest reason", "I don’t lend money to friends.", { cl: true }),
+    text("alt", "Something you can do instead?", "I can help you make a budget.", { opt: true }),
+    choice("door", "Is this a no for good, or for now?", [{ l: "A no for good", open: false }, { l: "Not right now, ask me again later", open: true }])],
+  thanksFor: a => "trusting me enough to ask" + (has(a, "what") ? " " + a.what.trim().replace(/[.!]$/, "") : ""),
+  extra: a => has(a, "alt") ? P("What I can do:", M(a.alt)) : null,
+  openLine: () => "Ask me again in a few months if it’s still needed.", pushback: true });
+add({ id: "ex", mode: "no", title: "An ex", blurb: "They want to talk, or get back together.", machine: "Seen 9:41 PM.", private: true,
+  note: "You can end contact whenever you choose. If someone keeps contacting you after you’ve said no, you can block them and keep a record.",
+  q: [NAME(), choice("what", "What do they want?", ["To talk", "To meet up", "To get back together", "Keeps checking in"]),
+    text("kernel", "What’s true for you, in one line?", "I’ve moved on, and I need it to stay that way.", { cl: true }),
+    text("valued", "Something good you remember", "We had some good years.", { opt: true }),
+    choice("door", "What contact is okay from here?", [{ l: "None. Please don’t contact me.", open: false, say: "Please don’t contact me again. I’m saying it kindly, and I mean it." }, { l: "A friendly hello, nothing more", open: true }])],
+  thanksFor: () => "reaching out",
+  openLine: () => "A friendly hello is fine, but I won’t be meeting up or talking about us.", pushback: true });
+add({ id: "candidate", mode: "no", title: "A job candidate", blurb: "You’re turning someone down for a role.", machine: "Unfortunately, we have decided to move forward with other candidates. Do not reply.", reasonOptional: true,
+  q: [NAME("Their first name"), text("role", "Which role?", "Product Designer", { opt: true }), choice("stage", "How far did they get?", ["Applied", "Interviewed"]),
+    text("kernel", "The real reason, if you can share one", "We chose someone with more B2B experience.", { opt: true, cl: true, hint: "Specific beats vague. If you can’t share it, skip and we’ll leave it out." }),
+    choice("fb", "Will you give feedback?", [{ l: "Yes, if they ask" }, { l: "No, I can’t" }]),
+    choice("door", "Would you want them to apply again?", [{ l: "Yes, happy to see them apply again", open: true }, { l: "I don’t want to promise anything", open: false, say: "I can’t promise anything about future roles, and I’d rather say so than leave you waiting." }])],
+  clear: t => ({ warm: ["Thank you for " + t + ". I’m sorry to tell you that we won’t be moving forward with your application.", "I know you put real effort into this, and you deserve a clear answer: we won’t be moving forward."],
+    plain: ["Thanks for " + t + ". We won’t be moving forward with your application."],
+    playful: ["Thank you for " + t + ". I wish I had better news: we won’t be moving forward."],
+    formal: ["Thank you for " + t + ". We have decided not to move forward with your application."] }),
+  thanksFor: a => (a.stage === "Interviewed" ? "taking the time to interview with us" : "taking the time to apply") + (has(a, "role") && a.stage !== "Interviewed" ? " for the " + a.role.trim() + " role" : ""),
+  owned: { warm: ["This isn’t a reflection of your ability or your worth.", "It was a close call, and it says nothing about what you can do."], plain: ["This isn’t a reflection of your ability."], playful: ["This isn’t a reflection of your ability."], formal: ["This decision is not a reflection of your ability or potential."] },
+  extra: a => a.fb === "Yes, if they ask" ? P("If you’d like feedback, just reply and I’ll share what I can.") : (a.fb === "No, I can’t" ? P("I’m not able to share detailed feedback, and I’m sorry about that.") : null),
+  openLine: () => "I’d welcome seeing your application again for a future role." });
+add({ id: "pitch", mode: "no", title: "A pitch", blurb: "A vendor or cold email you’re passing on.", machine: "Unsubscribed.", reasonOptional: true,
+  q: [NAME("Who wrote to you?"), text("what", "What are they selling?", "analytics software"),
+    text("kernel", "Why not? (optional)", "We already have a tool for this.", { opt: true, cl: true }),
+    choice("door", "Should they try again?", [{ l: "Please take me off your list", open: false, say: "Please take me off your list." }, { l: "Check back in six months", open: true }])],
+  thanksFor: a => "reaching out" + (has(a, "what") ? " about " + a.what.trim().replace(/[.!]$/, "") : ""),
+  owned: { warm: ["It’s about where we are right now, not about your product."], plain: ["It’s about fit, not quality."], playful: ["It’s about fit for us right now, not a review of your product."], formal: ["This reflects our current priorities and not the quality of your offering."] },
+  openLine: () => "Feel free to check back in about six months." });
+add({ id: "brain", mode: "no", title: "Pick your brain", blurb: "Someone wants your time and you don’t have it.", machine: "[Auto-reply: out of office]",
+  q: [NAME(), text("what", "What do they want?", "30 minutes about breaking into design"),
+    text("kernel", "Your honest reason", "I’m at capacity right now.", { cl: true }),
+    text("alt", "What can you offer instead?", "I wrote down my advice here.", { opt: true, hint: "A link, a short answer by email, a better person to ask." }),
+    choice("door", "Is this forever, or for now?", [{ l: "Not right now, try me in a few months", open: true }, { l: "I can’t take this on", open: false, say: "I’m not able to take this on." }])],
+  thanksFor: () => "thinking of me",
+  extra: a => has(a, "alt") ? P("What I can offer instead:", M(a.alt)) : null,
+  openLine: () => "Please try me again in a few months." });
+add({ id: "project", mode: "no", title: "Extra work", blurb: "You’re being asked to take on more.", machine: "Request declined. No reason given.",
+  q: [NAME("Who is asking?"), text("what", "What are they asking you to take on?", "lead the new committee"),
+    text("kernel", "Your honest reason", "My plate is full until March.", { cl: true }),
+    text("alt", "What can you do?", "I can review a draft.", { opt: true }),
+    choice("door", "Is this a no for now or for good?", [{ l: "Not this time", open: true }, { l: "Please don’t count on me for this", open: false, say: "Please don’t count on me for this one." }])],
+  thanksFor: () => "thinking of me",
+  extra: a => has(a, "alt") ? P("What I can do:", M(a.alt)) : null,
+  openLine: () => "Ask me again next quarter if it’s still open." });
+
+/* ---- ask ---- */
+const ASK_THANKS = { warm: "Thank you for considering it.", plain: "Thanks.", playful: "Thanks a lot.", formal: "Thank you for your time and consideration." };
+const askLead = (c) => W({ warm: "Here’s why I’m asking:", plain: "Why:", playful: "Why I’m asking:", formal: "My reasoning:" }, c);
+add({ id: "raise", mode: "ask", title: "A raise", blurb: "You’ve earned it. Say so, clearly.", machine: "Request submitted. Status: under review.",
+  q: [NAME("Your manager’s first name"), text("ask", "What are you asking for?", "a raise to $X, or a move to Senior"),
+    long("evidence", "What have you done since your last review?", "Led the migration, onboarded two hires…", { cl: true, hint: "Facts and results beat adjectives." }),
+    text("when", "When would you like an answer?", "by the end of the month", { opt: true })],
+  build(a, c) { return [P(hello(a, c)), P(W({ warm: "I’d like to talk with you about my compensation.", plain: "I’d like to talk about my pay.", playful: "I’d like to have a real conversation about my pay.", formal: "I am writing to request a discussion about my compensation." }, c)),
+    has(a, "ask") ? P("Specifically, I’m asking for", M(a.ask)) : P("Specifically, I’m asking for", PH("[what you’re asking for]")),
+    has(a, "evidence") ? P(W({ warm: "Why I believe it’s warranted:", plain: "Why:", playful: "Here’s the case:", formal: "The basis for this request:" }, c), M(a.evidence)) : null,
+    c.short ? null : P("If the answer is no, I’d value knowing what would need to change and when we can revisit it."),
+    has(a, "when") ? P("Could we talk " + a.when.trim() + "?") : null, P(W(ASK_THANKS, c))].filter(Boolean); } });
+add({ id: "help", mode: "ask", title: "Asking for help", blurb: "You need a hand and don’t love asking.", machine: "Ticket #48213 opened. Estimated response: 5–7 business days.",
+  q: [NAME("Who are you asking?"), text("ask", "What do you need?", "a second pair of eyes on my slides"),
+    text("tried", "What have you tried already?", "I’ve rewritten the intro twice.", { opt: true }),
+    text("size", "How much of their time?", "about 20 minutes", { opt: true }), text("when", "By when?", "Friday", { opt: true })],
+  build(a, c) { return [P(hello(a, c)), P(W({ warm: "I could use your help with something.", plain: "Can I ask you for some help?", playful: "I’m about to ask a favor, so thank you for hearing me out.", formal: "I am writing to ask for your assistance." }, c)),
+    has(a, "ask") ? P("What I need:", M(a.ask)) : P("What I need:", PH("[what you need]")),
+    has(a, "tried") && !c.short ? P("What I’ve tried so far:", M(a.tried)) : null,
+    has(a, "size") ? P("I think it would take", M(a.size)) : null,
+    has(a, "when") ? P("It would help to know by", M(a.when)) : null,
+    P("If you can’t, that’s completely fine. Just tell me and I’ll find another way."), P(W({ warm: "Thank you. It means a lot.", plain: "Thanks.", playful: "Thanks, I owe you one.", formal: "Thank you in advance." }, c))].filter(Boolean); } });
+add({ id: "consent", mode: "ask", title: "Permission or consent", blurb: "You want to ask, and make it safe to say no.", machine: "By continuing, you agree to the terms.",
+  note: "A yes only counts if no was easy. Hesitation, silence or “maybe” all mean no. Don’t ask again after a no.",
+  q: [NAME("Who are you asking?"), text("ask", "Finish the question: “Would you be okay with…”", "me sharing your story in my newsletter?", { hint: "Be specific about what, where and who sees it." }),
+    text("why", "Why does it matter to you?", "It would help other people feel less alone.", { opt: true }), text("when", "Is there a deadline? (optional)", "Friday", { opt: true, hint: "Only if there really is one. Deadlines add pressure." })],
+  build(a, c) { return [P(hello(a, c)), P(W({ warm: "I’d like to ask you something, and I want you to feel completely free to say no.", plain: "I want to ask you something. You can say no.", playful: "I’m going to ask you something, and a no is a perfectly good answer.", formal: "I would like to ask for your permission, and a refusal is entirely acceptable." }, c)),
+    has(a, "ask") ? P("Would you be okay with", M(a.ask.replace(/\?+$/, "") + "?")) : P("Would you be okay with", PH("[what you’re asking]")),
+    has(a, "why") && !c.short ? P(askLead(c), M(a.why)) : null,
+    P("A no is completely fine, and so is “not right now.” If I don’t hear back, I’ll take that as a no and I won’t ask again."),
+    has(a, "when") ? P("My deadline is", M(a.when), "Please don’t let that pressure you into a yes.") : null,
+    P(W(ASK_THANKS, c))].filter(Boolean); } });
+add({ id: "hi", mode: "ask", title: "Saying hi", blurb: "Someone new. A low-pressure opener.", machine: "Connection request sent. 14 mutual connections.",
+  q: [text("name", "Their name, if you know it", "Sam", { opt: true }), text("noticed", "Finish the sentence: “I noticed…”", "you were reading the same book I loved", { hint: "One real, specific thing beats any line." }),
+    text("where", "Where was this? (optional)", "at the climbing gym", { opt: true }),
+    choice("hope", "What are you hoping for?", ["Just saying hi", "To chat sometime", "To grab a coffee"])],
+  build(a, c) { const hope = ({ "Just saying hi": "No agenda, I just wanted to say hi.", "To chat sometime": "I’d enjoy chatting sometime, if you’re open to it.", "To grab a coffee": "I’d love to grab a coffee sometime, if you’re open to it." })[a.hope];
+    return [P(hello(a, c), W({ warm: "I don’t think we’ve met.", plain: "I don’t think we’ve met.", playful: "We haven’t officially met.", formal: "We have not been introduced." }, c)),
+    has(a, "noticed") ? P("I’m reaching out because I noticed", M(a.noticed + (has(a, "where") ? " " + a.where.trim() : ""))) : P("I’m reaching out because I noticed", PH("[something real]")),
+    hope ? P(hope) : null, c.short ? null : P("No pressure at all, and feel free to ignore this."), c.short ? null : P(W({ warm: "Hope your day is going well.", plain: "Have a good one.", playful: "Hope your day is a good one.", formal: "I wish you a pleasant day." }, c))].filter(Boolean); } });
+
+/* ---- own it ---- */
+const OWN_OPEN = { warm: "I need to tell you about something I got wrong.", plain: "I made a mistake and I want you to hear it from me.", playful: "I have something to own up to, and I’d rather say it straight.", formal: "I am writing to report an error of mine and explain how I will address it." };
+function ownBuild(personal) {
+  return function (a, c) {
+    const out = [P(hello(a, c)), P(W(OWN_OPEN, c))];
+    out.push(has(a, "what") ? P(W({ warm: "Here’s what happened:", plain: "What happened:", playful: "The short version:", formal: "The facts are as follows:" }, c), M(a.what)) : P(W({ warm: "Here’s what happened:", plain: "What happened:", playful: "The short version:", formal: "The facts are as follows:" }, c), PH("[what happened, in plain facts]")));
+    if (has(a, "impact")) out.push(P(W({ warm: "The impact was:", plain: "Impact:", playful: "Who it affected:", formal: "The impact was:" }, c), M(a.impact)));
+    out.push(P(W({ warm: "That was my mistake, and I’m not going to explain it away.", plain: "That’s on me.", playful: "That one’s on me, no excuses.", formal: "The responsibility is mine." }, c), has(a, "part") ? M(a.part) : ""));
+    if (has(a, "fix")) out.push(P(W({ warm: personal ? "Here’s how I want to make it right:" : "Here’s what I’ve done so far:", plain: personal ? "How I’ll make it right:" : "What I’ve done:", playful: personal ? "What I’m going to do about it:" : "What I’ve already done about it:", formal: personal ? "I intend to make this right by:" : "Actions taken so far:" }, c), M(a.fix)));
+    if (has(a, "prevent") && !c.short) out.push(P(W({ warm: "To keep it from happening again:", plain: "Next time:", playful: "So it doesn’t happen again:", formal: "To prevent recurrence:" }, c), M(a.prevent)));
+    if (personal) {
+      const ch = ({ "Talk when they’re ready": "I’d like to talk whenever you’re ready, and I’ll follow your lead.", "Space for as long as they need": "I’ll give you all the space you need, and I won’t push for a reply.", "They decide": "Whether you want to talk or want space, I’ll follow your lead." })[a.choice];
+      if (ch) out.push(P(ch));
+      out.push(P("I’m not asking you to forgive me. I just wanted you to hear it from me."));
+    }
+    out.push(P(W({ warm: "I’m sorry. If there’s anything else you need from me, tell me.", plain: "I’m sorry. Tell me if you need anything else from me.", playful: "I’m sorry, truly. Tell me what else would help.", formal: "I apologize, and I am available to assist further as needed." }, c)));
+    return out;
+  };
+}
+add({ id: "work", mode: "own", title: "A mistake at work", blurb: "You got something wrong. Say it first.", machine: "Incident logged. Ticket #48213. This is an automated message.",
+  q: [NAME("Who is this for?"), long("what", "What happened, in plain facts?", "I sent last month’s numbers in the Q3 report."),
+    text("impact", "Who or what was affected?", "The client saw the wrong figures for two hours.", { opt: true }),
+    text("part", "What was your part, plainly?", "I didn’t double-check the file.", { opt: true, cl: true, hint: "No excuses and no self-punishment. Just what you did." }),
+    text("fix", "What have you already done, or will do now?", "I sent the corrected report and called the client."),
+    text("prevent", "What will you change so it doesn’t happen again?", "I’m adding a checklist before sending.", { opt: true })],
+  build: ownBuild(false) });
+add({ id: "owning", mode: "own", title: "Owning it", blurb: "You hurt someone. You want to make it right.", machine: "Your feedback is important to us.",
+  q: [NAME("Who is this for?"), long("what", "What did you do?", "I forgot your birthday, again."),
+    text("impact", "How did it affect them?", "You told me it made you feel forgotten.", { opt: true }),
+    text("part", "What was your part, plainly?", "I let it slide because I was busy.", { opt: true, cl: true }),
+    text("fix", "What will you do to make it right?", "I’ll plan something for us this weekend."),
+    text("prevent", "What will you do differently?", "I’m putting every birthday in my calendar today.", { opt: true }),
+    choice("choice", "What do they get to choose?", ["Talk when they’re ready", "Space for as long as they need", "They decide"])],
+  build: ownBuild(true) });
+SC.forEach(s => { if (!s.build) s.build = (a, c) => declineBuild(s, a, c); });
+
+/* ---------- state ---------- */
+const MODES = [["no", "Say no", "Clear, kind, and never a maybe."], ["ask", "Ask", "Make the ask clear, and make no a safe answer."], ["own", "Own it", "What happened, whose it is, what you’ll do."]];
+const CHECKS = {
+  no: [["Clear", (a, c, sc) => true], ["Honest", (a, c, sc) => has(a, "kernel")], ["Mine", (a, c, sc) => !c.short], ["Door", (a, c, sc) => !!a.door], ["Kind ending", (a, c, sc) => !c.short]],
+  ask: [["Clear ask", (a, c, sc) => has(a, "ask") || has(a, "noticed")], ["Reason", (a, c, sc) => has(a, "evidence") || has(a, "tried") || has(a, "why") || has(a, "hope") || !!a.hope], ["Mine", (a, c, sc) => true], ["No is safe", (a, c, sc) => !c.short || sc.id === "consent"], ["Thanks", (a, c, sc) => true]],
+  own: [["What happened", (a, c, sc) => has(a, "what")], ["My part", (a, c, sc) => has(a, "part")], ["The impact", (a, c, sc) => has(a, "impact")], ["The fix", (a, c, sc) => has(a, "fix")], ["Next time", (a, c, sc) => has(a, "prevent") && !c.short]],
+};
+const TONES = [["warm", "Warm", "Kind, soft landing."], ["plain", "Plain", "Short and direct, no frills."], ["playful", "Playful", "Light, with a little humor."], ["formal", "Formal", "Polished and professional."]];
+let S = { mode: "no", id: null, step: 0, a: {}, t: "warm", short: false, em: false, v: 0, editing: false };
+const cur = () => SC.find(s => s.id === S.id);
+const ctx = () => ({ t: S.t, short: S.short, v: S.v, em: S.em });
+
+function assemble() {
+  const sc = cur(); if (!sc) return [];
+  const c = ctx(); let paras = sc.build(S.a, c);
+  if (c.em && (c.t === "warm" || c.t === "playful") && paras.length) paras[paras.length - 1] = paras[paras.length - 1].concat(["🙂"]);
+  return paras;
+}
+const partText = p => typeof p === "string" ? p : (p.m || p.ph || "");
+const plainText = paras => paras.map(pp => pp.map(partText).join(" ")).join("\n\n");
+function renderLetter() {
+  const L = $("letter"), sc = cur();
+  if (!sc) return;
+  if (S.editing) return;
+  const paras = assemble();
+  L.innerHTML = paras.map(pp => "<p>" + pp.map(p => typeof p === "string" ? esc(p) : p.m ? "<mark>" + esc(p.m) + "</mark>" : '<span class="ph">' + esc(p.ph) + "</span>").join(" ") + "</p>").join("");
+  $("slip").innerHTML = "<b>THE MACHINE VERSION</b>" + esc(sc.machine);
+  const c = ctx();
+  $("checks").innerHTML = CHECKS[sc.mode].map(([l, f]) => { const ok = f(S.a, c, sc); return '<span class="' + (ok ? "ok" : "") + '">' + (ok ? "✓ " : "○ ") + l + "</span>"; }).join("");
+}
+
+/* ---------- the question card ---------- */
+function totalSteps() { return cur().q.length + 1; }
+function renderCard() {
+  const sc = cur(), q = sc.q[S.step], card = $("qcard"), n = totalSteps();
+  const dots = '<div class="dots">' + Array.from({ length: n }, (_, i) => '<i class="' + (i <= S.step ? "d" : "") + '"></i>').join("") + "</div>";
+  let h = '<div class="prog">' + dots + "<span>" + (S.step + 1) + " of " + n + "</span></div>";
+  if (q) {
+    h += "<h2>" + esc(q.label) + (q.opt ? ' <span style="color:var(--faint);font-size:.8em">(optional)</span>' : "") + "</h2>" + (q.hint ? '<p class="hint">' + esc(q.hint) + "</p>" : "");
+    if (q.type === "text") h += '<input type="text" id="inp" autocomplete="off" placeholder="' + esc(q.ph || "") + '" value="' + esc(S.a[q.k] || "") + '" />';
+    else if (q.type === "long") h += '<textarea id="inp" placeholder="' + esc(q.ph || "") + '">' + esc(S.a[q.k] || "") + "</textarea>";
+    else h += '<div class="opts">' + q.opts.map(o => { const l = typeof o === "string" ? o : o.l; return '<button type="button" class="opt" data-v="' + esc(l) + '" aria-pressed="' + (S.a[q.k] === l) + '">' + esc(l) + "</button>"; }).join("") + "</div>";
+    h += '<p class="cliche" id="cliche"></p>';
+  } else {
+    h += '<h2>How do you sound?</h2><p class="hint">Pick what feels like you. Watch the message change.</p><div class="voice">' +
+      '<div class="chips" id="tones">' + TONES.map(t => '<button type="button" class="chip" data-t="' + t[0] + '" aria-pressed="' + (S.t === t[0]) + '">' + t[1] + "</button>").join("") + "</div>" +
+      '<p class="chipnote" id="tnote">' + esc(TONES.find(t => t[0] === S.t)[2]) + "</p>" +
+      '<h3>How long?</h3><div class="chips" id="lens"><button type="button" class="chip" data-l="short" aria-pressed="' + S.short + '">Short</button><button type="button" class="chip" data-l="full" aria-pressed="' + !S.short + '">Full</button></div>' +
+      '<h3>A little emoji?</h3><div class="chips" id="ems"><button type="button" class="chip" data-e="0" aria-pressed="' + !S.em + '">No</button><button type="button" class="chip" data-e="1" aria-pressed="' + S.em + '">A little</button></div></div>';
+  }
+  if (sc.note && S.step === 0) h += '<p class="safety">' + esc(sc.note) + "</p>";
+  const last = S.step === n - 1, empty = q && q.type !== "choice" && !has(S.a, q.k);
+  h += '<div class="nav"><button class="btn ghost" id="back" type="button"' + (S.step === 0 ? " disabled" : "") + '>Back</button><span class="sp"></span>' +
+    (last ? "" : '<button class="btn" id="next" type="button">' + (q && empty ? "Skip" : "Next") + "</button>") + "</div>";
+  card.innerHTML = h;
+  const inp = $("inp");
+  if (inp) {
+    inp.addEventListener("input", () => { S.a[q.k] = inp.value; renderLetter(); checkCliche(q); const nx = $("next"); if (nx) nx.textContent = inp.value.trim() ? "Next" : "Skip"; });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && q.type === "text") { e.preventDefault(); go(1); } });
+    if (S.focus !== false) inp.focus({ preventScroll: true });
+    checkCliche(q);
+  }
+  card.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => { S.a[q.k] = b.dataset.v; renderLetter(); renderCard(); }));
+  card.querySelectorAll("[data-t]").forEach(b => b.addEventListener("click", () => { S.t = b.dataset.t; S.v = 0; renderLetter(); renderCard(); }));
+  card.querySelectorAll("[data-l]").forEach(b => b.addEventListener("click", () => { S.short = b.dataset.l === "short"; renderLetter(); renderCard(); }));
+  card.querySelectorAll("[data-e]").forEach(b => b.addEventListener("click", () => { S.em = b.dataset.e === "1"; renderLetter(); renderCard(); }));
+  if ($("back")) $("back").onclick = () => go(-1);
+  if ($("next")) $("next").onclick = () => go(1);
+  $("acts").hidden = !last;
+  $("push").classList.toggle("on", last && !!sc.pushback);
+  if (sc.pushback) $("push").innerHTML = "<b>If they push back</b>“I hear that this is disappointing. My answer is still no.” Say it once, calmly. Don’t add new reasons, because more reasons reopen the negotiation. After that, you can stop replying.";
+}
+function checkCliche(q) {
+  const el = $("cliche"); if (!el || !q.cl) return;
+  const v = (S.a[q.k] || "").replace(/[’‘]/g, "'"), hit = CLICHES.find(([re]) => re.test(v));
+  el.classList.toggle("on", !!hit);
+  if (hit) el.textContent = "Heads up: " + hit[1] + " is one everyone sends. Try one specific, true thing only you would say.";
+}
+function go(d) {
+  const n = totalSteps(); S.step = Math.max(0, Math.min(n - 1, S.step + d)); S.focus = true; renderCard();
+}
+
+/* ---------- picking a moment ---------- */
+function renderTabs() {
+  $("tabs").innerHTML = MODES.map(([k, l]) => '<button class="tab" role="tab" data-k="' + k + '" aria-selected="' + (S.mode === k) + '">' + l + "</button>").join("");
+  $("modeline").textContent = MODES.find(m => m[0] === S.mode)[2];
+  $("picker").innerHTML = SC.filter(s => s.mode === S.mode).map(s => '<button type="button" class="sc" data-id="' + s.id + '" aria-pressed="' + (S.id === s.id) + '"><b>' + esc(s.title) + "</b><span>" + esc(s.blurb) + "</span></button>").join("");
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { S.mode = b.dataset.k; renderTabs(); }));
+  document.querySelectorAll(".sc").forEach(b => b.addEventListener("click", () => pickSc(b.dataset.id)));
+}
+function pickSc(id) {
+  S = Object.assign(S, { id, step: 0, a: {}, v: 0, editing: false, focus: false });
+  const sc = cur(); S.mode = sc.mode;
+  $("build").classList.add("on"); renderTabs(); renderCard(); renderLetter();
+  $("build").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  setTimeout(() => { const i = $("inp"); if (i) i.focus({ preventScroll: true }); }, 350);
+}
+
+/* ---------- actions ---------- */
+async function copyText(btn, txt) { const old = btn.textContent; try { await navigator.clipboard.writeText(txt); btn.textContent = "Copied"; } catch (e) { btn.textContent = "Select and copy by hand"; } setTimeout(() => btn.textContent = old, 1500); }
+$("copy").addEventListener("click", e => { const ta = $("letter").querySelector("textarea"); copyText(e.currentTarget, ta ? ta.value : plainText(assemble())); });
+$("edit").addEventListener("click", e => {
+  const L = $("letter");
+  if (!S.editing) { S.editing = true; L.innerHTML = '<textarea class="edit" id="ed" aria-label="Edit your message"></textarea>'; $("ed").value = plainText(assemble()); $("ed").focus(); e.currentTarget.textContent = "Back to highlights"; }
+  else { S.editing = false; e.currentTarget.textContent = "Edit it"; renderLetter(); }
+});
+$("another").addEventListener("click", () => { S.v++; S.editing = false; $("edit").textContent = "Edit it"; renderLetter(); });
+$("restart").addEventListener("click", () => { S.a = {}; S.step = 0; S.v = 0; S.editing = false; $("edit").textContent = "Edit it"; renderCard(); renderLetter(); });
+
+/* ---------- suggest a moment (opens a public GitHub issue; swap SUGGEST_URL to change the destination) ---------- */
+const SUGGEST_URL = "https://github.com/chiibitsu/labs/issues/new";
+$("sgBtn").addEventListener("click", () => {
+  const t = $("sgText").value.trim();
+  if (!t) { $("sgText").focus(); return; }
+  const url = SUGGEST_URL + "?title=" + encodeURIComponent("Say It Well: " + t.slice(0, 70)) + "&body=" + encodeURIComponent("**Kind of moment:** " + $("sgMode").value + "\n\n**The moment:**\n" + t + "\n\n_Suggested from labs.chiibitsu.com/receipt/_");
+  window.open(url, "_blank", "noopener");
+  $("sgNote").textContent = "Thank you. A GitHub page opened with your suggestion filled in. Press “Submit new issue” there to send it.";
+});
+
+/* ---------- start ---------- */
+renderTabs();
+$("letter").innerHTML = '<p class="empty">Pick a moment above. Your message appears here as you answer.</p>';
+</script>
+</body>
+</html>

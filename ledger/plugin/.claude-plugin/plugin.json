@@ -1,0 +1,17 @@
+{
+  "name": "time-dividend",
+  "displayName": "Time Dividend",
+  "version": "0.1.0",
+  "description": "Records each Claude Code session into Chii's Time Dividend ledger: AI time, your time, a human-equivalent estimate, a plain-language log of what was done, and the keep list handed back to you.",
+  "author": { "name": "Chiibitsu Labs", "url": "https://labs.chiibitsu.com" },
+  "homepage": "https://labs.chiibitsu.com/ledger/",
+  "repository": "https://github.com/chiibitsu/labs",
+  "userConfig": {
+    "ledger_token": {
+      "type": "string",
+      "title": "Ledger intake token",
+      "description": "Create one on labs.chiibitsu.com/ledger (Intake tokens). Write-only: it can add entries, never read them.",
+      "sensitive": true
+    }
+  }
+}
