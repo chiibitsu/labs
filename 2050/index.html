@@ -143,6 +143,15 @@ ul.sys.num li { padding-left: 0; color: var(--ink); font-size: .8rem; }
 .ch.hand { background: transparent; border: 1.5px solid var(--ink); font-family: var(--f-prose); font-size: 1.1rem; }
 .ch.small { padding: 10px 14px; font-size: .86rem; justify-content: center; }
 .ch:disabled { opacity: .35; cursor: default; }
+.controw { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.ch.cont { background: transparent; border: 1px solid var(--line); font-family: var(--f-data); font-size: .78rem; letter-spacing: .06em; color: var(--ink); padding: 13px 16px; }
+.ch.cont.auto { justify-content: center; color: var(--dim); }
+.ch.cont.auto.on { color: var(--ink); border-color: var(--accent); box-shadow: 0 0 18px -8px var(--accent); }
+.ch.cont.auto::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; margin-right: 8px; align-self: center; }
+.ch.cont.auto.on::before { background: var(--accent); border-color: var(--accent); }
+.namein { font-family: var(--f-prose); font-style: italic; font-size: 2rem; color: var(--ink); background: transparent; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; width: 100%; max-width: 16ch; outline: none; border-radius: 0; }
+.namein::placeholder { color: var(--dim); opacity: .6; }
+.namein:focus-visible { outline: none; border-bottom-color: var(--accent); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* Title */
@@ -268,7 +277,7 @@ ul.sys.num li { padding-left: 0; color: var(--ink); font-size: .8rem; }
   <header class="bar">
     <div class="clock"><b id="clk">06:52</b><span id="date">2050</span></div>
     <div class="bar-r">
-      <span class="pill wren" id="wstat"><i></i><span>Wren</span></span>
+      <span class="pill wren" id="wstat"><i></i><span>agent</span></span>
       <button class="pill" id="foundBtn" type="button" aria-label="Pieces of 2050 you have found"><span>◆</span><span id="foundN">0/28</span></button>
       <button class="pill" id="sndBtn" type="button" aria-pressed="false" aria-label="Sound">♪ off</button>
     </div>
@@ -310,7 +319,7 @@ $("#date").textContent = DATESTR.replace(/^\w+ /, "");
 
 /* ---------- Pieces of 2050 ---------- */
 const ART = {
-  wren: ["NEW", "Wren", "With you since 2034", "Your agent. You named it at twenty-three, after a bird you saw that week. It has read every message you’ve sent since. It knows your bank, your blood type and your mother’s birthday. It has no face. You chose that."],
+  wren: ["NEW", "Wren", "With you since 2034", "Your agent. You named it at twenty-three and it has answered to that name every day since. It has read every message you’ve sent since. It knows your bank, your blood type and your mother’s birthday. It has no face. You chose that."],
   window: ["OLD", "The window", "Unchanged since 1987", "Single glazing, a draught in winter, fog on cold mornings. Wren could have it replaced in a day. You’ve never asked. Some things you keep because they’re yours."],
   admin: ["CHANGED", "Life admin", "Was: your evenings. Now: agents talking to agents.", "Bills, bookings, returns, forms, disputes. In 2026 it ate hours of every week. Now it’s mostly machines negotiating with other machines in milliseconds, in formats no person reads. You can see the receipts. You rarely look."],
   yourvoice: ["NEW", "Your voice", "Licensed to Wren in 2044", "A model of how you write: your jokes, your sign-offs, the way you avoid exclamation marks. Most adults have one. Etiquette says messages your agent wrote carry a small ◦. Not everyone follows etiquette."],
@@ -402,22 +411,48 @@ const A = {
 $("#sndBtn").addEventListener("click", () => A.set(!A.on));
 
 /* ---------- Text, timing, and the skip ---------- */
-let fast = false, skipper = null;
+let skipper = null, auto = !!store.get("wwk.auto", false);
+let AGENT = String(store.get("wwk.name", "") || "").replace(/[^\p{L}\p{N} '\-]/gu, "").trim().slice(0, 16);
+const nm = t => AGENT ? String(t).replace(/\bWren\b/g, AGENT) : String(t);
 const sleep = ms => new Promise(r => setTimeout(r, FASTDEV ? Math.min(ms, 20) : ms));
+// Short timed pause; a tap skips it.
 function wait(ms) {
-  if (fast || FASTDEV) ms = Math.min(ms, 40);
+  if (FASTDEV) ms = Math.min(ms, 40);
   if (RM) ms = Math.min(ms, 500);
   return new Promise(r => {
     const done = () => { clearTimeout(t); if (skipper === done) skipper = null; r(); };
     const t = setTimeout(done, ms); skipper = done;
   });
 }
+// Reading pause: waits for the reader (tap, Continue, Space), or a slow timer when Auto is on.
+function beat(ms) {
+  if (FASTDEV) return sleep(20);
+  return new Promise(r => {
+    let t = 0;
+    const arm = () => { clearTimeout(t); if (auto) t = setTimeout(done, ms * 1.6); };
+    const done = () => { clearTimeout(t); if (skipper === done) skipper = null; dock.replaceChildren(); r(); };
+    skipper = done;
+    const go = el("button", "ch cont", "<span class='l'>Continue</span><span class='m'>tap anywhere</span>"); go.type = "button";
+    const au = el("button", "ch cont auto" + (auto ? " on" : ""), "Auto"); au.type = "button"; au.setAttribute("aria-pressed", String(auto));
+    go.addEventListener("click", done);
+    au.addEventListener("click", () => { auto = !auto; store.set("wwk.auto", auto); au.classList.toggle("on", auto); au.setAttribute("aria-pressed", String(auto)); arm(); });
+    const row = el("div", "controw"); row.append(go, au); dock.replaceChildren(row);
+    arm();
+  });
+}
 stage.addEventListener("click", e => {
   if (e.target.closest("button, input, label, canvas, .art")) return;
-  if (skipper) { fast = true; skipper(); }
+  if (skipper) skipper();
 });
-function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+document.addEventListener("keydown", e => {
+  if (!skipper || e.repeat || !sheet.hidden) return;
+  if (!["Enter", " ", "ArrowRight", "ArrowDown"].includes(e.key)) return;
+  if (e.target.closest && e.target.closest("input, button, .art, label")) return;
+  e.preventDefault(); skipper();
+});
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = nm(html); return e; }
 function rich(node, text) {
+  text = nm(text);
   const re = /\[\[(\w+)\|([^\]]+)\]\]/g; let i = 0, m;
   while ((m = re.exec(text))) {
     if (m.index > i) node.append(text.slice(i, m.index));
@@ -441,7 +476,7 @@ async function say(kind, text, who) {
   if (who) p.append(el("span", "who", who));
   rich(p, text); put(p);
   if (kind === "w") A.blip(1318, .028, .6);
-  await wait(readTime(text));
+  await beat(readTime(text));
 }
 const N = t => say("n", t);
 const W = t => say("w", t);
@@ -450,11 +485,10 @@ function hint(t) { put(el("p", "hint", t)); }
 async function sysList(items, gap, numbered) {
   const ul = put(el("ul", "sys" + (numbered ? " num" : "")));
   for (const it of items) { const li = el("li"); rich(li, it); ul.append(li); down(); A.blip(2200, .008, .08); await wait(gap); }
-  await wait(500);
+  await beat(2400);
 }
 
 function choose(opts) {
-  fast = false;
   return new Promise(res => {
     const btns = opts.map(o => {
       const b = el("button", "ch " + (o.kind || "plain")); b.type = "button";
@@ -482,7 +516,7 @@ function setPhase(p) {
 }
 function setWren(on) {
   const w = $("#wstat"); w.classList.toggle("off", !on);
-  w.querySelector("span").textContent = on ? "Wren" : "Wren · quiet";
+  w.querySelector("span").textContent = (AGENT || "agent") + (on ? "" : " · quiet");
 }
 function setWire(list) {
   const t = $("#tick"); t.replaceChildren();
@@ -497,7 +531,7 @@ async function scene(time, phase, place, wire) {
   stage.replaceChildren(); stage.classList.remove("out"); stage.scrollTop = 0;
   setPhase(phase); $("#clk").textContent = time; setWire(wire || []);
   const c = el("div", "chap"); c.append(el("span", "t", time), el("span", "pl", place)); put(c);
-  await wait(1000);
+  await wait(1300);
 }
 
 /* ---------- Sheet: a piece of 2050, or all of them ---------- */
@@ -594,7 +628,7 @@ function builder(tiles) {
     const out = el("p", "built", "…"), grid = el("div", "tiles"), picked = [];
     box.append(el("div", "cap", "Build your answer. Pick up to three, in the order you’d say them."), out, grid);
     const go = el("button", "ch hand", "Say it"); go.type = "button"; go.disabled = true;
-    const render = () => { out.textContent = picked.length ? compose(picked) : "…"; go.disabled = !picked.length; };
+    const render = () => { out.textContent = picked.length ? nm(compose(picked)) : "…"; go.disabled = !picked.length; };
     tiles.forEach(t => {
       const b = el("button", "tile", t); b.type = "button";
       b.addEventListener("click", () => {
@@ -703,7 +737,7 @@ function quietHold(total) {
     [19, "You notice you’re waiting for something to need you."], [23, "Nothing does."], [27, "That’s all right."]
   ];
   const scale = total / 30;
-  const setText = t => { txt.classList.add("fade"); setTimeout(() => { txt.textContent = t; txt.classList.remove("fade"); }, RM ? 0 : 420); };
+  const setText = t => { txt.classList.add("fade"); setTimeout(() => { txt.textContent = nm(t); txt.classList.remove("fade"); }, RM ? 0 : 420); };
   return new Promise(res => {
     btns.replaceChildren(); ring.hidden = false; tm.hidden = false;
     ring.style.setProperty("--p", 0); tm.textContent = "0:00";
@@ -772,13 +806,41 @@ async function titleScreen() {
   const p1 = el("p", "n", "It’s " + DATESTR.replace(/^\w+ /, "") + ". Twenty-four years from the day you opened this.");
   const p2 = el("p", "n", "You’re thirty-nine. In 2026 you were fifteen.");
   const p3 = el("p", "n", "Almost nothing needs you anymore. Today, you’ll find out what still does.");
-  t.append(p1, p2, p3, el("p", "meta-note", "About 12 minutes · best with sound and headphones · tap the story to move faster"));
+  t.append(p1, p2, p3, el("p", "meta-note", "About 15 minutes · best with sound · you set the pace: tap to continue, or switch on Auto"));
   put(t);
   const k = await choose([
     { k: "snd", label: "Wake up", meta: "with sound", kind: "ai", echo: false },
     { k: "quiet", label: "Wake up without sound", kind: "plain", echo: false }
   ]);
   A.set(k === "snd");
+  if (!AGENT) await nameAgent();
+}
+
+async function nameAgent() {
+  stage.classList.add("out"); await sleep(RM ? 0 : 420);
+  stage.replaceChildren(); stage.classList.remove("out");
+  const t = el("div", "title");
+  t.append(el("div", "eyebrow", "Before you wake"));
+  t.append(el("p", "n", "You got your agent at twenty-three and gave it a name. It has answered to that name every day since."));
+  t.append(el("p", "n", "What did you call it?"));
+  const inp = el("input", "namein"); inp.id = "agentName"; inp.type = "text"; inp.maxLength = 16;
+  inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "words"); inp.spellcheck = false;
+  inp.placeholder = "a name"; inp.setAttribute("aria-label", "Your agent’s name");
+  t.append(inp, el("p", "meta-note", "Any name. You can’t change it later in the day, same as real life."));
+  put(t);
+  const go = el("button", "ch hand", "<span class='l'>That’s its name</span>"); go.type = "button"; go.disabled = true;
+  dock.replaceChildren(go);
+  const clean = () => inp.value.replace(/[^\p{L}\p{N} '\-]/gu, "").replace(/\s+/g, " ").trim();
+  inp.addEventListener("input", () => { go.disabled = !clean(); });
+  await new Promise(res => {
+    const submit = () => { if (!clean()) return; res(); };
+    go.addEventListener("click", submit);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  });
+  const v = clean();
+  AGENT = v.charAt(0).toUpperCase() + v.slice(1);
+  store.set("wwk.name", AGENT);
+  inp.blur(); dock.replaceChildren(); setWren(true);
 }
 
 async function wake() {
@@ -843,7 +905,7 @@ async function junoScene() {
     await W("Juno, people who grew up before agents learned their manners on other people, so they use them everywhere. It costs nothing, and it’s kind. You can if you want to.");
     await P("Juno", "Okay.");
     await N("It’s a good answer. Better than yours would have been. Juno goes back to drawing and won’t remember it by lunch.");
-    await N("The drawing is of a small bird. Juno has never seen what Wren looks like. Nobody has.");
+    await N("The drawing is of a small glowing shape with legs. Juno has never seen what Wren looks like. Nobody has.");
   } else {
     S.junoBy = "you"; S.hand.juno = true; S.min += 11;
     const picks = await builder([
@@ -1021,7 +1083,7 @@ async function quietScene() {
 async function night() {
   await scene("22:30", "night", "Night", ["Orbital datacentre #3 online · grid relief for heat zones", "Tomorrow: 31°C · your run moved to 06:10"]);
   if (S.junoBy === "you") await N("Juno’s asleep. The drawing of you is on the fridge, held up by a magnet shaped like a pear. Your nose is enormous.");
-  else await N("Juno’s asleep. The bird drawing is on the fridge, held up by a magnet shaped like a pear.");
+  else await N("Juno’s asleep. The drawing of Wren, a glowing shape with legs, is on the fridge, held up by a magnet shaped like a pear.");
   await W("Can I ask you something? You’re the only one who can answer it.");
   await W("Tomorrow I can do all of it. The coffee. The walk. The answers. The waiting. Faster than you, and better.");
   await W("Which ones should I leave for you?");
