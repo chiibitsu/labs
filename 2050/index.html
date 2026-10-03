@@ -275,7 +275,7 @@ ul.sys.num li { padding-left: 0; color: var(--ink); font-size: .8rem; }
 <div id="sun" aria-hidden="true"></div>
 <div id="app">
   <header class="bar">
-    <div class="clock"><b id="clk">06:52</b><span id="date">2050</span></div>
+    <div class="clock"><b id="clk">06:15</b><span id="date">2050</span></div>
     <div class="bar-r">
       <span class="pill wren" id="wstat"><i></i><span>agent</span></span>
       <button class="pill" id="foundBtn" type="button" aria-label="Pieces of 2050 you have found"><span>◆</span><span id="foundN">0/28</span></button>
@@ -799,7 +799,7 @@ let S;
 function fresh() { return { hand: {}, min: 0, junoBy: "", momBy: "", supplier: "", show: "", quiet: "", quietHeld: 0, quietOk: false, picks: [], kept: [] }; }
 
 async function titleScreen() {
-  setPhase("dawn"); $("#clk").textContent = "06:51"; setWren(true);
+  setPhase("dawn"); $("#clk").textContent = "06:15"; setWren(true);
   setWire(["Today, twenty-four years on", "Compute dividend posts Thursday · 1,180 cr per adult", "Grid: overnight inference curfew lifts at 07:00", "61% of last night’s web traffic was agents talking to agents"]);
   const t = el("div", "title");
   t.append(el("div", "eyebrow", "A day in 2050"), el("h1", null, "What We Kept"));
@@ -851,7 +851,7 @@ async function nameAgent() {
 }
 
 async function wake() {
-  await scene("06:52", "dawn", "Bedroom", ["Overnight: your agent closed 214 tasks", "Grid: inference curfew lifts at 07:00", "Signed calls now default on every network", "Compute dividend posts Thursday · 1,180 cr per adult"]);
+  await scene("06:15", "dawn", "Bedroom", ["Overnight: your agent closed 214 tasks", "Grid: inference curfew lifts at 07:00", "Signed calls now default on every network", "Compute dividend posts Thursday · 1,180 cr per adult"]);
   await N("You wake before the alarm. There hasn’t been an alarm in years. [[wren|Wren]] waits until your breathing changes.");
   await N("Grey light in the same [[window|window]] you’ve had since Juno was born. It still fogs up.");
   await W("Morning. While you slept, I handled [[admin|214 things]].");
@@ -1153,7 +1153,7 @@ async function ending() {
   const hm = m => Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
 
   const r = el("div", "receipt");
-  r.append(el("h2", null, "What you kept"), el("div", "c", DATESTR + " · 06:52–22:30"), el("hr"));
+  r.append(el("h2", null, "What you kept"), el("div", "c", DATESTR + " · 06:15–22:30"), el("hr"));
   const row = (a, b) => { const d = el("div", "rrow"); d.append(el("span", null, a), el("span", "lead"), el("span", "v", b)); return d; };
   r.append(row("Handled by Wren", String(214 + delegated)), row("Done with your own hands", String(handCount)), el("hr"));
   for (const m of moments) {
