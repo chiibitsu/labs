@@ -21,6 +21,15 @@ Parkinson's law can't quietly fill it with more work.
 
 Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/chatgpt-and-codex.md).
 
+**Any Claude Code repo without the plugin:** vibeOS's standing orders carry the exact
+commands, pinned to a reviewed commit of `ledger.py` with its sha256 checked before it runs,
+so a change here reaches sessions only through a vibeOS PR that moves the pin. The client
+identifies the session by the harness's `CLAUDE_CODE_SESSION_ID` and reads every copy of its
+transcript (Claude Code starts a new copy when the working directory changes, and the cost
+records can stay in the old one); subagent transcripts never count. Cost is recorded when the
+transcript carries Claude Code's cost records, and the client says so when it cannot find them
+rather than estimating. Only the top-level session logs; subagents never do.
+
 ## One-time setup (about 10 minutes)
 
 1. **Allow the login link.** Supabase → `chiibitsu-labs` → Authentication → URL
