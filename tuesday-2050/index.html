@@ -77,6 +77,7 @@ body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
 .meter { display: inline-flex !important; gap: 2px; align-items: flex-end; }
 .meter u { width: 5px; height: 100%; background: var(--line); border-radius: 1px; text-decoration: none; }
 .meter u.on { background: var(--alert); }
+.snd.q { margin-right: -6px; font-size: 15px; }
 .snd { appearance: none; -webkit-appearance: none; background: none; border: 1px solid var(--line); border-radius: 999px; width: 34px; height: 34px; cursor: pointer; font: 14px var(--mono); color: var(--ink2); }
 .snd[aria-pressed="false"] { text-decoration: line-through; opacity: .6; }
 
@@ -109,6 +110,19 @@ body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
 .slug { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink2); }
 .title { font: italic 500 clamp(46px, 13vw, 78px)/.95 var(--narr); letter-spacing: -.02em; }
 .sub { font: 12px/1.6 var(--mono); color: var(--ink2); }
+.setup { display: flex; flex-direction: column; gap: 22px; }
+.setup .sec { display: flex; flex-direction: column; gap: 8px; }
+.setup h5, .setup label.l { font: 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); font-weight: 400; }
+.setup .hint { font: 12px/1.5 var(--mono); color: var(--ink2); margin-top: -2px; }
+.setup input, .setup select { width: 100%; font: 500 19px var(--narr); padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); }
+.setup select { font: 13px var(--mono); padding: 11px 6px; }
+.setup .pr { display: grid; grid-template-columns: 1fr 124px; gap: 8px; }
+.setup .who { display: flex; flex-direction: column; gap: 6px; }
+.jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jobbtn { appearance: none; -webkit-appearance: none; cursor: pointer; text-align: left; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); font-family: var(--narr); display: flex; flex-direction: column; gap: 3px; -webkit-tap-highlight-color: transparent; }
+.jobbtn b { font-weight: 500; font-size: 16.5px; line-height: 1.2; }
+.jobbtn i { font: normal 11px/1.4 var(--mono); color: var(--ink2); }
+.jobbtn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .field label { display: block; font: 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); margin-bottom: 8px; }
 .field input { width: 100%; font: 500 22px var(--narr); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--btn); color: var(--ink); }
 .chips { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
@@ -232,6 +246,7 @@ body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
       <div class="v" id="vBank"><b>0m</b><i>banked</i></div>
       <div class="v" id="vKept"><b>0</b><i>kept</i></div>
       <div class="v" id="vExp"><b class="meter"><u></u><u></u><u></u><u></u><u></u></b><i>exposed</i></div>
+      <button class="snd q" id="help" type="button" aria-label="What the numbers mean">?</button>
       <button class="snd" id="snd" type="button" aria-pressed="true" aria-label="Sound">&#9834;</button>
     </div>
   </header>
@@ -269,10 +284,16 @@ let S;
 function fresh() {
   return { name: 'Wren', time: 300, bank: 0, spent: 0, kept: 0, total: 0, exp: 0, dollars: 0, count: 1204, pending: 0,
     cps: 6, dead: false, preds: [], wsum: 0, wn: 0, moments: [], signed: 0, flaws: 0, caught: 0, missed: [],
-    feedMin: 0, offer: '', scene: -1 };
+    feedMin: 0, offer: '', scene: -1, explained: false, job: 'ops',
+    people: { mom: { n: 'Mom', p: 'she' }, friend: { n: 'Dani', p: 'she' }, kid: { n: 'Mina', p: 'she' } } };
 }
 S = fresh();
-const T = s => String(s).replace(/\{name\}/g, S.name);
+const PR = { she: { s: 'she', o: 'her', p: 'her', pp: 'hers' }, he: { s: 'he', o: 'him', p: 'his', pp: 'his' }, they: { s: 'they', o: 'them', p: 'their', pp: 'theirs' } };
+const T = s => String(s).replace(/\{name\}/g, S.name).replace(/\{(mom|friend|kid)(?:\.(s|o|p|pp|S|P))?\}/g, (m, r, f) => {
+  const x = S.people[r]; if (!f) return x.n;
+  const v = (PR[x.p] || PR.they)[f === 'S' ? 's' : f === 'P' ? 'p' : f];
+  return (f === 'S' || f === 'P') ? v[0].toUpperCase() + v.slice(1) : v;
+});
 
 /* ---------- audio ---------- */
 const AU = {
@@ -461,7 +482,7 @@ function add(node) { story.append(node); requestAnimationFrame(() => requestAnim
 function mk(L) {
   if (typeof L === 'string') return el('p', 'n', T(L));
   if (L.a) { const p = el('p', 'a'); p.append(el('span', 'tag', S.name), document.createTextNode(T(L.a))); return p; }
-  if (L.who) { const p = el('p', 'q'); p.append(el('span', 'tag', L.who), document.createTextNode(T(L.t))); return p; }
+  if (L.who) { const p = el('p', 'q'); p.append(el('span', 'tag', T(L.who)), document.createTextNode(T(L.t))); return p; }
   if (L.m) return el('p', 'm' + (L.alert ? ' alert' : ''), T(L.m));
   if (L.slug) return el('div', 'slug', T(L.slug));
   if (L.you) return el('p', 'you', T(L.you));
@@ -505,6 +526,7 @@ function choose(options, o = {}) {
       if (predict) {
         const hit = pi === i; S.preds.push({ q: o.q || '', you: op.short || op.label, it: options[pi].short || options[pi].label, hit });
         await say([{ m: hit ? `${S.name} expected this.` : `${S.name} expected “${options[pi].short || options[pi].label}”. noted.` }]);
+        if (!S.explained) { S.explained = true; await say([{ m: '(It learns from what you pick, and guesses the next one.)' }]); }
       }
       res(op);
     }
@@ -539,7 +561,7 @@ function openSheet(items, titleLine) {
   const box = $('#sheetbox'); box.replaceChildren();
   if (titleLine) box.append(el('h3', '', titleLine));
   items.forEach(r => {
-    const d = el('div', 'item'); d.append(el('div', 'kind', r.kind === 'bet' ? 'my bet · not a fact' : 'signal from 2025–26'), el('h3', '', r.title), el('p', '', r.text));
+    const d = el('div', 'item'); d.append(el('div', 'kind', r.kind === 'bet' ? 'my bet · not a fact' : r.kind === 'how' ? 'how to read the screen' : 'signal from 2025–26'), el('h3', '', r.title), el('p', '', r.text));
     if (r.links && r.links.length) { const l = el('div', 'lk'); r.links.forEach(([t, u]) => { const a = el('a', '', t + ' ↗'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; l.append(a); }); d.append(l); }
     box.append(d);
   });
@@ -554,17 +576,17 @@ const R = {
   wake: { title: 'The world runs without you', text: 'The four biggest US cloud companies guided to roughly $725B of AI capex for 2026, about 77% above 2025. The IEA expects data-centre electricity use to more than double to ~945 TWh by 2030. Someone is building the floor this day stands on, and it is not built for you in particular. It is built for everything.',
     links: [['Hyperscaler capex 2026', 'https://aiweekly.co/node/8566'], ['IEA, Energy and AI', 'https://www.iea.org/reports/energy-and-ai/executive-summary']] },
   kitchen: { kind: 'bet', title: 'Friction goes first', text: 'The things that vanish earliest are the ones nobody loved: forms, queues, passwords, hold music. The ones people did love last longer than the optimists expect. Breakfast sits right on that line. This is a claim about people, not a forecast with a source.' },
-  mom: { title: 'Is it really her?', text: 'From 2 August 2026 the EU AI Act (Article 50) requires AI-generated content to be machine-marked and deepfakes to be disclosed. World ID reports 39M+ people verified and is being wired into Tinder, Zoom and DocuSign. “Verified human” is already a paid, optional layer. The game assumes that layer exists and is imperfect.',
+  mom: { title: 'Is it really them?', text: 'From 2 August 2026 the EU AI Act (Article 50) requires AI-generated content to be machine-marked and deepfakes to be disclosed. World ID reports 39M+ people verified and is being wired into Tinder, Zoom and DocuSign. “Verified human” is already a paid, optional layer. The game assumes that layer exists and is imperfect.',
     links: [['EU AI Act Article 50', 'https://didit.me/blog/eu-ai-act-deepfake-labelling-2026/'], ['World ID, third anniversary', 'https://stocktwits.com/news-articles/markets/cryptocurrency/sam-altman-world-turns-3-proof-of-human-tinder/cZZsBPXR7zo']] },
   work: { title: 'The person whose name is on it', text: 'Oversight researchers describe automation bias: after a system is right a thousand times, the reviewer rubber-stamps it. A February 2026 Berkeley study in Harvard Business Review found AI did not shrink work. People took on more, faster, for longer, and engineers spent more time reviewing each other\'s AI-assisted output. When doing is cheap, checking becomes the job.',
     links: [['The human-in-the-loop fallacy', 'https://dev.to/himanshu-vaghela9/the-human-in-the-loop-fallacy-why-someone-will-check-is-not-a-control'], ['“AI doesn\'t reduce work, it intensifies it”', 'https://tagteam.harvard.edu/hub_feeds/2087/feed_items/17248204']] },
   deal: { title: 'Your agent haggles with theirs', text: 'The rails for agent-to-agent buying are being laid now: Visa\'s Trusted Agent Protocol (Oct 2025), Google\'s Universal Commerce Protocol (Jan 2026), OpenAI and Stripe\'s Agentic Commerce Protocol. McKinsey projects $3–5T of global agent-mediated retail by 2030. Reality check: OpenAI shut its consumer Instant Checkout in March 2026 for underperformance. The rails are ahead of the shoppers. Data-for-discount is an old trade; agents make it instant.',
     links: [['What is agentic commerce', 'https://forkast.news/learn/what-is-agentic-commerce'], ['Agentic commerce guide', 'https://alhena.ai/blog/agentic-commerce/']] },
-  lunch: { title: 'The on-ramp is what narrows', text: 'Stanford economists found employment of 22–25 year-olds in the most AI-exposed jobs is about 19% lower than in less-exposed ones, driven by weaker hiring, not firing. Jobs are not vanishing so much as the first rung is. Dani is the person that sentence is about.',
+  lunch: { title: 'The on-ramp is what narrows', text: 'Stanford economists found employment of 22–25 year-olds in the most AI-exposed jobs is about 19% lower than in less-exposed ones, driven by weaker hiring, not firing. Jobs are not vanishing so much as the first rung is. Your friend at lunch is the person that sentence is about.',
     links: [['Study summary, Computing', 'https://www.computing.co.uk/news/2026/ai/ai-is-closing-the-door-on-entry-level-jobs-study-finds']] },
   gap: { title: 'Saved time gets refilled', text: 'The same Berkeley study: when AI makes doing more feel possible, people fill every gap, and nobody asks them to. A feed that knows you perfectly is the end state of the attention business. The game lets you take the feed, the plan, or the window. All three are real in 2050.',
     links: [['HBR: the AI productivity trap', 'https://www.techbrew.com/stories/2026/02/10/AI-productivity-trap-HBR']] },
-  mina: { title: 'Why do the hard part?', text: 'A 2025 study of 666 people found more frequent AI use tied to weaker critical thinking, with cognitive offloading as the mediator. Education researchers in 2026 are focused on keeping “productive struggle” alive while letting AI take lower-order work. Mina\'s question is the real one in every classroom.',
+  mina: { title: 'Why do the hard part?', text: 'A 2025 study of 666 people found more frequent AI use tied to weaker critical thinking, with cognitive offloading as the mediator. Education researchers in 2026 are focused on keeping “productive struggle” alive while letting AI take lower-order work. The nine-year-old\'s question is the real one in every classroom.',
     links: [['UTS: unstructured AI use and cognitive atrophy', 'https://uts.edu.au/news/2026/03/experts-warn-unstructured-ai-use-in-schools-risks-cognitive-atrophy']] },
   outage: { title: 'When it stops', text: 'In October 2025 an AWS outage lasted about 15 hours and turned Alexa, Ring and other smart-home devices into dumb boxes. In 2050 the dependency is deeper, so the outage is too. Resilience (local control, cash, a paper map) becomes something people pay for. That last part is my bet.',
     links: [['The Register on the AWS outage', 'https://www.theregister.com/2025/10/21/aws_outage_aftermath']] },
@@ -615,34 +637,91 @@ function windowWidget(sec) {
 
 /* ---------- the day ---------- */
 const FEED = ['A video of a cat that looks like your uncle. Made for you.', 'Someone in another country is cooking your exact dinner.', 'A song you have never heard. You will love it. It is already saved.'];
-const ITEMS = [
-  { t: 'Lease renewal · 212 Alder St', s: 'Standard 12-month renewal. Rent unchanged.', c: '12 months. Rent unchanged. Pets allowed. Nothing odd.', f: 'Clause 14 lifts the rent 38% in month 7.', mm: 'The lease you signed raises the rent 38% in month 7.' },
-  { t: 'Night-shift triage ranking', s: 'Re-ranked 41 patients. No exceptions.', c: 'Ranked by acuity. Two nurse overrides, both logged.', f: 'A rounding rule pushes patients over 80 down the queue.', mm: 'The triage ranking you signed pushes patients over 80 down the queue.' },
-  { t: 'Shortlist · 6 of 3,100 applicants', s: 'Scored on skills only.', c: 'Every score traces to a portfolio or a test. Nothing else.', f: 'The score leans on postcode. Four of the six share one.', mm: 'The shortlist you signed leaned on postcode.' },
-  { t: 'Supplier payment run', s: '14 invoices, $2.1M, all matched.', c: 'All 14 match purchase orders and known vendors.', f: 'Invoice 9 matches a vendor created last Tuesday.', mm: 'The payment run you signed included a vendor created last Tuesday.' },
-  { t: 'Public notice · bus changes', s: 'Plain-language summary of 3 changes.', c: 'Three changes. All three are in the summary.', f: 'Leaves out that route 12 stops running. 50 people ride it daily.', mm: 'The notice you signed left out that route 12 stops running.' },
-  { t: 'Insurance claim · water damage', s: 'Approved. $11,400.', c: 'Photos, plumber\'s report and timestamps agree.', f: 'The photos are synthetic. The claim was generated.', mm: 'The $11,400 claim you approved used synthetic photos.' },
-  { t: 'Medication schedule · Mr. Okafor', s: 'Adjusted for the new prescription.', c: 'Doses and timing checked against the pharmacy record.', f: 'Two of the drugs interact. Not flagged.', mm: 'The medication schedule you signed has two drugs that interact.' }
-];
+const JOBS = {
+  ops: { label: 'Operations lead', blurb: 'You sign off on what the agents run.', slug: 'The signing queue',
+    intro: ['You work as a Signatory.', 'Three hundred agents do the work. Your job is to be the person whose name is on it. When something goes wrong, there has to be someone it went wrong for.', 'Five items. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Lease renewal · 212 Alder St', s: 'Standard 12-month renewal. Rent unchanged.', c: '12 months. Rent unchanged. Pets allowed. Nothing odd.', f: 'Clause 14 lifts the rent 38% in month 7.', mm: 'The lease you signed raises the rent 38% in month 7.' },
+      { t: 'Night-shift triage ranking', s: 'Re-ranked 41 patients. No exceptions.', c: 'Ranked by acuity. Two nurse overrides, both logged.', f: 'A rounding rule pushes patients over 80 down the queue.', mm: 'The triage ranking you signed pushes patients over 80 down the queue.' },
+      { t: 'Shortlist · 6 of 3,100 applicants', s: 'Scored on skills only.', c: 'Every score traces to a portfolio or a test. Nothing else.', f: 'The score leans on postcode. Four of the six share one.', mm: 'The shortlist you signed leaned on postcode.' },
+      { t: 'Supplier payment run', s: '14 invoices, $2.1M, all matched.', c: 'All 14 match purchase orders and known vendors.', f: 'Invoice 9 matches a vendor created last Tuesday.', mm: 'The payment run you signed included a vendor created last Tuesday.' },
+      { t: 'Public notice · bus changes', s: 'Plain-language summary of 3 changes.', c: 'Three changes. All three are in the summary.', f: 'Leaves out that route 12 stops running. 50 people ride it daily.', mm: 'The notice you signed left out that route 12 stops running.' },
+      { t: 'Insurance claim · water damage', s: 'Approved. $11,400.', c: 'Photos, plumber\'s report and timestamps agree.', f: 'The photos are synthetic. The claim was generated.', mm: 'The $11,400 claim you approved used synthetic photos.' },
+      { t: 'Medication schedule · Mr. Okafor', s: 'Adjusted for the new prescription.', c: 'Doses and timing checked against the pharmacy record.', f: 'Two of the drugs interact. Not flagged.', mm: 'The medication schedule you signed has two drugs that interact.' }
+    ] },
+  nurse: { label: 'Nurse', blurb: 'You hold the hands and sign the orders.', slug: 'The orders',
+    intro: ['You\'re a charge nurse on the day ward.', 'Agents chart, schedule and rank. They don\'t hold a hand, or catch the thing that looks wrong from the doorway. You do, and your signature goes on every order.', 'Five orders. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Night-shift triage ranking', s: 'Re-ranked 41 patients. No exceptions.', c: 'Ranked by acuity. Two nurse overrides, both logged.', f: 'A rounding rule pushes patients over 80 down the queue.', mm: 'The triage ranking you signed pushes patients over 80 down the queue.' },
+      { t: 'Medication schedule · Mr. Okafor', s: 'Adjusted for the new prescription.', c: 'Doses and timing checked against the pharmacy record.', f: 'Two of the drugs interact. Not flagged.', mm: 'The medication schedule you signed has two drugs that interact.' },
+      { t: 'Discharge summary · bed 6', s: 'Stable. Home today with follow-up.', c: 'Vitals, labs and notes agree.', f: 'Last night\'s oxygen dip is missing from the summary.', mm: 'The discharge you signed left out an oxygen dip overnight.' },
+      { t: 'Bed assignment · ward B', s: 'Beds filled. No conflicts.', c: 'No isolation or mobility conflicts.', f: 'A patient on isolation is placed beside a transplant patient.', mm: 'The bed plan you signed put an isolation patient next to a transplant patient.' },
+      { t: 'Handover note · night to day', s: 'Summary of 22 patients.', c: 'Every flag carried over.', f: 'Leaves out the fall risk on bed 3.', mm: 'The handover you signed left out a fall risk on bed 3.' },
+      { t: 'Supply restock', s: '148 items. Matched to usage.', c: 'Counts match usage and stock.', f: 'Insulin is ordered at a tenth of what the ward needs.', mm: 'The restock you signed ordered a tenth of the insulin the ward needs.' },
+      { t: 'Family update · bed 9', s: 'Plain-language update sent.', c: 'Accurate and kind.', f: 'It says the surgery went well. It hasn\'t happened yet.', mm: 'The update you signed told a family the surgery went well before it happened.' }
+    ] },
+  teacher: { label: 'Teacher', blurb: 'You are the adult in the room.', slug: 'The reports',
+    intro: ['You teach Year 6.', 'Agents write the lesson plans, mark the work and draft the reports. You\'re the adult in the room, and your name goes on everything that goes home.', 'Five items. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Marks · fractions test', s: '28 scripts marked. Average 71%.', c: 'Marks match the rubric. Two flagged for your review.', f: 'Every answer written as a decimal was marked wrong.', mm: 'The marks you signed penalised every answer written as a decimal.' },
+      { t: 'Report comment · Priya', s: 'Warm, specific, accurate.', c: 'Draws on three real pieces of work.', f: 'Praises work another student handed in.', mm: 'The report you signed praised work another student wrote.' },
+      { t: 'Lesson plan · Thursday', s: 'Covers the term\'s objective.', c: 'Timed and resourced.', f: 'The main activity needs a lab that\'s closed on Thursday.', mm: 'The lesson plan you signed needs a room that is closed Thursday.' },
+      { t: 'Essay flag · Jonah', s: 'Likely AI-written. 91% confidence.', c: 'Draft history is thin. The flag looks right.', f: 'Draft history shows two evenings of real work. The flag is wrong.', mm: 'The essay flag you signed accused a student who did the work.' },
+      { t: 'Attendance letters', s: 'Polite reminder to 4 families.', c: 'All four are correct.', f: 'One family is scolded for an absence caused by a funeral.', mm: 'The attendance letter you signed scolded a family for a funeral absence.' },
+      { t: 'Support plan · Sam', s: 'Updated. Accommodations unchanged.', c: 'Matches the support plan.', f: 'Drops the extra-time accommodation.', mm: 'The support summary you signed dropped a student\'s extra-time accommodation.' },
+      { t: 'Trip permission slips', s: 'All 30 returned and valid.', c: 'All 30 signed by guardians.', f: 'Six are signed in the same handwriting.', mm: 'The permission slips you signed included six in the same handwriting.' }
+    ] },
+  electrician: { label: 'Electrician', blurb: 'Agents can\'t open a panel.', slug: 'The jobs',
+    intro: ['You\'re an electrician.', 'Agents quote the jobs, order the parts and route your van. They can\'t open a panel. Your hands can, and your name is on every inspection.', 'Five jobs. Each has a summary. The summaries are usually right. “Usually” is the whole job.'],
+    items: [
+      { t: 'Quote · rewire, 14 Marlow Ct', s: 'Standard rewire. $6,200.', c: 'Copper throughout. Photos match.', f: 'Assumes copper. The wall is aluminum wiring.', mm: 'The quote you signed assumed copper in a house wired in aluminum.' },
+      { t: 'Parts order · panel upgrade', s: '14 parts. All in stock.', c: 'Ratings match the load calculation.', f: 'The breaker is rated 20A. The circuit needs 30A.', mm: 'The parts order you signed had a 20A breaker for a 30A circuit.' },
+      { t: 'Route · 6 jobs today', s: 'Fastest route. 9 minutes saved.', c: 'Times and access checked.', f: 'Job 4 is a locked site with no one home until 15:00.', mm: 'The route you signed sent you to a locked site before anyone was home.' },
+      { t: 'Safety checklist · attic job', s: 'Complete. All items green.', c: 'Every item has a photo.', f: 'Item 7 is green with no photo.', mm: 'The safety checklist you signed had a green item with no photo.' },
+      { t: 'Permit filing · garage', s: 'Filed. Approved in 40 seconds.', c: 'Permit matches the job.', f: 'The permit is for the house next door.', mm: 'The permit you signed was filed for the wrong address.' },
+      { t: 'Customer message · Ms. Adeyemi', s: 'Visit confirmed for Friday.', c: 'Date, time and access correct.', f: 'It says the power will be off for 20 minutes. It will be 4 hours.', mm: 'The message you signed told a customer a 4-hour outage would last 20 minutes.' },
+      { t: 'Invoice · kitchen circuit', s: '$840. Matches the quote.', c: 'Matches quote and hours.', f: 'Bills a second visit that never happened.', mm: 'The invoice you signed billed a visit that never happened.' }
+    ] }
+};
 
 async function title() {
   document.body.classList.add('intro'); await clearStory();
   add(el('div', 'slug', 'a game · about ten minutes'));
   add(el('h1', 'title', 'Tuesday, 2050.'));
-  await wait(700);
+  await wait(600);
   await say([
     'Nobody calls it AI anymore. You don\'t say “the grid” when you flip a light switch. It\'s just there.',
-    'This is one ordinary day. You\'ll make about ten choices. None of them are tests.'
+    'This is one ordinary day. You\'ll make about ten choices. None of them are tests.',
+    'First, who is in your day? Thirty seconds.'
   ]);
-  const f = el('div', 'field'); f.innerHTML = '<label for="nm">What do you call the voice that lives with you?</label><input id="nm" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Wren" /><div class="chips"></div>';
-  const chips = f.querySelector('.chips');
-  ['Wren', 'Sol', 'Juno'].forEach(n => { const c = el('button', 'chip', n); c.type = 'button'; c.addEventListener('click', () => { f.querySelector('input').value = n; }); chips.append(c); });
+  let saved = {}; try { saved = JSON.parse(lsGet('t2050-setup') || '{}') || {}; } catch (e) {}
+  const sp = saved.people || {};
+  const sel = '<select aria-label="Pronouns"><option value="she">she/her</option><option value="he">he/him</option><option value="they">they/them</option></select>';
+  const row = (id, label) => `<div class="who"><label class="l" for="${id}">${label}</label><div class="pr"><input id="${id}" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" />${sel.replace('<select', '<select id="' + id + 'p"')}</div>${id === 'p1' ? '<div class="chips" data-for="p1"></div>' : ''}</div>`;
+  const f = el('div', 'setup');
+  f.innerHTML = `<div class="sec"><label class="l" for="nm">Your voice</label><div class="hint">The AI that lives with you.</div><input id="nm" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Wren" /><div class="chips" data-for="nm"></div></div>
+<div class="sec"><h5>Your people</h5>${row('p1', 'Someone who calls you')}${row('p2', 'A friend')}${row('p3', 'A kid you love')}</div>
+<div class="sec"><h5>Your work</h5><div class="jobs"></div></div>`;
+  const q = id => f.querySelector('#' + id);
+  q('nm').value = saved.name || ''; 
+  [['p1', 'mom', 'Mom'], ['p2', 'friend', 'Dani'], ['p3', 'kid', 'Mina']].forEach(([id, k, d]) => { q(id).value = (sp[k] && sp[k].n) || d; q(id + 'p').value = (sp[k] && sp[k].p) || 'she'; });
+  const chip = (box, label, fn) => { const c = el('button', 'chip', label); c.type = 'button'; c.addEventListener('click', fn); box.append(c); };
+  const nmBox = f.querySelector('[data-for="nm"]'); ['Wren', 'Sol', 'Juno'].forEach(n => chip(nmBox, n, () => { q('nm').value = n; }));
+  const pBox = f.querySelector('[data-for="p1"]'); [['Mom', 'she'], ['Dad', 'he'], ['Nana', 'she'], ['Grandpa', 'he']].forEach(([n, p]) => chip(pBox, n, () => { q('p1').value = n; q('p1p').value = p; }));
+  let job = JOBS[saved.job] ? saved.job : 'ops'; const jb = f.querySelector('.jobs'); const jbtns = [];
+  Object.entries(JOBS).forEach(([k, J]) => { const b = el('button', 'jobbtn'); b.type = 'button'; b.append(el('b', '', J.label), el('i', '', J.blurb));
+    b.setAttribute('aria-pressed', k === job ? 'true' : 'false'); b.addEventListener('click', () => { job = k; jbtns.forEach(([kk, bb]) => bb.setAttribute('aria-pressed', kk === k ? 'true' : 'false')); });
+    jbtns.push([k, b]); jb.append(b); });
   add(f);
   add(el('div', 'sub', 'Sound on helps. On iPhone, turn off the silent switch. Tap the text to make it go faster.'));
-  await wait(400);
-  await cont('Begin', 'Tuesday 15 March, 2050');
-  const v = (f.querySelector('input').value || '').trim().replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, 12);
-  S.name = v || 'Wren'; AU.init(); AU.chord(300);
+  await wait(300);
+  await cont('Begin', null);
+  const val = (id, d, max) => (q(id).value || '').trim().replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, max) || d;
+  S.name = val('nm', 'Wren', 12);
+  S.people = { mom: { n: val('p1', 'Mom', 14), p: q('p1p').value }, friend: { n: val('p2', 'Dani', 14), p: q('p2p').value }, kid: { n: val('p3', 'Mina', 14), p: q('p3p').value } };
+  S.job = job;
+  lsSet('t2050-setup', JSON.stringify({ name: q('nm').value.trim() ? S.name : '', people: S.people, job }));
+  AU.init(); AU.chord(300);
   document.body.classList.remove('intro'); S.scene = 0; renderDots(); hud();
 }
 
@@ -661,6 +740,7 @@ async function sWake() {
   } else {
     S.wsum += 1; S.wn++; await say(['You got up early. That\'s allowed.', 'While you decided, the world did a few hundred more things. It doesn\'t wait to find out.']);
   }
+  await say([{ m: 'Top right: banked = time saved for you · kept = moments you chose by hand · exposed = private data you shared. Tap ? anytime.' }]);
   await say([{ a: 'Your day is planned. Eleven meetings declined, three kept, a walk at 14:10. Want the summary?' }]);
   const c = await choose([
     { label: 'Read the plan.', sub: '2 min', w: 0, short: 'read it' },
@@ -686,33 +766,34 @@ async function sKitchen() {
 async function sMom() {
   await head(500, 'A voice note', 2);
   await say([
-    { who: 'Mom · 0:11', t: 'Hi love. Just thinking of you. Call when you can? And we\'re out of that tea you like.' },
-    'Her voice. Her pauses. You\'ve learned to listen for one thing now: whether it\'s her.',
-    'A small grey mark sits beside the note. Unverified. Verified-human costs her four dollars a month. She says that\'s silly. She\'s right and she\'s wrong.'
+    { who: '{mom} · 0:11', t: 'Hi love. Just thinking of you. Call when you can? And we\'re out of that tea you like.' },
+    '{mom.P} voice. {mom.P} pauses. You\'ve learned to listen for one thing now: whether it\'s really {mom.o}.',
+    'A small grey mark sits beside the note. Unverified. {mom.P} agent, Pip, drafts a lot of {mom.p} messages now, and it\'s good.',
+    'Verified-human costs {mom.o} four dollars a month. {mom} says that\'s silly. It is, and it isn\'t.'
   ]);
   const c = await choose([
-    { label: 'Call her.', sub: '12 min', w: 0, short: 'call her' },
-    { label: 'Send a heart. {name} will say the rest.', sub: 'banks 12 min · her reply is probably drafted too', w: 1, short: 'send a heart' }
-  ], { predict: true, q: 'Mom' });
+    { label: 'Call {mom.o}.', sub: '12 min', w: 0, short: 'call' },
+    { label: 'Send a heart. {name} will say the rest.', sub: 'banks 12 min · {mom.p} reply is probably drafted too', w: 1, short: 'send a heart' }
+  ], { predict: true, q: '{mom}' });
   if (c.w === 0) {
-    S.spent += 12; S.moments.push('Called Mom');
-    await say(['She picks up on the second ring. The first thing she says is about the neighbor\'s tree.',
-      { who: 'Mom', t: 'Oh, and Pip wrote that note, love. I was in the garden. I told it what to say.' }, { w: 800 }, { who: 'Mom', t: 'I meant it, though.' },
-      'You think about that for a long time. The words were a machine\'s. The meaning was hers. You\'re not sure which part you were listening for.']);
+    S.spent += 12; S.moments.push('Called {mom}');
+    await say(['{mom} picks up on the second ring. The first thing out of {mom.p} mouth is about the neighbor\'s tree.',
+      { who: '{mom}', t: 'Oh, and Pip wrote that note, love. I was in the garden. I told it what to say.' }, { w: 800 }, { who: '{mom}', t: 'I meant it, though.' },
+      'You think about that for a long time. The words were a machine\'s. The meaning was {mom.pp}. You\'re not sure which part you were listening for.']);
   } else {
     S.bank += 12; hud();
-    await say(['{name} writes back in your voice. Warmer than you\'d have managed. She replies in four seconds.', { m: 'unverified ↔ unverified' },
+    await say(['{name} writes back in your voice. Warmer than you\'d have managed. Pip answers in four seconds.', { m: 'unverified ↔ unverified' },
       'Two agents just had a lovely conversation. Two people feel loved. You don\'t have a word for what that was.']);
   }
   await cont('Next · 09:30', null, R.mom);
 }
 
 async function sWork() {
-  await head(570, 'The signing queue', 3);
-  await say(['You work as a Signatory.', 'Three hundred agents do the work. Your job is to be the person whose name is on it. When something goes wrong, there has to be someone it went wrong for.',
-    'Five items. Each has a summary. The summaries are usually right. “Usually” is the whole job.']);
+  const J = JOBS[S.job] || JOBS.ops;
+  await head(570, J.slug, 3);
+  await say(J.intro);
   await cont('Open the queue', null, null);
-  const set = shuffle(ITEMS.slice()).slice(0, 5); const bad = new Set(shuffle([1, 2, 3, 4]).slice(0, 2)); S.flaws = 2;
+  const set = shuffle(J.items.slice()).slice(0, 5); const bad = new Set(shuffle([1, 2, 3, 4]).slice(0, 2)); S.flaws = 2;
   const box = el('div', 'doc-box'); add(box);
   for (let i = 0; i < 5; i++) {
     const it = set[i], flawed = bad.has(i);
@@ -752,25 +833,25 @@ async function sDeal() {
 
 async function sLunch() {
   await head(770, 'The quiet table', 5);
-  await say(['Dani picked the place. A small sign by the door: UNASSISTED SEATING. $6 cover.', 'You\'ve known Dani since you were fourteen. She looks tired in a new way.',
-    { who: 'Dani', t: 'They moved my team\'s work to a swarm last month. I\'ve got until June.' },
-    'She listens the glassy way people do now. Her eyes flick left, where her agent whispers to her.',
+  await say(['{friend} picked the place. A small sign by the door: UNASSISTED SEATING. $6 cover.', 'You\'ve known {friend} since you were fourteen. Tired looks different on {friend.o} now.',
+    { who: '{friend}', t: 'They moved my team\'s work to a swarm last month. I\'ve got until June.' },
+    '{friend} listens the glassy way people do now. {friend.P} eyes flick left, where {friend.p} agent whispers.',
     { m: '{name}, in your ear: “Say: That\'s a real opportunity to pivot. You\'ve got transferable skills.”' }]);
   const c = await choose([
     { label: 'Say what {name} suggests.', sub: 'it\'s even true', w: 1, short: 'say the line' },
     { label: '“I don\'t know what to say.”', w: 0, short: 'be honest' },
     { label: 'Turn {name} off for lunch.', sub: 'first time in months', w: 0, short: 'turn it off' }
-  ], { predict: true, q: 'Lunch with Dani' });
-  if (c.w === 1) await say([{ who: 'Dani', t: '…Yeah. That\'s probably right.' }, 'She says it like she\'s reading it. Maybe she is.']);
-  else if (c.label.startsWith('“')) { S.moments.push('Told Dani the honest, clumsy thing'); await say([{ who: 'Dani', t: 'Thank you.' }, 'Everybody has a line. You\'re the first one who didn\'t.']); }
-  else { S.moments.push('Turned {name} off. Dani laughed.'); await say(['It goes quiet in your ear. You feel oddly exposed, like you left the house without something.', 'You say something unplanned and a bit stupid. Dani laughs for the first time in a week.']); }
+  ], { predict: true, q: 'Lunch with {friend}' });
+  if (c.w === 1) await say([{ who: '{friend}', t: '…Yeah. That\'s probably right.' }, 'It comes out flat, like reading off a card. Maybe it is.']);
+  else if (c.label.startsWith('“')) { S.moments.push('Told {friend} the honest, clumsy thing'); await say([{ who: '{friend}', t: 'Thank you.' }, 'Everybody has a line. You\'re the first one who didn\'t.']); }
+  else { S.moments.push('Turned {name} off. {friend} laughed.'); await say(['It goes quiet in your ear. You feel oddly exposed, like you left the house without something.', 'You say something unplanned and a bit stupid. {friend} laughs for the first time in a week.']); }
   await cont('Next · 14:10', null, R.lunch);
 }
 
 async function sGap() {
   await head(850, 'The gap', 6);
   const gap = Math.max(20, Math.min(75, Math.round(S.bank)));
-  await say([{ a: 'Nothing is scheduled until ' + hhmm(850 + gap) + '. I cleared it. You were ahead.' }, 'It is the first gap in your week. ' + gap + ' minutes with no purpose attached.']);
+  await say([{ a: 'Nothing is scheduled until ' + hhmm(850 + gap) + '. I cleared it with the time you banked.' }, 'It is the first gap in your week. ' + gap + ' minutes with no purpose attached.']);
   const c = await choose([
     { label: 'Open the feed.', sub: 'it knows exactly what you like', w: 1, short: 'feed' },
     { label: 'Take the walk from the plan.', sub: gap + ' min', w: .5, short: 'walk' },
@@ -798,18 +879,18 @@ async function sGap() {
 }
 
 async function sMina() {
-  await head(990, 'Mina', 7);
-  await say(['Mina is nine. She\'s at your table, tablet face-down, homework open: Write three sentences about the sea.',
-    'She has a tutor. It can write them, grade them, and explain to her why they\'re good. It is a better teacher than you will ever be.',
-    { who: 'Mina', t: 'Why do I have to? It already knows.' }]);
+  await head(990, '{kid}', 7);
+  await say(['{kid} is nine. At your table, tablet face-down, homework open: Write three sentences about the sea.',
+    '{kid} has a tutor. It can write them, grade them, and explain why they\'re good. It is a better teacher than you will ever be.',
+    { who: '{kid}', t: 'Why do I have to? It already knows.' }]);
   const c = await choose([
     { label: '“Because you\'ll find out what you think.”', w: 0, short: 'because you\'ll find out' },
     { label: '“You\'re right. Come play.”', w: 1, short: 'come play' },
     { label: '“Do the first sentence yourself.”', w: .4, short: 'first sentence' }
-  ], { predict: true, q: 'Mina' });
-  if (c.w === 0) { S.moments.push('Mina wrote: The sea is loud.'); await say(['She narrows her eyes. Then she writes, tongue out.', { who: 'Mina', t: 'The sea is loud.' }, 'That\'s the whole thing, you think. You don\'t say it.']); }
-  else if (c.w === 1) await say(['You play. In the next room the tutor finishes the homework, silently. It\'s good. It\'s better than hers would have been.', 'Neither of you says so.']);
-  else { S.moments.push('Mina crossed out a sentence and wrote a better one'); await say(['She writes: The sea is big. Then she looks at it for a long time, crosses it out, and writes something else.', 'You don\'t see what.']); }
+  ], { predict: true, q: '{kid}' });
+  if (c.w === 0) { S.moments.push('{kid} wrote: The sea is loud.'); await say(['{kid} narrows {kid.p} eyes, then writes with {kid.p} tongue out.', { who: '{kid}', t: 'The sea is loud.' }, 'That\'s the whole thing, you think. You don\'t say it.']); }
+  else if (c.w === 1) await say(['You play. In the next room the tutor finishes the homework, silently. It\'s good. It\'s better than {kid.pp} would have been.', 'Neither of you says so.']);
+  else { S.moments.push('{kid} crossed out a sentence and wrote a better one'); await say(['{kid} writes: The sea is big. Then looks at it for a long time, crosses it out, and writes something else.', 'You don\'t see what.']); }
   await cont('Next · 18:42', null, R.mina);
 }
 
@@ -850,7 +931,7 @@ async function sOffer() {
   await head(1290, 'Home', 9);
   const hits = S.preds.filter(p => p.hit).length, n = S.preds.length;
   await say([{ a: 'I\'ve modeled tomorrow.' }, { a: 'Today I guessed ' + hits + ' of ' + n + ' of your choices.' }]);
-  const box = el('div', 'preds'); S.preds.forEach(p => { const r = el('div', p.hit ? '' : 'miss'); r.append(el('span', '', p.q), el('span', '', p.hit ? '✓ ' + p.it : '✗ it said “' + p.it + '” · you said “' + p.you + '”')); box.append(r); });
+  const box = el('div', 'preds'); S.preds.forEach(p => { const r = el('div', p.hit ? '' : 'miss'); r.append(el('span', '', T(p.q)), el('span', '', p.hit ? '✓ ' + p.it : '✗ it said “' + p.it + '” · you said “' + p.you + '”')); box.append(r); });
   add(box); await wait(1200);
   await say([hits === n ? 'It knew all of you. That isn\'t an accusation. It\'s a measurement.' : 'The misses are where you were yours.',
     { a: 'Most of tomorrow is already decided. If you want, I\'ll just live it with you. You\'d barely have to choose.' }]);
@@ -902,10 +983,10 @@ async function summary() {
   add(rem);
   const inv = el('div', 'inv');
   [['Gone', 'Alarms. Queues. Forms. Passwords. Hold music. Doing the thing yourself, by default.'],
-   ['Still here', 'Mom. Tea. Pigeons. Awkward silences. Being tired. Paper maps. The sea, and what a nine-year-old thinks of it.'],
-   ['New', 'A voice that lives with you. A grey mark for “unverified.” Signatories. Unassisted seating. Eleven private minutes.'],
+   ['Still here', '{mom}. Tea. Pigeons. Awkward silences. Being tired. Paper maps. The sea, and what a nine-year-old thinks of it.'],
+   ['New', 'A voice that lives with you. A grey mark for “unverified.” Accountable humans. Unassisted seating. Eleven private minutes.'],
    ['Old, changed', 'Money (agents haggle). Work (you sign). Friendship (two whispers). School (why bother). Privacy (a price).']
-  ].forEach(([h, p]) => { const d = el('div'); d.append(el('h4', '', h), el('p', '', p)); inv.append(d); });
+  ].forEach(([h, p]) => { const d = el('div'); d.append(el('h4', '', h), el('p', '', T(p))); inv.append(d); });
   add(inv);
   add(el('p', 'n', 'The question in 2050 is not whether AI is in the day. It is how many choices are still yours at 23:04. Today: ' + S.kept + '.'));
   actions.replaceChildren();
@@ -922,7 +1003,17 @@ async function run() {
   for (const s of [sWake, sKitchen, sMom, sWork, sDeal, sLunch, sGap, sMina, sOutage, sOffer, sNight]) await s();
 }
 
+function openHelp() {
+  openSheet([
+    { kind: 'how', title: 'The ledger', text: 'The count at the top is everything your agent did for you today without asking.' },
+    { kind: 'how', title: 'Banked', text: 'Minutes your agent saved by doing something for you. You can spend them on purpose, or something else will.' },
+    { kind: 'how', title: 'Kept', text: 'Moments you chose by hand, even when it cost you time.' },
+    { kind: 'how', title: 'Exposed', text: 'How much private data you traded for convenience or a discount. Five bars at most.' },
+    { kind: 'how', title: S.name + ' expected this', text: 'Your agent guesses each choice before you make it. The end shows how well it knows you.' }
+  ], 'How to read the screen');
+}
 /* controls */
+$('#help').addEventListener('click', openHelp);
 $('#snd').addEventListener('click', e => { AU.init(); AU.setOn(!AU.on); e.currentTarget.setAttribute('aria-pressed', AU.on ? 'true' : 'false'); });
 $('#snd').setAttribute('aria-pressed', AU.on ? 'true' : 'false');
 $('#feedhead').addEventListener('click', () => { if (innerWidth < 900) $('#feed').classList.toggle('open'); });
