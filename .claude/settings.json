@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "chiibitsu-labs": {
+      "source": { "source": "github", "repo": "chiibitsu/labs" }
+    }
+  },
+  "enabledPlugins": {
+    "time-dividend@chiibitsu-labs": true
+  }
+}
