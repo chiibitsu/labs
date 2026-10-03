@@ -262,7 +262,7 @@ body.intro .hud, body.intro .feed { display: none; }
 <div id="flash"></div>
 <div id="app">
   <header class="hud">
-    <div class="clock"><b id="clock">05:00</b><span id="date">FRI 28 JUL 2045</span></div>
+    <div class="clock"><b id="clock">06:15</b><span id="date">FRI 28 JUL 2045</span></div>
     <div class="vitals">
       <div class="v" id="vBank"><b>0m</b><i>banked</i></div>
       <div class="v" id="vKept"><b>0</b><i>kept</i></div>
@@ -303,7 +303,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 /* ---------- state ---------- */
 let S;
 function fresh() {
-  return { name: 'Wren', time: 300, bank: 0, spent: 0, kept: 0, total: 0, exp: 0, dollars: 0, count: 1204, pending: 0,
+  return { name: 'Wren', time: 375, bank: 0, spent: 0, kept: 0, total: 0, exp: 0, dollars: 0, count: 1204, pending: 0,
     cps: 6, dead: false, preds: [], wsum: 0, wn: 0, moments: [], signed: 0, flaws: 0, caught: 0, missed: [],
     feedMin: 0, offer: '', scene: -1, explained: false, job: 'ops',
     people: { mom: { n: 'Mom', p: 'she' }, friend: { n: 'Dani', p: 'she' }, kid: { n: 'Mina', p: 'she' } } };
@@ -743,7 +743,7 @@ async function title() {
   S.people = { mom: { n: val('p1', 'Mom', 14), p: q('p1p').value }, friend: { n: val('p2', 'Dani', 14), p: q('p2p').value }, kid: { n: val('p3', 'Mina', 14), p: q('p3p').value } };
   S.job = job;
   lsSet('t2050-setup', JSON.stringify({ name: q('nm').value.trim() ? S.name : '', people: S.people, job }));
-  AU.init(); AU.chord(300);
+  AU.init(); AU.chord(375);
   document.body.classList.remove('intro'); S.scene = 0; renderDots(); hud();
 }
 
@@ -1014,13 +1014,13 @@ async function summary() {
   actions.replaceChildren();
   const why = el('button', 'cont', 'Why this world'); why.type = 'button'; why.append(el('small', '', 'the 2025–26 facts behind each moment'));
   why.addEventListener('click', () => openSheet([R.wake, R.kitchen, R.mom, R.work, R.deal, R.lunch, R.gap, R.mina, R.outage, R.offer, WRONG], 'Why this world'));
-  const again = el('button', 'ghost', 'live another Friday'); again.type = 'button'; again.addEventListener('click', () => { S = fresh(); pool = []; $('#feedlist').replaceChildren(); $('#latest').textContent = ''; $('#count').textContent = fmt(S.count); S.time = 300; renderClock(); applyPalette(); hud(); run(); });
+  const again = el('button', 'ghost', 'live another Friday'); again.type = 'button'; again.addEventListener('click', () => { S = fresh(); pool = []; $('#feedlist').replaceChildren(); $('#latest').textContent = ''; $('#count').textContent = fmt(S.count); S.time = 375; renderClock(); applyPalette(); hud(); run(); });
   actions.append(why, again);
   requestAnimationFrame(() => requestAnimationFrame(() => { story.style.scrollBehavior = 'auto'; story.scrollTop = 0; story.style.scrollBehavior = ''; }));
 }
 
 async function run() {
-  inSummary = false; pinned = true; document.body.classList.add('intro'); S.time = 300; applyPalette(); renderClock(); hud(); renderDots();
+  inSummary = false; pinned = true; document.body.classList.add('intro'); S.time = 375; applyPalette(); renderClock(); hud(); renderDots();
   await title();
   for (const s of [sWake, sKitchen, sMom, sWork, sDeal, sLunch, sGap, sMina, sOutage, sOffer, sNight]) await s();
 }
