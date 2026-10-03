@@ -10,7 +10,7 @@ root is a landing page that lists them.
 
 | | Path | What it is |
 |---|---|---|
-| **[What We Kept](./2050/)** | [`labs.chiibitsu.com/2050/`](https://labs.chiibitsu.com/2050/) | One day in 2050, twenty-four years from today. AI handles almost everything; every choice is one tap to delegate or doing it yourself with your hands. Ends with a receipt of what you kept and the 2026 signals behind each scene. Single file, zero dependencies. |
+| **[What We Kept](./2045/)** | [`labs.chiibitsu.com/2045/`](https://labs.chiibitsu.com/2045/) | One day in 2045 (Friday 28 July). Name your agent and child, pick your work (principal, nurse, teacher). AI handles almost everything; every choice is one tap to delegate or doing it yourself with your hands. Varies on every replay. Ends with a receipt of what you kept and the 2026 signals behind each scene. Single file, zero dependencies. |
 | **[Sigil](./sigil/)** | [`labs.chiibitsu.com/sigil/`](https://labs.chiibitsu.com/sigil/) | Type a name, watch its universe grow — a generative cosmos of colour, glyph, motion, and sound, all from one word. Single file, zero dependencies. |
 | **[Ghost Office](./ghost-team/)** | [`labs.chiibitsu.com/ghost-team/`](https://labs.chiibitsu.com/ghost-team/) | Pitch a company in one sentence and watch a team of Claude Code sub-agents ship the founding plan, live. A playable demo of a sub-agent team for solo founders — then [run it for real](./ghost-team/). |
 | **[Wonderforge](./wonderforge/)** | [`labs.chiibitsu.com/wonderforge/`](https://labs.chiibitsu.com/wonderforge/) | A pocket-sized imagination machine: pick a vibe, a timebox, and a constraint, get a tiny creative mission with a secret move. Runs in the browser, no API calls, no build. |
