@@ -403,7 +403,7 @@ $("dividend").innerHTML = DIVIDEND.map((d) =>
   '<div class="div-row"><div class="k">' + d[0] + "<small>" + d[1] + ' hours a year</small></div><div class="bar2"><i style="--w:' +
   (d[1] / maxH * 100).toFixed(1) + '%"></i></div><p class="went">' + d[2] + "</p></div>").join("");
 const totalH = DIVIDEND.reduce((a, d) => a + d[1], 0);
-$("total").innerHTML = "About <b>" + totalH + " hours</b> a year, per person. Roughly five working weeks. Nobody was allowed to spend it for you.";
+$("total").innerHTML = "About <b>" + totalH + " hours</b> a year, per person. About twenty working weeks. Nobody was allowed to spend it for you.";
 $("rules").innerHTML = RULES.map((r) => "<li><div><b>" + r[0] + "</b>" + (r[1] ? "<small>" + r[1] + "</small>" : "") + "</div></li>").join("");
 
 /* ═══════════════ ASK FOR A HAND ═══════════════ */
