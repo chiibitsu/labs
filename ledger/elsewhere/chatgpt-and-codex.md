@@ -14,6 +14,7 @@ When I say "log it", reply with only a JSON code block for my time ledger, no pr
  "human_low":<low>,"human_high":<high>,
  "estimate_basis":"<the concrete output counted: words, sources, files, tables>",
  "you_minutes":<your best guess of my own minutes: each of my messages ≈ 2–5 min>,
+ "tokens_input":<approx input tokens if you can tell, else omit>,"tokens_output":<approx output tokens, else omit>,
  "actions":[{"kind":"did|drafted|handled|handed_back|note","line":"<plain past-tense line>"}]}
 Be honest, not generous, with human_minutes.
 ```
@@ -37,6 +38,7 @@ curl -s -X POST "https://wguhmblrcfcvbheusizt.supabase.co/rest/v1/rpc/ledger_ing
   -d "{\"p_token\":\"$LEDGER_TOKEN\",\"p_entry\":{\"source\":\"codex\",\"title\":\"...\",
        \"ai_minutes\":<your working minutes>,\"human_minutes\":<honest human-equivalent minutes>,
        \"human_low\":<low>,\"human_high\":<high>,\"estimate_basis\":\"<files/lines/tests counted>\",
+       \"tokens_input\":<input tokens used, if known>,\"tokens_output\":<output tokens, if known>,
        \"actions\":[{\"kind\":\"did\",\"line\":\"...\"}]}}"
 
 Keep list: never do anything on Chii's keep list (shown on the ledger page); leave it
@@ -45,3 +47,7 @@ for her and add a `handed_back` action saying so.
 
 Your own minutes on a Codex task are usually the review: add or correct
 `you_minutes` on the ledger page after you've reviewed the PR.
+
+**Cost:** ChatGPT and Codex don't hand their cost to the conversation. Token counts
+are logged when the tool can tell. For dollars, fill in `cost` on the session (edit)
+from your OpenAI usage page if you want it, and it's marked `manual`.

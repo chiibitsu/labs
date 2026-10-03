@@ -3,7 +3,8 @@
 
   ledger.py hook          Stop / SessionStart hook. Reads the hook JSON on stdin,
                           measures the session from its transcript, and upserts
-                          timing (AI minutes, your minutes) into the ledger.
+                          timing (AI minutes, your minutes) and the cost and
+                          token totals Claude Code reports into the ledger.
                           On SessionStart it also prints the keep list and the
                           logging command as session context.
   ledger.py entry         Reads an entry JSON on stdin (title, human estimate,
@@ -69,14 +70,36 @@ def is_human_prompt(d):
     return False
 
 
+def usage_totals(snap):
+    """Flatten one cost-state snapshot into cost + token totals."""
+    mu = snap.get("modelUsage") or {}
+    tot = {"cost_usd": float(snap.get("totalCostUSD") or 0), "tokens_input": 0, "tokens_cache_read": 0, "tokens_output": 0}
+    for u in mu.values():
+        tot["tokens_input"] += int(u.get("inputTokens") or 0) + int(u.get("cacheCreationInputTokens") or 0)
+        tot["tokens_cache_read"] += int(u.get("cacheReadInputTokens") or 0)
+        tot["tokens_output"] += int(u.get("outputTokens") or 0)
+    return tot, mu
+
+
 def measure(path):
-    """Return timing for a transcript: start, end, ai_minutes, you_minutes, first prompt."""
+    """Return timing and cost for a transcript: start, end, ai/you minutes, cost, tokens, first prompt."""
     ai_events, prompts, first_text = [], [], None
+    # cost-state lines are running totals for the current process; if a resumed
+    # session restarts them, bank the earlier run and keep adding.
+    banked, last, models = None, None, {}
     with open(path, encoding="utf-8") as f:
         for line in f:
             try:
                 d = json.loads(line)
             except Exception:
+                continue
+            if d.get("type") == "cost-state":
+                cur, mu = usage_totals(d)
+                if last and cur["cost_usd"] + 1e-9 < last["cost_usd"]:
+                    banked = {k: (banked or {}).get(k, 0) + last[k] for k in last}
+                last = cur
+                for name, u in mu.items():
+                    models[name] = {k: v for k, v in u.items() if isinstance(v, (int, float))}
                 continue
             t = ts(d.get("timestamp") or "")
             if t is None or d.get("isSidechain"):
@@ -102,9 +125,15 @@ def measure(path):
     if ai_events and ai_events[-1] > prompts[-1]:
         you += FIRST_READ
     iso = lambda x: datetime.fromtimestamp(x, timezone.utc).isoformat()
-    return {"started_at": iso(every[0]), "ended_at": iso(every[-1]),
-            "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1),
-            "first_prompt": first_text or ""}
+    out = {"started_at": iso(every[0]), "ended_at": iso(every[-1]),
+           "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1),
+           "first_prompt": first_text or ""}
+    if last:
+        total = {k: last[k] + (banked or {}).get(k, 0) for k in last}
+        out.update({"cost_usd": round(total["cost_usd"], 4), "tokens_input": total["tokens_input"],
+                    "tokens_cache_read": total["tokens_cache_read"], "tokens_output": total["tokens_output"],
+                    "model_usage": models, "cost_basis": "reported"})
+    return out
 
 
 def keep_context():
@@ -182,8 +211,9 @@ def entry():
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
         saved = (e.get("human_minutes") or 0) - (e.get("you_minutes") or 0)
+        cost = f" · cost ${e['cost_usd']:.2f}" if e.get("cost_usd") is not None else ""
         print(f"ledger: recorded session {sid} · you {e.get('you_minutes')} min · "
-              f"human-equivalent {e.get('human_minutes')} min · saved ≈ {round(saved)} min")
+              f"human-equivalent {e.get('human_minutes')} min · saved ≈ {round(saved)} min{cost}")
     except Exception as err:
         print(f"ledger: could not record ({err})")
 

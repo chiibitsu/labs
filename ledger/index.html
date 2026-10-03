@@ -204,6 +204,7 @@
       <h2>The running total.</h2>
       <div class="stats" id="allStats"></div>
       <p class="hint" id="calibHint"></p>
+      <p class="hint">Cost is the API-equivalent figure the tool reports. On a subscription it isn't what you're billed, but it's the right number to compare against a human's time.</p>
     </section>
 
     <section>
@@ -252,6 +253,12 @@ function fmt(min) {
   const s = h ? (r ? h + " h " + r + " m" : h + " h") : r + " m";
   return (neg ? "−" : "") + s;
 }
+const usd = (v) => (v === null || v === undefined || isNaN(v)) ? "—" : "$" + Number(v).toFixed(Number(v) < 10 ? 2 : 0);
+function tok(n) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n);
+}
+const tokens = (s) => (num(s.tokens_input) || 0) + (num(s.tokens_cache_read) || 0) + (num(s.tokens_output) || 0);
 let toastT = 0;
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.hidden = false;
@@ -308,7 +315,7 @@ async function loadAll() {
       sb.from("ledger_keep").select("*").order("sort").order("created_at"),
       sb.from("ledger_spent").select("*").gte("day", dayKey(addDays(weekStart(day), -35))),
       sb.from("ledger_tokens").select("id, label, revoked, last_used_at, created_at").order("created_at", { ascending: false }),
-      sb.from("ledger_sessions").select("human_minutes, you_minutes, ai_minutes, saved_minutes, calibration"),
+      sb.from("ledger_sessions").select("human_minutes, you_minutes, ai_minutes, saved_minutes, calibration, cost_usd, tokens_input, tokens_cache_read, tokens_output"),
     ]);
     for (const r of [ses, keep, spent, toks, all]) if (r.error) throw r.error;
     S = { sessions: ses.data, keep: keep.data, spent: spent.data, tokens: toks.data, all: all.data };
@@ -335,6 +342,7 @@ function render() {
     ["", "your time", fmt(sum(daySes, "you_minutes")), daySes.length + (daySes.length === 1 ? " session" : " sessions")],
     ["", "human-equivalent", fmt(sum(estimated, "human_minutes")), "what it would have taken by hand"],
     ["", "AI time", fmt(sum(daySes, "ai_minutes")), "working, start to finish"],
+    ["", "AI cost", usd(sum(daySes, "cost_usd")), tok(daySes.reduce((a, s) => a + tokens(s), 0)) + " tokens · this week " + usd(sum(weekSes, "cost_usd"))],
   ].map((s) => '<div class="stat ' + s[0] + '"><span>' + s[1] + "</span><b>" + s[2] + "</b><small>" + s[3] + "</small></div>").join("");
 
   const nudges = [];
@@ -380,7 +388,8 @@ function renderLog(daySes) {
     return '<div class="card sess" data-sid="' + s.id + '">' +
       '<div class="sess-head"><h3>' + esc(s.title || "Untitled session") + '</h3><span class="src">' + esc(s.source) + "</span>" +
       (s.project ? '<span class="src" style="color:var(--soft)">' + esc(s.project) + "</span>" : "") + "</div>" +
-      '<div class="figs">' + saved + "you " + fmt(s.you_minutes) + " · human-equivalent " + fmt(s.human_minutes) + range + " · AI " + fmt(s.ai_minutes) + "</div>" +
+      '<div class="figs">' + saved + "you " + fmt(s.you_minutes) + " · human-equivalent " + fmt(s.human_minutes) + range + " · AI " + fmt(s.ai_minutes) +
+      (num(s.cost_usd) !== null || tokens(s) ? " · cost " + usd(s.cost_usd) + (s.cost_basis === "reported" ? "" : s.cost_basis ? " (" + esc(s.cost_basis) + ")" : "") + " · " + tok(tokens(s)) + " tokens" : "") + "</div>" +
       (s.estimate_basis ? '<p class="basis">' + esc(s.estimate_basis) + "</p>" : "") +
       (lines.length ? '<ul class="lines">' + lines.map((l) =>
         '<li data-aid="' + l.id + '"><span class="k ' + esc(l.kind) + '">' + esc(l.kind.replace("_", " ")) + '</span><span class="t">' + esc(l.line) +
@@ -395,6 +404,7 @@ function renderLog(daySes) {
       '<label>human minutes<input name="human_minutes" type="number" min="0" step="5" value="' + esc(s.human_minutes ?? "") + '" /></label>' +
       '<label>low<input name="human_low" type="number" min="0" step="5" value="' + esc(s.human_low ?? "") + '" /></label>' +
       '<label>high<input name="human_high" type="number" min="0" step="5" value="' + esc(s.human_high ?? "") + '" /></label>' +
+      '<label>cost usd<input name="cost_usd" type="number" min="0" step="0.01" value="' + esc(s.cost_usd ?? "") + '" /></label>' +
       '<label class="wide">basis<input name="estimate_basis" value="' + esc(s.estimate_basis || "") + '" /></label>' +
       '<label class="wide">receipt url<input name="receipt_url" value="' + esc(s.receipt_url || "") + '" placeholder="link to the public sign-off, once signed" /></label>' +
       '<div class="wide"><button class="btn small primary" type="submit">Save</button></div></form></div>';
@@ -419,11 +429,15 @@ function renderAll() {
   const est = rows.filter((r) => num(r.human_minutes) !== null);
   const you = sum(est, "you_minutes"), human = sum(est, "human_minutes");
   const mult = you > 0 ? (human / you) : null;
+  const savedAll = sum(est, "saved_minutes"), costEst = sum(est, "cost_usd");
+  const perHour = savedAll > 0 && costEst > 0 ? costEst / (savedAll / 60) : null;
   $("allStats").innerHTML = [
-    ["hero", "saved, all time", fmt(sum(est, "saved_minutes")), est.length + " estimated sessions"],
+    ["hero", "saved, all time", fmt(savedAll), est.length + " estimated sessions"],
     ["", "human-equivalent", fmt(human), "by hand"],
     ["", "your time", fmt(you), "on those sessions"],
     ["", "leverage", mult ? mult.toFixed(1) + "×" : "—", "human-equivalent ÷ your time"],
+    ["", "AI cost", usd(sum(rows, "cost_usd")), tok(rows.reduce((a, r) => a + tokens(r), 0)) + " tokens, all sessions"],
+    ["", "cost per saved hour", perHour !== null ? usd(perHour) : "—", "API-equivalent $ ÷ hours saved"],
   ].map((s) => '<div class="stat ' + s[0] + '"><span>' + s[1] + "</span><b>" + s[2] + "</b><small>" + s[3] + "</small></div>").join("");
   const c = { too_low: 0, about_right: 0, too_high: 0 };
   rows.forEach((r) => { if (r.calibration) c[r.calibration]++; });
@@ -509,8 +523,10 @@ document.addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(f), patch = {};
   for (const [k, v] of fd.entries()) {
-    patch[k] = ["you_minutes", "human_minutes", "human_low", "human_high"].includes(k) ? (v === "" ? null : Number(v)) : (v.trim() || null);
+    patch[k] = ["you_minutes", "human_minutes", "human_low", "human_high", "cost_usd"].includes(k) ? (v === "" ? null : Number(v)) : (v.trim() || null);
   }
+  const before = S.sessions.find((x) => x.id === f.dataset.form);
+  if (before && Number(before.cost_usd) !== Number(patch.cost_usd ?? NaN) && !(before.cost_usd == null && patch.cost_usd == null)) patch.cost_basis = patch.cost_usd == null ? null : "manual";
   patch.updated_at = new Date().toISOString();
   const { error } = await sb.from("ledger_sessions").update(patch).eq("id", f.dataset.form);
   if (error) return fail(error);

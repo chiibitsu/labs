@@ -5,7 +5,8 @@ description: Log the finished piece of work into Chii's Time Dividend ledger —
 
 # Log this session to the Time Dividend ledger
 
-Timing (AI minutes, Chii's minutes) is recorded automatically by the plugin's hooks.
+Timing (AI minutes, Chii's minutes) and cost (dollars and tokens, as Claude Code
+reports them) are recorded automatically by the plugin's hooks.
 Your job is the part only you can judge: **what was done** and **how long it would
 have taken a competent human by hand**.
 
@@ -48,7 +49,7 @@ JSON
 ```
 
 The command prints what it recorded. Mention it in one line in your final message
-(e.g. "Logged: ~7 h human-equivalent, ~20 min of yours"). If the command isn't in
+(e.g. "Logged: ~7 h human-equivalent, ~20 min of yours, $13 of AI"). If the command isn't in
 your context, the plugin's token isn't set; say so once and move on.
 
 ## Keep list

@@ -1,7 +1,7 @@
 # The Ledger: time dividend
 
 Private. For every AI job session it records **how long it would have taken a
-competent human by hand** next to **how much of your own time it took**. It also
+competent human by hand** next to **how much of your own time it took** and **what the AI cost**. It also
 keeps a daily plain-language log of what was done, and a **keep list**: tasks the
 AI hands back to you, plus pre-set shares for where saved time goes, so
 Parkinson's law can't quietly fill it with more work.
@@ -55,6 +55,12 @@ Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/ch
   it counted (`estimate_basis`). Mark estimates *too low / about right / too high* on
   the page each week; that calibration is what makes the data worth something.
 - **Saved** = human-equivalent − your time. Sessions without an estimate aren't counted.
+- **Cost & tokens:** Claude Code writes a running cost total and per-model token
+  counts into every transcript; the hook records them as reported (`cost_basis =
+  reported`). That's the API-equivalent cost: on a subscription it isn't your bill,
+  but it's the honest number to set against a human's hours. The page shows cost
+  per day and week, and **cost per saved hour** overall. ChatGPT and Codex
+  don't report cost, so fill it in by hand if you want it (`manual`).
 
 ## Files
 
