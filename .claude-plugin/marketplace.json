@@ -1,0 +1,13 @@
+{
+  "name": "chiibitsu-labs",
+  "owner": { "name": "Chiibitsu Labs", "url": "https://labs.chiibitsu.com" },
+  "description": "Claude Code plugins from Chiibitsu Labs.",
+  "plugins": [
+    {
+      "name": "time-dividend",
+      "description": "Time Dividend ledger: AI time vs human-equivalent time, a daily log, and a keep list.",
+      "version": "0.1.0",
+      "source": "./ledger/plugin"
+    }
+  ]
+}

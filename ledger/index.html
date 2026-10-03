@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Ledger — time dividend</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="description" content="Private. Time saved by AI sessions, the daily log of what was done, and the keep list." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f6f1e7'/%3E%3Cpath d='M9 22V10M16 22V6M23 22v-8' stroke='%233f7d5c' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #f6f1e7; --card: #fbf8f1; --ink: #1d1b16; --soft: #6b6457; --faint: #a39a87; --line: #e2d9c6;
+    --sage: #3f7d5c; --warm: #d9542b; --ai: #4f6fb0; --chip: #efe7d6;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14151c; --card: #1b1d26; --ink: #ece8f4; --soft: #a7a2b8; --faint: #6f6a80; --line: #2b2d3a;
+      --sage: #8fd0ab; --warm: #ff8a63; --ai: #a9bcff; --chip: #23252f; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; }
+  :focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  .mono { font-family: var(--mono); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+
+  header.top { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  header.top h1 { font-weight: 400; font-size: 1.35rem; letter-spacing: -.01em; flex: 1; }
+  header.top h1 small { font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); margin-left: 8px; }
+  .who { font-family: var(--mono); font-size: .66rem; color: var(--soft); }
+  .btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); font-size: .95rem; background: var(--card); }
+  .btn:hover { border-color: var(--sage); }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn.small { padding: 4px 10px; font-size: .8rem; }
+  .btn.link { border: 0; background: none; padding: 4px 6px; color: var(--soft); font-size: .85rem; }
+  .btn.link:hover { color: var(--warm); }
+
+  .kicker { font-family: var(--mono); font-size: .66rem; letter-spacing: .2em; text-transform: uppercase; color: var(--sage); }
+  h2 { font-weight: 400; font-size: clamp(1.5rem, 4.5vw, 2.1rem); letter-spacing: -.01em; margin-top: 6px; }
+  section { padding: 34px 0 10px; }
+  .hint { color: var(--soft); font-size: 1rem; line-height: 1.5; margin-top: 6px; max-width: 60ch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+
+  /* login */
+  .login { max-width: 460px; margin: 12vh auto 0; text-align: left; }
+  .login h2 { font-size: 2.4rem; }
+  .login form { margin-top: 22px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .login input { flex: 1 1 220px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
+  .msg { margin-top: 14px; color: var(--soft); min-height: 1.4em; }
+  .msg.bad { color: var(--warm); }
+
+  /* day bar */
+  .daybar { display: flex; align-items: center; gap: 8px; margin-top: 26px; flex-wrap: wrap; }
+  .daybar .d { font-size: clamp(1.6rem, 5vw, 2.4rem); flex: 1; min-width: 0; letter-spacing: -.02em; }
+  .daybar .d small { display: block; font-family: var(--mono); font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); }
+
+  .stats { margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .stat span { display: block; font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  .stat b { display: block; margin-top: 6px; font-weight: 400; font-size: clamp(1.4rem, 4.4vw, 1.9rem); font-variant-numeric: tabular-nums; }
+  .stat small { display: block; margin-top: 2px; color: var(--soft); font-size: .85rem; }
+  .stat.hero { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .stat.hero span, .stat.hero small { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+  .nudge { margin-top: 12px; padding: 10px 14px; border-left: 3px solid var(--warm); color: var(--ink); font-size: 1rem; line-height: 1.45; }
+
+  /* dividend */
+  .alloc { display: grid; grid-template-columns: minmax(120px, 1fr) 2fr auto; gap: 10px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .alloc:first-child { border-top: 0; }
+  .alloc .name { font-size: 1.05rem; }
+  .alloc .name small { display: block; font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; color: var(--soft); text-transform: uppercase; }
+  .meter { height: 10px; border-radius: 5px; background: var(--chip); overflow: hidden; position: relative; }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--sage); border-radius: 5px; }
+  .alloc .fig { font-family: var(--mono); font-size: .72rem; color: var(--soft); white-space: nowrap; }
+  .alloc .adds { grid-column: 2 / 4; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* log */
+  .sess { margin-top: 14px; }
+  .sess-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .sess-head h3 { font-weight: 400; font-size: 1.25rem; flex: 1; min-width: 0; }
+  .src { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ai); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+  .figs { margin-top: 6px; font-family: var(--mono); font-size: .72rem; color: var(--soft); line-height: 1.6; }
+  .figs b { color: var(--sage); font-weight: 400; }
+  .basis { margin-top: 4px; font-size: .92rem; color: var(--soft); font-style: italic; }
+  .lines { margin-top: 10px; list-style: none; }
+  .lines li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 1.02rem; line-height: 1.45; }
+  .lines li .k { font-family: var(--mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ai); min-width: 6.5em; }
+  .lines li .k.handed_back { color: var(--warm); }
+  .lines li .t { flex: 1; }
+  .lines li.gone .t { text-decoration: line-through; color: var(--faint); }
+  .x { color: var(--faint); font-size: .9rem; padding: 0 4px; }
+  .x:hover { color: var(--warm); }
+  .tools { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tools .lbl { font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); margin-right: 2px; }
+  .cal[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .edit { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+  .edit label { font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); display: flex; flex-direction: column; gap: 4px; }
+  .edit input, .edit textarea { font-family: var(--serif); font-size: 1rem; text-transform: none; letter-spacing: 0; color: var(--ink); padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+  .edit .wide { grid-column: 1 / -1; }
+  .empty { margin-top: 14px; color: var(--soft); font-style: italic; }
+
+  /* keep */
+  .keep-list { list-style: none; margin-top: 12px; }
+  .keep-list li { display: flex; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line); }
+  .keep-list li:first-child { border-top: 0; }
+  .keep-list li .t { flex: 1; font-size: 1.05rem; }
+  .keep-list li .t small { display: block; color: var(--soft); font-style: italic; font-size: .9rem; }
+  .keep-list li.off .t { color: var(--faint); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .row input, .row select { flex: 1 1 160px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+  .row input.pct { flex: 0 0 90px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+
+  textarea.paste { width: 100%; min-height: 150px; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-family: var(--mono); font-size: .8rem; }
+  .token-box { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--chip); font-family: var(--mono); font-size: .8rem; word-break: break-all; }
+
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: .95rem; max-width: calc(100% - 32px); z-index: 50; }
+  footer { margin-top: 50px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); display: flex; gap: 16px; flex-wrap: wrap; }
+  footer a { color: var(--ink); text-decoration: none; }
+  @media (max-width: 560px) {
+    .alloc { grid-template-columns: 1fr auto; }
+    .alloc .meter { grid-column: 1 / -1; grid-row: 2; }
+    .alloc .adds { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>The Ledger<small>time dividend · private</small></h1>
+    <span class="who" id="who"></span>
+    <button class="btn small" id="signOut" hidden>Sign out</button>
+  </header>
+
+  <!-- ─────────── login ─────────── -->
+  <div class="login" id="loginView" hidden>
+    <div class="kicker">private</div>
+    <h2>Sign in to your ledger.</h2>
+    <p class="hint">A one-time link goes to your email. Only ledger owners can read anything here.</p>
+    <form id="loginForm">
+      <input type="email" id="email" required autocomplete="email" placeholder="you@example.com" aria-label="Email" />
+      <button class="btn primary" type="submit">Send link</button>
+    </form>
+    <p class="msg" id="loginMsg" aria-live="polite"></p>
+  </div>
+
+  <!-- ─────────── app ─────────── -->
+  <main id="app" hidden>
+    <div class="daybar">
+      <button class="btn small" id="prevDay" aria-label="Previous day">←</button>
+      <div class="d" id="dayLabel"></div>
+      <button class="btn small" id="todayBtn">Today</button>
+      <button class="btn small" id="nextDay" aria-label="Next day">→</button>
+    </div>
+    <div class="stats" id="dayStats"></div>
+    <div id="nudges"></div>
+
+    <section>
+      <div class="kicker">the dividend · this week</div>
+      <h2>Where the saved time goes.</h2>
+      <p class="hint">Saved time is split by your shares in advance. Log what you actually spent. Whatever stays unspent tends to turn into more work.</p>
+      <div class="card" style="margin-top:14px" id="dividend"></div>
+    </section>
+
+    <section>
+      <div class="kicker">the log</div>
+      <h2>What was done for you.</h2>
+      <p class="hint">Plain lines from every session that ended on this day. ✕ crosses a line out, and after a few seconds it's deleted for good.</p>
+      <div id="log"></div>
+    </section>
+
+    <section>
+      <div class="kicker">the keep list</div>
+      <h2>Yours, on purpose.</h2>
+      <div class="two">
+        <div class="card">
+          <div class="kicker" style="color:var(--warm)">kept tasks</div>
+          <p class="hint">The AI hands these back instead of doing them.</p>
+          <ul class="keep-list" id="keepTasks"></ul>
+          <form class="row" id="addTask">
+            <input id="taskLabel" placeholder="Something that stays yours" required aria-label="Kept task" />
+            <input id="taskWhy" placeholder="Why (optional)" aria-label="Why" />
+            <button class="btn small" type="submit">Add</button>
+          </form>
+        </div>
+        <div class="card">
+          <div class="kicker">shares of the dividend</div>
+          <p class="hint" id="shareHint">Decided in advance, so the time can't quietly fill up with more work.</p>
+          <ul class="keep-list" id="keepAllocs"></ul>
+          <form class="row" id="addAlloc">
+            <input id="allocLabel" placeholder="Where saved time goes" required aria-label="Allocation" />
+            <input id="allocPct" class="pct" type="number" min="0" max="100" step="5" placeholder="%" required aria-label="Share percent" />
+            <button class="btn small" type="submit">Add</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="kicker">all time</div>
+      <h2>The running total.</h2>
+      <div class="stats" id="allStats"></div>
+      <p class="hint" id="calibHint"></p>
+    </section>
+
+    <section>
+      <div class="kicker">add an entry</div>
+      <h2>From ChatGPT or anywhere else.</h2>
+      <p class="hint">Paste the JSON block an AI gave you when you said “log it”. Code fences are fine. Missing source defaults to ChatGPT.</p>
+      <textarea class="paste" id="pasteBox" placeholder='{"source":"chatgpt","title":"...","human_minutes":120,"you_minutes":20,"actions":[{"kind":"did","line":"..."}]}' aria-label="Entry JSON"></textarea>
+      <div class="row"><button class="btn primary" id="pasteSave">Save entry</button></div>
+    </section>
+
+    <section>
+      <div class="kicker">intake tokens</div>
+      <h2>Let tools write here.</h2>
+      <p class="hint">A token lets one tool (Claude Code, Codex) <em>add</em> entries. It can't read anything. You see it once, so put it straight into that tool's environment as <span class="mono">LEDGER_TOKEN</span>.</p>
+      <form class="row" id="newToken">
+        <input id="tokenLabel" placeholder="Label, e.g. Claude Code cloud" required aria-label="Token label" />
+        <button class="btn small" type="submit">New token</button>
+      </form>
+      <div class="token-box" id="tokenShow" hidden></div>
+      <ul class="keep-list" id="tokens"></ul>
+    </section>
+
+    <footer>
+      <a href="./">↻ refresh</a>
+      <a href="https://github.com/chiibitsu/labs/tree/main/ledger" target="_blank" rel="noopener">setup &amp; plugin</a>
+      <span>the point was always the afternoon</span>
+    </footer>
+  </main>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+"use strict";
+const SUPABASE_URL = "https://wguhmblrcfcvbheusizt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y_jI74qFxdAlZb4elby75A_7QlUky9a"; // publishable; RLS keeps the ledger private
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
+
+function fmt(min) {
+  if (min === null || min === undefined || isNaN(min)) return "—";
+  const neg = min < 0, m = Math.round(Math.abs(min));
+  const h = Math.floor(m / 60), r = m % 60;
+  const s = h ? (r ? h + " h " + r + " m" : h + " h") : r + " m";
+  return (neg ? "−" : "") + s;
+}
+let toastT = 0;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 3200);
+}
+function fail(e) { console.error(e); toast("Something went wrong: " + (e?.message || e)); }
+
+/* ── dates (local time) ── */
+const dayKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const weekStart = (d) => addDays(startOfDay(d), -((d.getDay() + 6) % 7)); // Monday
+const endOf = (s) => new Date(s.ended_at || s.started_at || s.created_at);
+let day = startOfDay(new Date());
+
+/* ── state ── */
+let S = { sessions: [], keep: [], spent: [], tokens: [], all: null };
+
+/* ── auth ── */
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return showLogin();
+  $("who").textContent = session.user.email;
+  $("signOut").hidden = false;
+  const { data: owner } = await sb.from("ledger_owners").select("email").limit(1);
+  if (!owner || !owner.length) {
+    showLogin();
+    $("loginMsg").textContent = "Signed in as " + session.user.email + ", but that email isn't a ledger owner.";
+    $("loginMsg").className = "msg bad";
+    return;
+  }
+  $("loginView").hidden = true;
+  $("app").hidden = false;
+  await loadAll();
+}
+function showLogin() { $("app").hidden = true; $("loginView").hidden = false; }
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("email").value.trim();
+  $("loginMsg").className = "msg"; $("loginMsg").textContent = "Sending…";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
+  if (error) { $("loginMsg").className = "msg bad"; $("loginMsg").textContent = error.message; return; }
+  $("loginMsg").textContent = "Check your email for the link. Open it on this device.";
+});
+$("signOut").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_IN" && $("app").hidden) boot(); });
+
+/* ── loading ── */
+async function loadAll() {
+  try {
+    const since = addDays(weekStart(day), -35).toISOString();
+    const [ses, keep, spent, toks, all] = await Promise.all([
+      sb.from("ledger_sessions").select("*, ledger_actions(id, at, kind, line)").gte("started_at", since).order("started_at", { ascending: false }),
+      sb.from("ledger_keep").select("*").order("sort").order("created_at"),
+      sb.from("ledger_spent").select("*").gte("day", dayKey(addDays(weekStart(day), -35))),
+      sb.from("ledger_tokens").select("id, label, revoked, last_used_at, created_at").order("created_at", { ascending: false }),
+      sb.from("ledger_sessions").select("human_minutes, you_minutes, ai_minutes, saved_minutes, calibration"),
+    ]);
+    for (const r of [ses, keep, spent, toks, all]) if (r.error) throw r.error;
+    S = { sessions: ses.data, keep: keep.data, spent: spent.data, tokens: toks.data, all: all.data };
+    render();
+  } catch (e) { fail(e); }
+}
+
+/* ── render ── */
+function sum(rows, k) { return rows.reduce((a, r) => a + (num(r[k]) || 0), 0); }
+function render() {
+  const today = dayKey(new Date()), dk = dayKey(day);
+  $("dayLabel").innerHTML = "<small>" + (dk === today ? "today" : day.toLocaleDateString(undefined, { weekday: "long" })) + "</small>" +
+    day.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  $("nextDay").disabled = dk >= today;
+
+  const daySes = S.sessions.filter((s) => dayKey(endOf(s)) === dk);
+  const estimated = daySes.filter((s) => num(s.human_minutes) !== null);
+  const ws = weekStart(day), we = addDays(ws, 7);
+  const weekSes = S.sessions.filter((s) => { const t = endOf(s); return t >= ws && t < we; });
+  const weekSaved = sum(weekSes.filter((s) => num(s.human_minutes) !== null), "saved_minutes");
+
+  $("dayStats").innerHTML = [
+    ["hero", "saved", fmt(sum(estimated, "saved_minutes")), "this week " + fmt(weekSaved)],
+    ["", "your time", fmt(sum(daySes, "you_minutes")), daySes.length + (daySes.length === 1 ? " session" : " sessions")],
+    ["", "human-equivalent", fmt(sum(estimated, "human_minutes")), "what it would have taken by hand"],
+    ["", "AI time", fmt(sum(daySes, "ai_minutes")), "working, start to finish"],
+  ].map((s) => '<div class="stat ' + s[0] + '"><span>' + s[1] + "</span><b>" + s[2] + "</b><small>" + s[3] + "</small></div>").join("");
+
+  const nudges = [];
+  const missing = daySes.length - estimated.length;
+  if (missing > 0) nudges.push(missing + (missing === 1 ? " session has" : " sessions have") + " no human-equivalent estimate yet, so they aren't counted as saved. Add one below.");
+  $("nudges").innerHTML = nudges.map((n) => '<p class="nudge">' + esc(n) + "</p>").join("");
+
+  renderDividend(ws, we, weekSaved);
+  renderLog(daySes);
+  renderKeep();
+  renderAll();
+  renderTokens();
+}
+
+function renderDividend(ws, we, weekSaved) {
+  const allocs = S.keep.filter((k) => k.kind === "allocation" && k.active);
+  const weekSpent = S.spent.filter((p) => p.day >= dayKey(ws) && p.day < dayKey(we));
+  if (!allocs.length) { $("dividend").innerHTML = '<p class="empty">No shares yet. Add some in the keep list below.</p>'; return; }
+  let owedT = 0, spentT = 0;
+  const rows = allocs.map((a) => {
+    const owed = Math.max(0, weekSaved) * (num(a.share) || 0);
+    const spent = sum(weekSpent.filter((p) => p.keep_id === a.id), "minutes");
+    owedT += owed; spentT += spent;
+    const pct = owed > 0 ? Math.min(100, (spent / owed) * 100) : (spent > 0 ? 100 : 0);
+    return '<div class="alloc"><div class="name">' + esc(a.label) + "<small>" + Math.round((num(a.share) || 0) * 100) + '% share</small></div>' +
+      '<div class="meter" role="img" aria-label="' + fmt(spent) + " spent of " + fmt(owed) + '"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
+      '<div class="fig">' + fmt(spent) + " / " + fmt(owed) + "</div>" +
+      '<div class="adds"><span class="mono" style="font-size:.6rem;color:var(--soft);align-self:center">spent on this day:</span>' +
+      [15, 30, 60, 120].map((m) => '<button class="btn small" data-spend="' + a.id + '" data-min="' + m + '">+' + fmt(m) + "</button>").join("") + "</div></div>";
+  }).join("");
+  const unspent = owedT - spentT;
+  $("dividend").innerHTML = rows + (owedT > 0 ? '<p class="nudge" style="margin-top:14px">' +
+    (unspent > 1 ? esc(fmt(unspent) + " of this week's dividend is still unspent. If you don't spend it on purpose, it'll probably turn into more work.")
+                 : "This week's dividend is spent. That's the point.") + "</p>" : "");
+}
+
+function renderLog(daySes) {
+  if (!daySes.length) { $("log").innerHTML = '<p class="empty">Nothing logged on this day.</p>'; return; }
+  $("log").innerHTML = daySes.map((s) => {
+    const lines = (s.ledger_actions || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
+    const saved = num(s.human_minutes) !== null ? "<b>saved " + fmt(s.saved_minutes) + "</b> · " : "";
+    const range = num(s.human_low) !== null ? " (" + fmt(s.human_low) + "–" + fmt(s.human_high) + ")" : "";
+    return '<div class="card sess" data-sid="' + s.id + '">' +
+      '<div class="sess-head"><h3>' + esc(s.title || "Untitled session") + '</h3><span class="src">' + esc(s.source) + "</span>" +
+      (s.project ? '<span class="src" style="color:var(--soft)">' + esc(s.project) + "</span>" : "") + "</div>" +
+      '<div class="figs">' + saved + "you " + fmt(s.you_minutes) + " · human-equivalent " + fmt(s.human_minutes) + range + " · AI " + fmt(s.ai_minutes) + "</div>" +
+      (s.estimate_basis ? '<p class="basis">' + esc(s.estimate_basis) + "</p>" : "") +
+      (lines.length ? '<ul class="lines">' + lines.map((l) =>
+        '<li data-aid="' + l.id + '"><span class="k ' + esc(l.kind) + '">' + esc(l.kind.replace("_", " ")) + '</span><span class="t">' + esc(l.line) +
+        '</span><button class="x" data-cross="' + l.id + '" aria-label="Cross out this line">✕</button></li>').join("") + "</ul>" : "") +
+      '<div class="tools"><span class="lbl">estimate was</span>' +
+      [["too_low", "too low"], ["about_right", "about right"], ["too_high", "too high"]].map((c) =>
+        '<button class="btn small cal" aria-pressed="' + (s.calibration === c[0]) + '" data-cal="' + c[0] + '">' + c[1] + "</button>").join("") +
+      '<button class="btn link" data-edit="' + s.id + '">edit</button><button class="btn link" data-del="' + s.id + '">delete</button></div>' +
+      '<form class="edit" data-form="' + s.id + '" hidden>' +
+      '<label class="wide">title<input name="title" value="' + esc(s.title || "") + '" /></label>' +
+      '<label>your minutes<input name="you_minutes" type="number" min="0" step="1" value="' + esc(s.you_minutes ?? "") + '" /></label>' +
+      '<label>human minutes<input name="human_minutes" type="number" min="0" step="5" value="' + esc(s.human_minutes ?? "") + '" /></label>' +
+      '<label>low<input name="human_low" type="number" min="0" step="5" value="' + esc(s.human_low ?? "") + '" /></label>' +
+      '<label>high<input name="human_high" type="number" min="0" step="5" value="' + esc(s.human_high ?? "") + '" /></label>' +
+      '<label class="wide">basis<input name="estimate_basis" value="' + esc(s.estimate_basis || "") + '" /></label>' +
+      '<label class="wide">receipt url<input name="receipt_url" value="' + esc(s.receipt_url || "") + '" placeholder="link to the public sign-off, once signed" /></label>' +
+      '<div class="wide"><button class="btn small primary" type="submit">Save</button></div></form></div>';
+  }).join("");
+}
+
+function renderKeep() {
+  const tasks = S.keep.filter((k) => k.kind === "task"), allocs = S.keep.filter((k) => k.kind === "allocation");
+  $("keepTasks").innerHTML = tasks.map((k) => '<li class="' + (k.active ? "" : "off") + '"><span class="t">' + esc(k.label) +
+    (k.why ? "<small>" + esc(k.why) + "</small>" : "") + '</span><button class="btn link" data-toggle="' + k.id + '">' + (k.active ? "pause" : "resume") +
+    '</button><button class="x" data-kdel="' + k.id + '" aria-label="Remove">✕</button></li>').join("") || '<li class="empty">Nothing kept yet.</li>';
+  const total = allocs.filter((a) => a.active).reduce((a, k) => a + (num(k.share) || 0), 0);
+  $("shareHint").textContent = "Decided in advance, so the time can't quietly fill up with more work. Active shares add up to " + Math.round(total * 100) + "%" + (Math.abs(total - 1) > 0.001 ? ". Aim for 100%." : ".");
+  $("keepAllocs").innerHTML = allocs.map((k) => '<li class="' + (k.active ? "" : "off") + '"><span class="t">' + esc(k.label) +
+    (k.why ? "<small>" + esc(k.why) + "</small>" : "") + '</span><input class="mono" style="width:4.5em;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)" type="number" min="0" max="100" step="5" value="' +
+    Math.round((num(k.share) || 0) * 100) + '" data-share="' + k.id + '" aria-label="Share percent for ' + esc(k.label) + '" /><span class="mono" style="font-size:.7rem">%</span>' +
+    '<button class="btn link" data-toggle="' + k.id + '">' + (k.active ? "pause" : "resume") + '</button><button class="x" data-kdel="' + k.id + '" aria-label="Remove">✕</button></li>').join("");
+}
+
+function renderAll() {
+  const rows = S.all || [];
+  const est = rows.filter((r) => num(r.human_minutes) !== null);
+  const you = sum(est, "you_minutes"), human = sum(est, "human_minutes");
+  const mult = you > 0 ? (human / you) : null;
+  $("allStats").innerHTML = [
+    ["hero", "saved, all time", fmt(sum(est, "saved_minutes")), est.length + " estimated sessions"],
+    ["", "human-equivalent", fmt(human), "by hand"],
+    ["", "your time", fmt(you), "on those sessions"],
+    ["", "leverage", mult ? mult.toFixed(1) + "×" : "—", "human-equivalent ÷ your time"],
+  ].map((s) => '<div class="stat ' + s[0] + '"><span>' + s[1] + "</span><b>" + s[2] + "</b><small>" + s[3] + "</small></div>").join("");
+  const c = { too_low: 0, about_right: 0, too_high: 0 };
+  rows.forEach((r) => { if (r.calibration) c[r.calibration]++; });
+  const n = c.too_low + c.about_right + c.too_high;
+  $("calibHint").textContent = n ? "Calibration so far: " + c.too_high + " too high, " + c.about_right + " about right, " + c.too_low + " too low. Marking a few each week keeps the numbers honest."
+    : "Mark a few estimates each week (too low / about right / too high). That's what makes these numbers trustworthy.";
+}
+
+function renderTokens() {
+  $("tokens").innerHTML = S.tokens.map((t) => '<li class="' + (t.revoked ? "off" : "") + '"><span class="t">' + esc(t.label) + "<small>" +
+    (t.revoked ? "revoked" : t.last_used_at ? "last used " + new Date(t.last_used_at).toLocaleString() : "never used") + "</small></span>" +
+    (t.revoked ? "" : '<button class="btn link" data-revoke="' + t.id + '">revoke</button>') + "</li>").join("") || '<li class="empty">No tokens yet.</li>';
+}
+
+/* ── interactions ── */
+$("prevDay").addEventListener("click", () => { day = addDays(day, -1); render(); maybeReload(); });
+$("nextDay").addEventListener("click", () => { day = addDays(day, 1); render(); });
+$("todayBtn").addEventListener("click", () => { day = startOfDay(new Date()); render(); });
+let loadedFrom = null;
+function maybeReload() { const need = addDays(weekStart(day), -35); if (!loadedFrom || need < loadedFrom) { loadedFrom = need; loadAll(); } }
+
+const pending = new Map();
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  try {
+    if (b.dataset.cross) {
+      const id = b.dataset.cross, li = b.closest("li");
+      if (pending.has(id)) { clearTimeout(pending.get(id)); pending.delete(id); li.classList.remove("gone"); b.textContent = "✕"; return; }
+      li.classList.add("gone"); b.textContent = "undo";
+      pending.set(id, setTimeout(async () => {
+        pending.delete(id);
+        const { error } = await sb.from("ledger_actions").delete().eq("id", id);
+        if (error) return fail(error);
+        S.sessions.forEach((s) => (s.ledger_actions = (s.ledger_actions || []).filter((a) => a.id !== id)));
+        li.remove(); toast("Forgotten.");
+      }, 4000));
+    } else if (b.dataset.cal) {
+      const sid = b.closest("[data-sid]").dataset.sid, s = S.sessions.find((x) => x.id === sid);
+      const v = s.calibration === b.dataset.cal ? null : b.dataset.cal;
+      const { error } = await sb.from("ledger_sessions").update({ calibration: v }).eq("id", sid);
+      if (error) return fail(error);
+      await loadAll();
+    } else if (b.dataset.edit) {
+      const f = document.querySelector('[data-form="' + b.dataset.edit + '"]'); f.hidden = !f.hidden;
+    } else if (b.dataset.del) {
+      if (!confirm("Delete this session and its log lines?")) return;
+      const { error } = await sb.from("ledger_sessions").delete().eq("id", b.dataset.del);
+      if (error) return fail(error);
+      toast("Session deleted."); await loadAll();
+    } else if (b.dataset.spend) {
+      const { error } = await sb.from("ledger_spent").insert({ keep_id: b.dataset.spend, minutes: Number(b.dataset.min), day: dayKey(day) });
+      if (error) return fail(error);
+      toast("Logged " + fmt(Number(b.dataset.min)) + ". Good."); await loadAll();
+    } else if (b.dataset.toggle) {
+      const k = S.keep.find((x) => x.id === b.dataset.toggle);
+      const { error } = await sb.from("ledger_keep").update({ active: !k.active }).eq("id", k.id);
+      if (error) return fail(error);
+      await loadAll();
+    } else if (b.dataset.kdel) {
+      if (!confirm("Remove this from the keep list?")) return;
+      const { error } = await sb.from("ledger_keep").delete().eq("id", b.dataset.kdel);
+      if (error) return fail(error);
+      await loadAll();
+    } else if (b.dataset.revoke) {
+      if (!confirm("Revoke this token? Tools using it stop logging.")) return;
+      const { error } = await sb.from("ledger_tokens").update({ revoked: true }).eq("id", b.dataset.revoke);
+      if (error) return fail(error);
+      await loadAll();
+    }
+  } catch (err) { fail(err); }
+});
+
+document.addEventListener("change", async (e) => {
+  const i = e.target.closest("[data-share]"); if (!i) return;
+  const v = Math.max(0, Math.min(100, Number(i.value) || 0)) / 100;
+  const { error } = await sb.from("ledger_keep").update({ share: v }).eq("id", i.dataset.share);
+  if (error) return fail(error);
+  await loadAll();
+});
+
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("[data-form]"); if (!f) return;
+  e.preventDefault();
+  const fd = new FormData(f), patch = {};
+  for (const [k, v] of fd.entries()) {
+    patch[k] = ["you_minutes", "human_minutes", "human_low", "human_high"].includes(k) ? (v === "" ? null : Number(v)) : (v.trim() || null);
+  }
+  patch.updated_at = new Date().toISOString();
+  const { error } = await sb.from("ledger_sessions").update(patch).eq("id", f.dataset.form);
+  if (error) return fail(error);
+  toast("Saved."); await loadAll();
+});
+
+$("addTask").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await sb.from("ledger_keep").insert({ kind: "task", label: $("taskLabel").value.trim(), why: $("taskWhy").value.trim() || null, sort: 100 });
+  if (error) return fail(error);
+  e.target.reset(); await loadAll();
+});
+$("addAlloc").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await sb.from("ledger_keep").insert({ kind: "allocation", label: $("allocLabel").value.trim(), share: Math.max(0, Math.min(100, Number($("allocPct").value))) / 100, sort: 100 });
+  if (error) return fail(error);
+  e.target.reset(); await loadAll();
+});
+
+$("pasteSave").addEventListener("click", async () => {
+  let raw = $("pasteBox").value.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  let entry;
+  try { entry = JSON.parse(raw); } catch (err) { return toast("That isn't valid JSON: " + err.message); }
+  if (!entry.source) entry.source = "chatgpt";
+  const { error } = await sb.rpc("ledger_add", { p_entry: entry });
+  if (error) return fail(error);
+  $("pasteBox").value = ""; toast("Entry saved."); day = startOfDay(new Date()); await loadAll();
+});
+
+$("newToken").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = "ldg_" + btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { error } = await sb.rpc("ledger_create_token", { p_label: $("tokenLabel").value.trim(), p_token_hash: hash });
+  if (error) return fail(error);
+  const box = $("tokenShow");
+  box.hidden = false;
+  box.innerHTML = "Copy this now. It won't be shown again.<br><br><b></b><br><br><button class='btn small' id='copyTok'>Copy</button>";
+  box.querySelector("b").textContent = token;
+  $("copyTok").addEventListener("click", async () => { try { await navigator.clipboard.writeText(token); toast("Copied."); } catch { toast("Select and copy it by hand."); } });
+  e.target.reset(); await loadAll();
+});
+
+boot();
+</script>
+</body>
+</html>
