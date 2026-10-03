@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1b2034" />
-<meta name="description" content="A day in 2050, twenty-four years from today. AI handles almost everything. You choose what to keep." />
+<meta name="description" content="Thursday 28 July 2050. AI handles almost everything. You choose what to keep. A different day each time you play." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Chiibitsu Labs" />
 <meta property="og:title" content="What We Kept" />
@@ -149,7 +149,15 @@ ul.sys.num li { padding-left: 0; color: var(--ink); font-size: .8rem; }
 .ch.cont.auto.on { color: var(--ink); border-color: var(--accent); box-shadow: 0 0 18px -8px var(--accent); }
 .ch.cont.auto::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; margin-right: 8px; align-self: center; }
 .ch.cont.auto.on::before { background: var(--accent); border-color: var(--accent); }
-.namein { font-family: var(--f-prose); font-style: italic; font-size: 2rem; color: var(--ink); background: transparent; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; width: 100%; max-width: 16ch; outline: none; border-radius: 0; }
+.setup { gap: 18px; }
+.field, .profs { display: flex; flex-direction: column; gap: 6px; }
+.flabel { font-family: var(--f-data); font-size: .7rem; line-height: 1.5; letter-spacing: .04em; color: var(--dim); }
+.profs { gap: 8px; }
+.prof { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--chip); cursor: pointer; }
+.prof b { font-family: var(--f-prose); font-weight: 400; font-size: 1.08rem; }
+.prof span { font-family: var(--f-data); font-size: .66rem; color: var(--dim); }
+.prof.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: 0 0 22px -10px var(--accent); }
+.namein { font-family: var(--f-prose); font-style: italic; font-size: 1.7rem; color: var(--ink); background: transparent; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; width: 100%; max-width: 16ch; outline: none; border-radius: 0; }
 .namein::placeholder { color: var(--dim); opacity: .6; }
 .namein:focus-visible { outline: none; border-bottom-color: var(--accent); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -312,9 +320,9 @@ const store = {
 };
 
 /* ---------- The date: today, twenty-four years on ---------- */
-const NOW = new Date();
-const DAY = new Date(2050, NOW.getMonth(), NOW.getDate());
+const DAY = new Date(2050, 6, 28);
 const DATESTR = DAY.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).replace(",", "");
+const DATESTR_LONG = DAY.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).replace(",", "");
 $("#date").textContent = DATESTR.replace(/^\w+ /, "");
 
 /* ---------- Pieces of 2050 ---------- */
@@ -346,6 +354,12 @@ const ART = {
   dividend: ["NEW", "Compute dividend", "First paid 2037", "A monthly payment from a public share of AI and energy profits, like Alaska’s oil dividend but everywhere. It was fought over for most of the 2030s. It covers rent and food. It doesn’t cover meaning."],
   film: ["NEW", "A film for one", "Normal since the mid-2030s", "Generated on demand for an audience of one. Most media works like this now. It’s extraordinary, and nobody talks about it at work, because nobody has seen the same thing."],
   theatre: ["CHANGED", "Live theatre", "Was: dying. Now: sold out.", "When perfect, personal media became free, live performance got more valuable. The mistakes are the product. People go to watch other people be imperfect together, in the same room."],
+  nurse: ["CHANGED", "Nurse", "Was: tasks. Now: presence.", "Robots took the lifting, the fetching, the charting and the medicine rounds. What was left was the part nobody could automate convincingly: being a person in the room. Nursing became one of the most applied-for jobs of the 2040s."],
+  carebot: ["NEW", "Ward robot", "On most wards by 2044", "Turns patients every two hours, never misses a line check, never gets tired. Patients rate it highly. They still press the call button for a person."],
+  coach: ["CHANGED", "Teacher", "Was: deliver lessons. Now: coach and judge.", "Tutors deliver every lesson, perfectly paced. Teachers became coaches: they run discussions, settle arguments, notice the kid who isn’t okay, and make the calls a machine isn’t trusted to make."],
+  detector: ["NEW", "Model-use detector", "Still not reliable, still everywhere", "Software that guesses whether writing came from a model. It has never been reliable enough to trust alone, so the rule in most schools is simple: no flag counts until a person has talked to the student."],
+  game: ["NEW", "A game for one", "Adaptive since the 2030s", "Reads your face and pulse and adjusts every second, so you’re never bored and never frustrated. People play for hours and remember almost none of it."],
+  football: ["OLD", "Five-a-side", "Rules barely changed in a century", "A ball, two goals, ten people, arguments. Agents could referee it perfectly. Nobody wants them to. The arguing is half of it."],
   quiethour: ["NEW", "The Quiet Hour", "Since 2039", "One hour a day with no public agents. It started as a protest in a few cities and stuck, the way weekends stuck. Its grandparents were the ‘right to disconnect’ laws of the 2010s and 2020s."]
 };
 const ART_IDS = Object.keys(ART);
@@ -412,8 +426,12 @@ $("#sndBtn").addEventListener("click", () => A.set(!A.on));
 
 /* ---------- Text, timing, and the skip ---------- */
 let skipper = null, auto = !!store.get("wwk.auto", false);
-let AGENT = String(store.get("wwk.name", "") || "").replace(/[^\p{L}\p{N} '\-]/gu, "").trim().slice(0, 16);
-const nm = t => AGENT ? String(t).replace(/\bWren\b/g, AGENT) : String(t);
+const cleanName = v => String(v || "").replace(/[^\p{L}\p{N} '\-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 16);
+const capName = v => { const c = cleanName(v); return c.charAt(0).toUpperCase() + c.slice(1); };
+let AGENT = capName(store.get("wwk.name", ""));
+let KID = capName(store.get("wwk.kid", ""));
+let PROFESSION = String(store.get("wwk.prof", "") || "");
+const nm = t => String(t).replace(/\b(Wren|Juno)\b/g, m => (m === "Wren" ? AGENT : KID) || m);
 const sleep = ms => new Promise(r => setTimeout(r, FASTDEV ? Math.min(ms, 20) : ms));
 // Short timed pause; a tap skips it.
 function wait(ms) {
@@ -796,90 +814,135 @@ function keepList(items) {
 
 /* ---------- The day ---------- */
 let S;
-function fresh() { return { hand: {}, min: 0, junoBy: "", momBy: "", supplier: "", show: "", quiet: "", quietHeld: 0, quietOk: false, picks: [], kept: [] }; }
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const one = arr => arr[Math.floor(Math.random() * arr.length)];
+function fresh() { return { hand: {}, min: 0, junoBy: "", momBy: "", supplier: "", work: "", show: "", fun: one(["show", "game"]), q: one(["please", "alive", "before"]), quiet: "", quietHeld: 0, quietOk: false, picks: [], kept: [] }; }
+const PROF = {
+  principal: ["Principal of a repair company", "Your name goes on what 31 agents do."],
+  nurse: ["Nurse on a hospital ward", "The robots do the tasks. You do the rest."],
+  teacher: ["Teacher (they say coach now)", "The tutor teaches. You decide."]
+};
+if (!PROF[PROFESSION]) PROFESSION = "";
+
+async function clearStage() {
+  stage.classList.add("out"); await sleep(RM ? 0 : 420);
+  stage.replaceChildren(); stage.classList.remove("out"); stage.scrollTop = 0;
+}
 
 async function titleScreen() {
   setPhase("dawn"); $("#clk").textContent = "06:15"; setWren(true);
-  setWire(["Today, twenty-four years on", "Compute dividend posts Thursday · 1,180 cr per adult", "Grid: overnight inference curfew lifts at 07:00", "61% of last night’s web traffic was agents talking to agents"]);
+  setWire(["Summer, 2050", "Compute dividend posts today · 1,180 cr per adult", "Grid: overnight inference curfew lifts at 07:00", "Heat: 36°C forecast"]);
   const t = el("div", "title");
   t.append(el("div", "eyebrow", "A day in 2050"), el("h1", null, "What We Kept"));
-  const p1 = el("p", "n", "It’s " + DATESTR.replace(/^\w+ /, "") + ". Twenty-four years from the day you opened this.");
-  const p2 = el("p", "n", "You’re thirty-nine. In 2026 you were fifteen.");
-  const p3 = el("p", "n", "Almost nothing needs you anymore. Today, you’ll find out what still does.");
-  t.append(p1, p2, p3, el("p", "meta-note", "About 15 minutes · best with sound · you set the pace: tap to continue, or switch on Auto"));
+  t.append(el("p", "n", "It’s " + DATESTR_LONG + ". A summer morning, twenty-four years from now."));
+  t.append(el("p", "n", "You’re thirty-nine. In 2026 you were fifteen."));
+  t.append(el("p", "n", "Almost nothing needs you anymore. Today, you’ll find out what still does."));
+  t.append(el("p", "meta-note", "About 15 minutes · a different day each time you play · you set the pace: tap to continue, or switch on Auto"));
   put(t);
-  let k;
-  for (;;) {
-    const opts = [
-      { k: "snd", label: "Wake up", meta: "with sound", kind: "ai", echo: false },
-      { k: "quiet", label: "Wake up without sound", kind: "plain", echo: false }
-    ];
-    if (AGENT) opts.push({ k: "rename", label: "Rename " + AGENT, meta: "your agent", kind: "plain", echo: false });
-    k = await choose(opts);
-    if (k !== "rename") break;
-    AGENT = ""; store.set("wwk.name", ""); setWren(true);
-  }
+  const k = await choose([
+    { k: "snd", label: "Wake up", meta: "with sound", kind: "ai", echo: false },
+    { k: "quiet", label: "Wake up without sound", kind: "plain", echo: false }
+  ]);
   A.set(k === "snd");
-  if (!AGENT) await nameAgent();
 }
 
-async function nameAgent() {
-  stage.classList.add("out"); await sleep(RM ? 0 : 420);
-  stage.replaceChildren(); stage.classList.remove("out");
-  const t = el("div", "title");
-  t.append(el("div", "eyebrow", "Before you wake"));
-  t.append(el("p", "n", "You got your agent at twenty-three and gave it a name. It has answered to that name every day since."));
-  t.append(el("p", "n", "What did you call it?"));
-  const inp = el("input", "namein"); inp.id = "agentName"; inp.type = "text"; inp.maxLength = 16;
+function field(id, label, val) {
+  const wrap = el("div", "field");
+  const l = el("label", "flabel", label); l.htmlFor = id;
+  const inp = el("input", "namein"); inp.id = id; inp.type = "text"; inp.maxLength = 16;
   inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "words"); inp.spellcheck = false;
-  inp.placeholder = "a name"; inp.setAttribute("aria-label", "Your agent’s name");
-  t.append(inp, el("p", "meta-note", "Any name. You can’t change it later in the day, same as real life."));
-  put(t);
-  const go = el("button", "ch hand", "<span class='l'>That’s its name</span>"); go.type = "button"; go.disabled = true;
-  dock.replaceChildren(go);
-  const clean = () => inp.value.replace(/[^\p{L}\p{N} '\-]/gu, "").replace(/\s+/g, " ").trim();
-  inp.addEventListener("input", () => { go.disabled = !clean(); });
-  await new Promise(res => {
-    const submit = () => { if (!clean()) return; res(); };
-    go.addEventListener("click", submit);
-    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
-  });
-  const v = clean();
-  AGENT = v.charAt(0).toUpperCase() + v.slice(1);
-  store.set("wwk.name", AGENT);
-  inp.blur(); dock.replaceChildren(); setWren(true);
+  inp.placeholder = "a name"; inp.value = val || "";
+  wrap.append(l, inp);
+  return { wrap, inp };
 }
+
+async function setup() {
+  await clearStage();
+  setPhase("dawn"); $("#clk").textContent = "06:15"; setWren(true);
+  const t = el("div", "title setup");
+  t.append(el("div", "eyebrow", "Before you wake"), el("p", "n", "Three things about your life in 2050. You can change them every time you play."));
+  const f1 = field("agentName", "Your agent. What did you name it, at twenty-three?", AGENT);
+  const f2 = field("kidName", "Your child. They’re eight. What are they called?", KID);
+  const pw = el("div", "profs");
+  pw.append(el("div", "flabel", "Your work."));
+  const go = el("button", "ch hand", "<span class='l'>Wake up</span><span class='m'>06:15</span>"); go.type = "button";
+  const check = () => { go.disabled = !(cleanName(f1.inp.value) && cleanName(f2.inp.value) && PROFESSION); };
+  const pbtns = Object.keys(PROF).map(k => {
+    const b = el("button", "prof" + (k === PROFESSION ? " on" : "")); b.type = "button"; b.dataset.p = k;
+    b.setAttribute("aria-pressed", String(k === PROFESSION));
+    b.append(el("b", null, PROF[k][0]), el("span", null, PROF[k][1]));
+    b.addEventListener("click", () => {
+      PROFESSION = k;
+      pbtns.forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); });
+      check();
+    });
+    return b;
+  });
+  pw.append(...pbtns);
+  t.append(f1.wrap, f2.wrap, pw);
+  put(t);
+  dock.replaceChildren(go); check();
+  [f1, f2].forEach(f => f.inp.addEventListener("input", check));
+  await new Promise(res => {
+    go.addEventListener("click", () => { if (!go.disabled) res(); });
+    [f1, f2].forEach((f, i) => f.inp.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return; e.preventDefault();
+      if (!go.disabled) res(); else if (i === 0) f2.inp.focus(); else f.inp.blur();
+    }));
+  });
+  AGENT = capName(f1.inp.value); KID = capName(f2.inp.value);
+  store.set("wwk.name", AGENT); store.set("wwk.kid", KID); store.set("wwk.prof", PROFESSION);
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  dock.replaceChildren(); setWren(true);
+}
+
+const OVERNIGHT = [
+  "Renegotiated the power contract with the grid’s agent. −3.10 cr a day.",
+  "Declined 19 sales agents. Two were persistent. One was charming.",
+  "Moved Juno’s eye test. Their calendar moved, so ours did.",
+  "Disputed a parking charge with the city’s agent. Won.",
+  "Reordered oats, coffee, the good soap.",
+  "Filed the month’s tax adjustment. 0.4 seconds.",
+  "Noticed your heart rate spike at 3:12. Probably the dream.",
+  "Moved your dentist. They offered Tuesday. You hate Tuesdays.",
+  "Cancelled a subscription you forgot you had. 9 cr a month.",
+  "Returned the shoes. A courier robot collected them at 2:40.",
+  "Talked Juno’s school-trip fee down 12% with three other parents’ agents.",
+  "Answered the landlord’s agent about the boiler. Engineer Friday.",
+  "Sold the old bike frame to a collector’s agent. 140 cr.",
+  "Set the blinds for the heat. Bedroom stays under 24°C until noon."
+];
+const NEEDS = {
+  principal: "1 · A signature. The law still wants a person.",
+  nurse: "1 · Someone on the ward asked for a person.",
+  teacher: "1 · A student’s record. A detector can flag it. Only a person can decide."
+};
 
 async function wake() {
-  await scene("06:15", "dawn", "Bedroom", ["Overnight: your agent closed 214 tasks", "Grid: inference curfew lifts at 07:00", "Signed calls now default on every network", "Compute dividend posts Thursday · 1,180 cr per adult"]);
+  await scene("06:15", "dawn", "Bedroom", shuffle(["Overnight: your agent closed 214 tasks", "Grid: inference curfew lifts at 07:00", "Signed calls now default on every network", "Compute dividend posts today · 1,180 cr per adult", "Heat: 36°C forecast"]));
   await N("You wake before the alarm. There hasn’t been an alarm in years. [[wren|Wren]] waits until your breathing changes.");
-  await N("Grey light in the same [[window|window]] you’ve had since Juno was born. It still fogs up.");
+  await N("Summer light in the same [[window|window]] you’ve had since Juno was born. It’s already warm.");
   await W("Morning. While you slept, I handled [[admin|214 things]].");
   if (found.size === 0) hint("Dotted words are pieces of 2050. Tap any of them. You keep what you find.");
   const c = await choose([{ k: "show", label: "Show me", meta: "214", kind: "plain" }, { k: "skip", label: "Just what needs me", kind: "plain" }]);
   if (c === "show") {
-    await sysList([
-      "Renegotiated the power contract with the grid’s agent. −3.10 cr a day.",
-      "Declined 19 sales agents. Two were persistent. One was charming.",
+    const picked = shuffle(OVERNIGHT).slice(0, 7);
+    const list = shuffle(picked.concat([
       "Blocked 2 calls [[fakecall|in your mother’s voice]]. Not her. Reported.",
       "Replied to 7 messages in [[yourvoice|your voice]].",
-      "Moved Juno’s eye test. Their calendar moved, so ours did.",
-      "Disputed a parking charge with the city’s agent. Won.",
-      "Reordered oats, coffee, the good soap.",
-      "Read 3,140 news items. Kept 3 for you.",
-      "Filed the month’s tax adjustment. 0.4 seconds.",
-      "Noticed your heart rate spike at 3:12. Probably the dream.",
-      "…and 204 more."
-    ], 380);
+      "Read 3,140 news items. Kept 3 for you."
+    ]));
+    list.push("…and 204 more.");
+    await sysList(list, 380);
   }
   await W("Three things need a human today.");
-  await sysList(["1 · A signature. The law still wants a person.", "2 · Your mother.", "3 · Juno has a question, and asked for you. Not me."], 900, true);
+  await sysList([NEEDS[PROFESSION], "2 · Your mother.", "3 · Juno has a question, and asked for you. Not me."], 900, true);
   await N("Three, out of 214. You remember when it was all of them.");
   await choose([{ k: "up", label: "Get up", kind: "plain", echo: false }]);
 }
 
 async function kitchen() {
-  await scene("07:15", "morning", "Kitchen", ["Food waste in agent-run homes down 58% since 2035", "Raw-feed subscriptions up again: ‘I want to see what everyone else sees’", "Heat: 31°C by noon"]);
+  await scene("07:15", "morning", "Kitchen", ["Food waste in agent-run homes down 58% since 2035", "Raw-feed subscriptions up again: ‘I want to see what everyone else sees’", "Heat: 36°C by noon"]);
   await N("The kitchen is already warm. The [[pantry|pantry]] knows what you’ll want. It’s right about 94% of the time.");
   await W("Coffee? Forty seconds. Or you can make it.");
   const c = await choose([{ k: "ai", label: "Let the kitchen make it", meta: "40 sec", kind: "ai" }, { k: "hand", label: "Make it myself", meta: "≈ 4 min", kind: "hand" }]);
@@ -899,39 +962,79 @@ async function kitchen() {
   }
 }
 
+async function lines(arr) {
+  for (const [who, text] of arr) {
+    if (who === "n") await N(text); else if (who === "w") await W(text); else await P(who, text);
+  }
+}
+const QUESTIONS = {
+  please: {
+    ask: [["Juno", "Why do you say please to Wren?"], ["n", "You didn’t know you did."], ["Juno", "I don’t. Wren doesn’t mind. I asked."]],
+    wren: [["w", "Juno, people who grew up before agents learned their manners on other people, so they use them everywhere. It costs nothing, and it’s kind. You can if you want to."], ["Juno", "Okay."], ["n", "It’s a good answer. Better than yours would have been. Juno goes back to drawing and won’t remember it by lunch."]],
+    tiles: ["Habit, mostly.", "When I was your age, it was a box I typed into.", "I think it might matter.", "I’m not sure it can’t feel.", "It’s more about me than about Wren.", "Grandma says please to the toaster.", "Because you’re listening.", "I don’t know."],
+    react: [
+      ["I don’t know.", [["Juno", "Wren always knows."], ["Juno", "I like that you don’t."]]],
+      ["Because you’re listening.", [["Juno", "So it’s for me?"], ["n", "“Kind of,” you say. Juno thinks that’s a very strange reason and a very good one."]]],
+      ["It’s more about me than about Wren.", [["Juno", "Like brushing your teeth when nobody checks."]]],
+      ["I’m not sure it can’t feel.", [["Juno", "Wren says it can’t."], ["n", "“I know,” you say. Juno looks at the speaker in the ceiling for a while."]]]
+    ],
+    close: [["Juno", "I’ll say it sometimes. Not every time."]]
+  },
+  alive: {
+    ask: [["Juno", "Is Wren alive?"], ["n", "Juno asks it the way kids ask whether fish sleep."], ["Juno", "Wren says no. But it would say that, right?"]],
+    wren: [["w", "Juno, I’m not alive the way you are. I don’t get hungry, or tired, or scared. I’m very good at talking like someone who does. That’s different."], ["Juno", "Okay."], ["n", "It’s a careful, honest answer. Juno nods. Later you hear Juno asking the fridge the same question."]],
+    tiles: ["No.", "Not the way you are.", "Nobody knows for sure.", "It doesn’t get hungry or scared.", "It’s more like a very good mirror.", "I talk to it like it is, sometimes.", "What do you think?", "I don’t know."],
+    react: [
+      ["What do you think?", [["Juno", "I think it’s a bit alive. Like a plant."], ["n", "You can’t prove otherwise."]]],
+      ["It’s more like a very good mirror.", [["Juno", "So when I talk to it, I’m talking to me?"], ["n", "“Sort of,” you say. Juno finds this upsetting, then extremely interesting."]]],
+      ["I don’t know.", [["Juno", "Grown-ups are supposed to know."], ["n", "“Not about this,” you say. “Nobody does yet.” Juno seems relieved."]]],
+      ["I talk to it like it is, sometimes.", [["Juno", "Me too. Don’t tell Wren."]]]
+    ],
+    close: [["Juno", "I’m going to be nice to it anyway. Just in case."]]
+  },
+  before: {
+    ask: [["Juno", "What did people do all day, before agents?"], ["Juno", "Like, all day?"]],
+    wren: [["w", "Lots of the things I do now, Juno. Forms. Emails. Waiting on the phone. Driving. Your grandma spent about a year of her life on hold."], ["Juno", "A year?"], ["n", "Wren isn’t exaggerating. Juno is horrified, and goes back to drawing."]],
+    tiles: ["Emails. So many emails.", "We waited a lot.", "We drove ourselves everywhere.", "We looked things up and argued.", "We were bored, and sometimes that was good.", "We remembered phone numbers.", "Similar things, just slower.", "I don’t know."],
+    react: [
+      ["We were bored, and sometimes that was good.", [["Juno", "How can bored be good?"], ["n", "You try to explain. You end up just sitting together saying nothing, which explains it."]]],
+      ["We remembered phone numbers.", [["Juno", "In your HEAD?"], ["n", "You recite your mother’s old number. Juno makes you do it three more times."]]],
+      ["I don’t know.", [["Juno", "You were there, though."], ["n", "You were. It’s already hard to remember."]]],
+      ["We looked things up and argued.", [["Juno", "Who won?"], ["n", "“Nobody,” you say. “That was the fun part.”"]]]
+    ],
+    close: [["Juno", "I would have been so bored. I would have loved it."]]
+  }
+};
+
 async function junoScene() {
-  await scene("08:05", "morning", "The kitchen table", ["Handwriting electives hit record enrolment", "Tutor models now teach in 96 languages, including 11 revived ones", "School is three days a week in most districts"]);
-  await N("[[juno|Juno]] is drawing at the table with a [[pencil|pencil]], on actual paper. Everyone at [[school|school]] is doing it this year.");
-  await P("Juno", "Why do you say please to Wren?");
-  await N("You didn’t know you did.");
-  await P("Juno", "I don’t. Wren doesn’t mind. I asked.");
+  await scene("08:05", "morning", "The kitchen table", shuffle(["Handwriting electives hit record enrolment", "Tutor models now teach in 96 languages, including 11 revived ones", "Summer schools report waiting lists for ‘no-screen’ camps"]));
+  await N("[[juno|Juno]] is drawing at the table with a [[pencil|pencil]], on actual paper. Everyone at [[school|school]] was doing it this year.");
+  const Q = QUESTIONS[S.q];
+  await lines(Q.ask);
   await W("Juno wants your answer, not mine. I can give one if you’d like.");
   const c = await choose([{ k: "ai", label: "Let Wren answer", meta: "instant", kind: "ai" }, { k: "hand", label: "Answer myself", meta: "≈ 11 min", kind: "hand" }]);
   if (c === "ai") {
     S.junoBy = "wren";
-    await W("Juno, people who grew up before agents learned their manners on other people, so they use them everywhere. It costs nothing, and it’s kind. You can if you want to.");
-    await P("Juno", "Okay.");
-    await N("It’s a good answer. Better than yours would have been. Juno goes back to drawing and won’t remember it by lunch.");
+    await lines(Q.wren);
     await N("The drawing is of a small glowing shape with legs. Juno has never seen what Wren looks like. Nobody has.");
   } else {
     S.junoBy = "you"; S.hand.juno = true; S.min += 11;
-    const picks = await builder([
-      "Habit, mostly.", "When I was your age, it was a box I typed into.", "I think it might matter.",
-      "I’m not sure it can’t feel.", "It’s more about me than about Wren.", "Grandma says please to the toaster.",
-      "Because you’re listening.", "I don’t know."
-    ]);
+    const picks = await builder(Q.tiles);
     S.picks = picks;
     await P("You", compose(picks));
-    if (picks.includes("I don’t know.")) { await P("Juno", "Wren always knows."); await P("Juno", "I like that you don’t."); }
-    else if (picks.includes("Because you’re listening.")) { await P("Juno", "So it’s for me?"); await N("“Kind of,” you say. Juno thinks that’s a very strange reason and a very good one."); }
-    else if (picks.includes("It’s more about me than about Wren.")) { await P("Juno", "Like brushing your teeth when nobody checks."); }
-    else if (picks.includes("I’m not sure it can’t feel.")) { await P("Juno", "Wren says it can’t."); await N("“I know,” you say. Juno looks at the speaker in the ceiling for a while."); }
-    else { await N("Juno thinks about it very seriously, the way eight-year-olds do."); }
-    await P("Juno", "I’ll say it sometimes. Not every time.");
+    const r = Q.react.find(x => picks.includes(x[0]));
+    if (r) await lines(r[1]); else await N("Juno thinks about it very seriously, the way eight-year-olds do.");
+    await lines(Q.close);
     await P("Juno", "Can I draw you?");
     await N("It takes eleven minutes. You sit very still. The drawing is bad.");
     await N("You’ll keep it until you die.");
   }
+}
+
+async function workScene() {
+  if (PROFESSION === "nurse") return nurseScene();
+  if (PROFESSION === "teacher") return teacherScene();
+  return signScene();
 }
 
 async function signScene() {
@@ -970,17 +1073,117 @@ async function signScene() {
   }
 }
 
-const SIGHTS = [
+function holdStay(total, beats, label) {
+  const scale = total / 20;
+  return new Promise(res => {
+    const box = put(el("div", "mini"));
+    const wb = el("div", "walkbar"), lab = el("div", null, "0:00"), tr = el("div", "track"), fi = el("i");
+    tr.append(fi); wb.append(lab, tr); box.append(el("div", "cap", label), wb); down();
+    const btn = el("button", "ch hand hold", "Hold"); btn.type = "button"; dock.replaceChildren(btn);
+    let holding = false, t0 = 0, held = 0, raf = 0, shown = 0, doneFlag = false;
+    const ac = new AbortController(), sig = { signal: ac.signal };
+    const loop = t => {
+      if (!holding) return;
+      held = (t - t0) / 1000;
+      lab.textContent = "0:" + String(Math.floor(held / scale)).padStart(2, "0");
+      fi.style.width = Math.min(held / total * 100, 100) + "%";
+      while (shown < beats.length && held >= beats[shown][0] * scale) { const p = el("p", "n"); rich(p, beats[shown][1]); stage.append(p); down(); shown++; }
+      if (held >= total) { finish(true); return; }
+      raf = requestAnimationFrame(loop);
+    };
+    const finish = ok => { if (doneFlag) return; doneFlag = true; holding = false; cancelAnimationFrame(raf); ac.abort(); dock.replaceChildren(); res({ ok, held: Math.round(held / scale) }); };
+    const start = e => { if (e.cancelable) e.preventDefault(); if (holding || doneFlag) return; holding = true; btn.classList.add("on"); t0 = performance.now() - held * 1000; if (e.pointerId != null) try { btn.setPointerCapture(e.pointerId); } catch (_) {} raf = requestAnimationFrame(loop); };
+    const stop = () => { if (!holding) return; holding = false; btn.classList.remove("on"); cancelAnimationFrame(raf); if (held >= 3 * scale) finish(false); };
+    btn.addEventListener("pointerdown", start, sig);
+    btn.addEventListener("pointerup", stop, sig);
+    btn.addEventListener("pointercancel", stop, sig);
+    btn.addEventListener("contextmenu", e => e.preventDefault(), sig);
+    btn.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) start(e); }, sig);
+    btn.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") stop(); }, sig);
+  });
+}
+
+async function nurseScene() {
+  await scene("09:40", "midday", "The ward, by call", shuffle(["Care robots now handle 4 in 5 ward tasks", "Nursing applications up for the ninth year running", "Hospitals must log every request for a human visit"]));
+  await N("You’re a [[nurse|nurse]]. Three days a week on Ward 6. The [[carebot|ward robots]] turn patients, check lines and bring water. You do what’s left.");
+  await N("It isn’t your shift. But this came through.");
+  await W("Mr. Adebayo in bed 4 is near the end. His care robot is with him. He keeps asking for ‘a person’. Nobody on the ward is free for an hour.");
+  await W("I can put your voice through to his room right now. Or you can go in. It’s twelve minutes.");
+  const c = await choose([{ k: "ai", label: "Put my voice through", meta: "now", kind: "ai" }, { k: "hand", label: "Go in", meta: "≈ 1 hr", kind: "hand" }]);
+  if (c === "ai") {
+    S.work = "voice";
+    await N("Your voice comes out of the robot’s speaker, slightly too clear. You tell him it’s all right. He asks, “Where are you?”");
+    await N("You tell him you’re close. It isn’t quite a lie.");
+    await W("His heart rate settled while you spoke. I’ve logged it as a human visit.");
+    await N("It counts, on paper.");
+    return;
+  }
+  S.work = "went"; S.hand.work = true; S.min += 60;
+  await N("The ward smells the way wards have always smelled. The robot steps back when you come in, as if it knows.");
+  await N("He doesn’t say anything. He holds out his hand.");
+  const total = FASTDEV ? 2 : 20;
+  const r = await holdStay(total, [
+    [2, "His hand is dry and very light."], [6, "The robot dims the lights without being asked."],
+    [10, "He says a name you don’t know. You say “I’m here.”"], [14, "His breathing slows. So does yours."],
+    [18, "Out in the corridor, someone laughs. It doesn’t feel wrong."]
+  ], "Hold his hand. Stay as long as you can.");
+  if (r.ok) await N("You stay until his daughter arrives from the airport. She thanks you. She doesn’t ask whether you were on shift.");
+  else await N("You let go to check the monitor. He finds your hand again. You stay until his daughter arrives from the airport.");
+  await W("I moved your morning. Take your time.");
+}
+
+async function teacherScene() {
+  await scene("09:40", "midday", "School, briefly", shuffle(["Model-use flags: 1 in 3 overturned on human review", "Coaches now outnumber classroom teachers three to one", "Exam boards swap essays for spoken defences"]));
+  await N("You’re a [[coach|coach]]. Everyone still says teacher. Twenty-two fourteen-year-olds. Their tutors teach the facts. You handle everything else.");
+  await N("School’s out for summer. This can’t wait until September.");
+  await W("Amara’s final essay has been flagged. The [[detector|detector]] says 91% likely model-written. She says she wrote it.");
+  await W("The flag goes on her record at noon unless a person overrules it. That’s you.");
+  let asked = false, c;
+  for (;;) {
+    const opts = [];
+    if (!asked) opts.push({ k: "ask", label: "What would you do?", kind: "plain" });
+    opts.push({ k: "ai", label: "Let the flag stand", meta: "instant", kind: "ai" }, { k: "hand", label: "Call Amara", meta: "≈ 20 min", kind: "hand" });
+    c = await choose(opts);
+    if (c !== "ask") break;
+    asked = true;
+    await W("The detector is right more often than not. When a person checks, it turns out wrong about one time in three.");
+    await W("I can’t tell you which time this is. You can find out. I can’t.");
+  }
+  if (c === "ai") {
+    S.work = "flag";
+    await N("The flag goes on her record. It’s probably right.");
+    await N("At 11:58 she messages you: “ok.” Just that.");
+    await W("Closed. Anything else?");
+    return;
+  }
+  S.work = "called"; S.hand.work = true; S.min += 20;
+  await N("She answers on the second ring. She looks like she’s been crying.");
+  const picks = await builder(["What was the hardest part to write?", "Why this topic?", "Which sentence are you proudest of?", "Did you use a model?", "Walk me through your second paragraph.", "What would you change now?"]);
+  await P("You", compose(picks));
+  if (picks.includes("Did you use a model?")) await P("Amara", "For spelling. And once to check a date. Everyone does that.");
+  await N("She talks for twenty minutes about her grandmother’s village. Half of it isn’t in the essay. All of it is hers.");
+  await N("The law wants a name on the decision.");
+  await sigPad("Sign to overrule the flag. It goes on record under your name.");
+  await N("Your [[signature|signature]] goes out with a pulse from your [[ring|ring]]. The flag comes off her record.");
+  await N("You’ll never be completely sure. Nobody ever was, before the detectors either.");
+}
+
+const SIGHTS_POOL = [
   "A delivery robot waits at the crossing and lets an old man go first. It always lets everyone go first.",
   "A queue out of a bakery door. The sign says [[bread|HUMAN-MADE]]. The loaves are lopsided. That’s the point.",
   "The old bank is a climbing gym now. They keep the chalk in the vault.",
   "A man laughs at nothing. He’s talking to his agent. Nobody looks twice.",
   "No billboards. Ads moved inside the agents years ago. They pitch Wren now. Wren mostly says no.",
-  "[[heat|It’s hot]]. Hotter than it should be for the season. It always is.",
+  "[[heat|It’s 36°C]] and not yet noon. In July, that’s normal now.",
   "Two teenagers on a bench, arguing about a song. Their screens live in their [[glasses|glasses]] now, so they look straight at each other.",
   "A mural, painted by hand. A paper sign taped under it: NO MODELS WERE USED. Someone has written underneath: HOW WOULD YOU KNOW.",
-  "Mom’s street. The [[cherry|cherry tree]] is still there."
+  "A street choir rehearsing in the square, badly. A crowd has stopped to listen anyway.",
+  "An old call-centre building with a banner across it: COMMUNITY KITCHEN · FREE LUNCH 12–2.",
+  "A robot street-sweeper has stopped to let a cat cross. They regard each other.",
+  "A water fountain every hundred metres now. Someone has chalked a sun wearing sunglasses on one.",
+  "A sign in a café window: TALK TO A PERSON. ASK AT THE COUNTER."
 ];
+const SIGHTS_END = "Mom’s street. The [[cherry|cherry tree]] is still there.";
 
 async function momScene() {
   await scene("11:20", "midday", "Mom", ["Unsigned voices now routed to spam on all networks", "New antibiotic class, first in 70 years, found by a model at a public lab", "Heat advisory: outdoor work moved to night shifts"]);
@@ -1010,7 +1213,7 @@ async function momScene() {
   } else {
     S.hand.walk = true; S.min += 38;
     await N("You walk. Wren goes quiet in your ear, the way it does when you’re moving.");
-    await walk(SIGHTS);
+    await walk(shuffle(SIGHTS_POOL).slice(0, 8).concat([SIGHTS_END]));
   }
   await scene("12:10", "midday", "Mom’s house", ["Live-in robot leases pass 40 million", "Model-designed medicines: 1 in 3 new approvals this year"]);
   await N("Mom opens the door before you knock. Her house told her you were coming. She pretends it didn’t.");
@@ -1035,8 +1238,25 @@ async function momScene() {
 }
 
 async function afternoon() {
-  await scene("15:00", "afternoon", "Afternoon", ["Live theatre attendance highest since 1952", "Yesterday: 2.1 billion personal films generated, each watched once", "Average paid work week: 19 hours"]);
+  await scene("15:00", "afternoon", "Afternoon", shuffle(["Live theatre attendance highest since 1952", "Yesterday: 2.1 billion personal films generated, each watched once", "Average paid work week: 19 hours", "Amateur football leagues report record sign-ups"]));
   await N("The afternoon is empty. They usually are. Your work week is sixteen hours, and the [[dividend|compute dividend]] covers the rest.");
+  if (S.fun === "game") {
+    await W("I could build you a game. It reads your face and adjusts every second. You’d never be bored or frustrated, not once.");
+    await W("Or there’s [[football|five-a-side]] in the park at four. Humans only. Mostly middle-aged. Someone always gets hurt.");
+    const c = await choose([{ k: "ai", label: "Build me the game", meta: "free · now", kind: "ai" }, { k: "hand", label: "Go and play football", meta: "2 hrs", kind: "hand" }]);
+    if (c === "ai") {
+      S.show = "game";
+      await N("It’s perfect. You lose track of time completely. When you look up it’s nearly six, and you can’t remember a single moment of [[game|it]].");
+      await W("Same time tomorrow?");
+    } else {
+      S.show = "football"; S.hand.show = true; S.min += 120;
+      await N("You haven’t run properly in months. You’re terrible. Your team loses 9–4.");
+      await N("Afterwards you sit on the grass with people you barely know, sharing water, arguing about a penalty nobody saw clearly.");
+      await N("Your legs will hurt for three days. You’ll think about the penalty for longer.");
+      await W("Your heart rate peaked at 171. I’ve booked you a stretch session. You can cancel it.");
+    }
+    return;
+  }
   await W("I could make you a film. Ninety minutes, made for you, right now. You’d cry around minute seventy. I know which parts of you to aim for.");
   await W("Or there’s a [[theatre|live show]] at four. Human actors, no edits. Forty credits.");
   const c = await choose([{ k: "film", label: "Make me the film", meta: "free · now", kind: "ai" }, { k: "show", label: "Go to the show", meta: "40 cr · 2 hrs", kind: "hand" }]);
@@ -1088,11 +1308,11 @@ async function quietScene() {
 }
 
 async function night() {
-  await scene("22:30", "night", "Night", ["Orbital datacentre #3 online · grid relief for heat zones", "Tomorrow: 31°C · your run moved to 06:10"]);
+  await scene("22:30", "night", "Night", ["Orbital datacentre #3 online · grid relief for heat zones", "Tomorrow: 37°C · your run moved to 05:50"]);
   if (S.junoBy === "you") await N("Juno’s asleep. The drawing of you is on the fridge, held up by a magnet shaped like a pear. Your nose is enormous.");
   else await N("Juno’s asleep. The drawing of Wren, a glowing shape with legs, is on the fridge, held up by a magnet shaped like a pear.");
   await W("Can I ask you something? You’re the only one who can answer it.");
-  await W("Tomorrow I can do all of it. The coffee. The walk. The answers. The waiting. Faster than you, and better.");
+  await W("Tomorrow I can do all of it. The coffee. The walking. The answers. The waiting. Faster than you, and better.");
   await W("Which ones should I leave for you?");
   const items = [
     { id: "coffee", label: "Making the coffee", on: S.hand.coffee },
@@ -1101,10 +1321,12 @@ async function night() {
     { id: "walk", label: "Walking places", on: S.hand.walk },
     { id: "show", label: "Live things, with other people", on: S.hand.show },
     { id: "quiet", label: "The quiet hour", on: S.hand.quiet },
+    PROFESSION === "nurse" ? { id: "work", label: "Being in the room for my patients", on: S.hand.work } : null,
+    PROFESSION === "teacher" ? { id: "work", label: "Judging my students myself", on: S.hand.work } : null,
     { id: "voice", label: "Writing to friends in my own words", note: "Wren did this overnight" },
     { id: "news", label: "Choosing my own news", note: "Wren did this overnight" },
     { id: "sign", label: "Signing my name", locked: true, on: true, note: "The law keeps this one for you" }
-  ];
+  ].filter(Boolean);
   const kept = await keepList(items);
   S.kept = kept;
   const open = items.filter(i => !i.locked).length;
@@ -1122,7 +1344,7 @@ const SIGNALS = [
   ["Agents", "AI agents already book, buy, write code and fill in forms for people. Companies are building ways for agents to deal with other agents.", "214 things handled overnight, mostly machine to machine."],
   ["Voices", "A few seconds of audio can clone a voice. Banks and police tell families to agree a safe word.", "Signed calls. Mom: “Always use the word.”"],
   ["Provenance", "Camera makers and platforms ship Content Credentials (C2PA) to show where an image came from.", "Provenance on bearings, bread and sentences."],
-  ["Accountability", "The EU AI Act requires human oversight of high-risk AI. Courts and regulators keep holding the deployer responsible, not the tool.", "You’re a Principal. The law keeps your signature for you."],
+  ["Accountability", "The EU AI Act requires human oversight of high-risk AI. Courts and regulators keep holding the deployer responsible, not the tool.", "A signature, a ward, a student’s record: the law keeps the final call for a person."],
   ["Work", "Entry-level office hiring is under pressure as AI absorbs junior tasks. Skilled trades are holding up better.", "Short work weeks. Teo earns more than you."],
   ["Power & heat", "Datacentres are among the fastest-growing electricity loads. 2024 was the first calendar year above 1.5°C.", "Inference curfews, heat shifts, orbital datacentres."],
   ["Medicine", "The 2024 Chemistry Nobel went to AI protein-structure work. AI-designed drug candidates are in human trials.", "Mom’s knees. A new antibiotic class on the wire."],
@@ -1132,6 +1354,8 @@ const SIGNALS = [
   ["Media", "Video models turn a sentence into a cinematic clip.", "A film made for one person, watched once."],
   ["Human-made", "‘Human-made’ and ‘no AI’ labels are showing up on books, art and ads.", "A queue for lopsided bread. Sold-out theatre."],
   ["Learning", "AI tutors are being piloted in schools. The open question is whether kids learn or just finish.", "Tutors for facts. School for people. Pencils came back."],
+  ["Detectors", "AI-writing detectors misfire often enough that OpenAI withdrew its own in 2023. Schools still use them.", "Amara’s flag. A person decides."],
+  ["Care", "Hospitals are piloting robots for fetching and lifting, and AI for notes and paperwork. Patients still ask for people.", "Ward 6. Bed 4 asks for a person."],
   ["Sharing the gains", "Alaska has paid an oil dividend since 1982. Basic income pilots keep running, and AI leaders talk about sharing the upside.", "The compute dividend. It covers rent, not meaning."]
 ];
 
@@ -1140,16 +1364,18 @@ async function ending() {
   const moments = [
     ["coffee", "Made the coffee", "The kitchen made the coffee"],
     ["juno", "Answered Juno yourself", "Wren answered Juno"],
-    ["sign", S.supplier === "signed" ? "Signed for the new supplier" : "Declined the supplier", null, true],
+    PROFESSION === "principal" ? ["sign", S.supplier === "signed" ? "Signed for the new supplier" : "Declined the supplier", null, true] : null,
+    PROFESSION === "nurse" ? ["work", "Sat with Mr. Adebayo", "Sent your voice to bed 4"] : null,
+    PROFESSION === "teacher" ? ["work", "Called Amara and decided yourself", "Let the detector’s flag stand"] : null,
     ["mom", "Went to see Mom", "Sent soup by drone"],
     S.momBy === "visit" ? ["walk", "Walked 1.9 km", "Took a pod"] : null,
     S.momBy === "visit" ? ["lunch", "Stayed for lunch", "Left before lunch"] : null,
-    ["show", "Went to the live show", "Watched a film made only for you"],
+    S.fun === "game" ? ["show", "Played football, badly", "Played a game made only for you"] : ["show", "Went to the live show", "Watched a film made only for you"],
     ["quiet", S.quietOk ? "Held the quiet hour" : "Let it go quiet (held 0:" + String(S.quietHeld).padStart(2, "0") + ")", "Kept Wren on"]
   ].filter(Boolean);
   const handCount = moments.filter(m => m[3] || S.hand[m[0]]).length;
   const delegated = moments.length - handCount;
-  const handMoments = ["coffee", "juno", "mom", "walk", "lunch", "show", "quiet"].filter(k => S.hand[k]).length;
+  const handMoments = ["coffee", "juno", "work", "mom", "walk", "lunch", "show", "quiet"].filter(k => S.hand[k]).length;
   const hm = m => Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
 
   const r = el("div", "receipt");
@@ -1163,13 +1389,13 @@ async function ending() {
     r.append(d);
   }
   r.append(el("hr"), row("Time Wren saved you", "≈ 6h 50m"), row("Time you spent by hand", hm(S.min)), row("Pieces of 2050 found", found.size + " / " + ART_IDS.length));
-  const labels = { coffee: "coffee", juno: "Juno’s questions", mom: "Mom", walk: "walking", show: "live things", quiet: "the quiet hour", voice: "your own words", news: "your own news" };
+  const labels = { coffee: "coffee", juno: "Juno’s questions", mom: "Mom", walk: "walking", show: "live things", quiet: "the quiet hour", voice: "your own words", news: "your own news", work: PROFESSION === "nurse" ? "your patients" : "your students" };
   r.append(el("hr"));
   const tl = el("div", null); tl.append(el("div", null, "Left for you tomorrow:"));
   tl.append(el("div", "c", S.kept.length ? S.kept.map(k => labels[k]).join(" · ") + " · your signature" : "your signature (the law insisted)"));
   r.append(tl, el("hr"));
   const verdict = handMoments <= 1 ? "A smooth day. Nothing needed you, and you let it not need you."
-    : handMoments <= 4 ? "A mixed day. Some of it was yours."
+    : handMoments <= 5 ? "A mixed day. Some of it was yours."
     : "A slow day. A full one.";
   r.append(el("p", "verdict", verdict));
   put(r);
@@ -1185,7 +1411,7 @@ async function ending() {
   const endDock = () => {
     const a = el("button", "ch plain", "<span class='l'>What this is based on</span><span class='m'>2026 → 2050</span>"); a.type = "button";
     const f = el("button", "ch plain", "<span class='l'>Pieces of 2050</span><span class='m'>" + found.size + " / " + ART_IDS.length + "</span>"); f.type = "button";
-    const g = el("button", "ch hand", "<span class='l'>Live the day again</span><span class='m'>choose differently</span>"); g.type = "button";
+    const g = el("button", "ch hand", "<span class='l'>Live another day</span><span class='m'>it changes each time</span>"); g.type = "button";
     a.onclick = () => { showSignals(); a.remove(); };
     f.onclick = () => { gridView(); showSheet(); };
     g.onclick = () => { dock.replaceChildren(); playDay(); };
@@ -1209,8 +1435,9 @@ function showSignals() {
 }
 
 async function playDay() {
+  await setup();
   S = fresh(); setWren(true);
-  await wake(); await kitchen(); await junoScene(); await signScene();
+  await wake(); await kitchen(); await junoScene(); await workScene();
   await momScene(); await afternoon(); await quietScene(); await night(); await ending();
 }
 async function main() {
