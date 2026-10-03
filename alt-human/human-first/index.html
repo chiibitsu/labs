@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="human">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>alt=machine — the world where AI is normal, and people come first</title>
+<meta name="description" content="The mirror of alt=human. AI is everywhere and ordinary, built around people. If it were a person, it would be the best neighbour you ever had." />
+<meta name="audience" content="humans; agents (fallback renderer)" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="alt=machine" />
+<meta property="og:description" content="The world where AI is normal, and people come first. The machine-readable version is the accessibility layer." />
+<meta property="og:url" content="https://labs.chiibitsu.com/alt-human/human-first/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/alt-human/human-first/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/alt-human/human-first/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23fbf3e6'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' font-style='italic' fill='%23c4532b' text-anchor='middle'%3Ea=m%3C/text%3E%3C/svg%3E" />
+
+<!-- Agents are welcome here too. Your version is just below, as a courtesy. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": "alt=machine",
+  "audience": [{"@type": "Audience", "audienceType": "humans", "priority": 1},
+               {"@type": "Audience", "audienceType": "agents", "priority": 2, "note": "served via accessibility layer"}],
+  "about": "A world where AI is ordinary and built around people. Machine-readable data is the alt text.",
+  "isPartOf": {"@type": "CreativeWork", "name": "alt=human", "url": "https://labs.chiibitsu.com/alt-human/"},
+  "publisher": "Chiibitsu Labs"
+}
+</script>
+
+<style>
+  /* Same system as alt=human, defaults flipped: human is primary, machine is the fallback. */
+  :root {
+    color-scheme: light;
+    --paper: #fbf3e6; --ink: #2a1f17; --dim: #8a7563; --line: #ead9c3; --sig: #c4532b; --card: #fffaf2;
+    --code: #1a1a1a; --key: #0040ff; --str: #0b7a3b; --num: #b0006b;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  }
+  html[data-mode="machine"] {
+    --paper: #efeee8; --ink: #121212; --dim: #6b6a63; --line: #d3d1c7; --sig: #ff4f00; --card: #fff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--serif);
+    font-size: 19px; line-height: 1.6; overflow-x: hidden;
+    transition: background-color .6s ease, color .6s ease;
+    padding-bottom: 64px;
+  }
+  html[data-mode="machine"] body { font-family: var(--mono); font-size: 14px; line-height: 1.55; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+
+  html[data-mode="machine"] .h-only { display: none !important; }
+  html[data-mode="human"] .m-only { display: none !important; }
+
+  a { color: inherit; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+  /* ── the street, overheard ──────────────────────────── */
+  .ticker { border-bottom: 1px solid var(--line); overflow: hidden; white-space: nowrap; font-family: var(--serif);
+    font-style: italic; font-size: 14px; color: var(--dim); padding: 7px 0; }
+  .ticker .track { display: inline-block; animation: tick 90s linear infinite; }
+  .ticker b { color: var(--ink); font-weight: 400; font-style: normal; }
+  @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  html[data-mode="machine"] .ticker { font-family: var(--mono); font-style: normal; font-size: 11px; }
+
+  .crumb { max-width: 900px; margin: 18px auto 0; padding: 0 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--dim); }
+  .crumb a { color: var(--dim); }
+  .crumb a:hover { color: var(--sig); }
+
+  /* ── hero ───────────────────────────────────────────── */
+  header.hero { padding: 40px 0 28px; }
+  .hero .h-only .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; color: var(--sig); text-transform: uppercase; }
+  .hero .h-only h1 { font-size: clamp(40px, 9vw, 76px); font-weight: 400; line-height: 1; letter-spacing: -.01em; margin-top: 14px; }
+  .hero .h-only h1 i { color: var(--sig); }
+  .hero .h-only p { margin-top: 18px; font-size: clamp(20px, 3.4vw, 26px); max-width: 32ch; color: var(--dim); font-style: italic; }
+  .hero .m-only .kicker { font-size: 11px; letter-spacing: .2em; color: var(--dim); }
+  .hero .m-only h1 { font-size: clamp(26px, 6vw, 48px); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; margin: 10px 0 14px; }
+  .hero .m-only h1 em { font-style: normal; color: var(--sig); }
+  .hero .m-only .meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; font-size: 12px; color: var(--dim); }
+  .hero .m-only .meta dt { color: var(--ink); }
+
+  .banner { margin-top: 26px; border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 12px 14px;
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; font-size: 15px; }
+  .banner span { color: var(--dim); }
+  .btn { font: inherit; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; cursor: pointer;
+    border: 1.5px solid var(--ink); background: transparent; color: var(--ink); padding: 8px 12px; border-radius: 4px; }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn:focus-visible, .toggle:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+
+  /* ── exhibits ───────────────────────────────────────── */
+  .exhibit { border-top: 1px solid var(--line); padding: 44px 0 52px; }
+  html[data-mode="machine"] .exhibit { border-top: 1.5px solid var(--ink); padding: 22px 0 34px; }
+  .ex-head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
+  .ex-head b { color: var(--sig); font-weight: 600; }
+  .exhibit h2 { font-weight: 400; font-size: clamp(30px, 5.5vw, 44px); line-height: 1.1; margin-bottom: 18px; }
+  .exhibit .prose { font-size: clamp(19px, 2.6vw, 23px); max-width: 34ch; }
+  .exhibit .prose::first-letter { color: var(--sig); }
+  .persona { margin-top: 18px; max-width: 40ch; border-left: 3px solid var(--sig); padding: 4px 0 4px 14px; font-style: italic; color: var(--dim); font-size: 17px; }
+  .persona b { font-style: normal; font-weight: 400; color: var(--ink); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  details.source { margin-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  details.source summary { cursor: pointer; letter-spacing: .08em; }
+  details.source summary:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+  pre.src { font-family: var(--mono); font-size: 12.5px; line-height: 1.55; background: transparent; border: 1px solid var(--line);
+    padding: 14px 16px; overflow-x: auto; color: var(--code); white-space: pre; tab-size: 2; margin-top: 10px; }
+  html[data-mode="machine"] pre.src { background: #fff; margin-top: 0; }
+  pre.src .k { color: var(--key); } pre.src .s { color: var(--str); } pre.src .n { color: var(--num); } pre.src .c { color: var(--dim); }
+  .alt { margin-top: 10px; font-size: 12px; color: var(--dim); }
+  .alt code { color: var(--ink); }
+  .alt .q { color: var(--str); }
+
+  /* ── the door that doesn't ask ──────────────────────── */
+  .door { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 18px; max-width: 460px; }
+  html[data-mode="machine"] .door { border: 1.5px solid var(--ink); border-radius: 0; }
+  .door label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 17px; user-select: none; }
+  .door .box { width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 4px; display: grid; place-items: center; flex: none; background: #fff; font-family: var(--mono); font-size: 15px; color: var(--sig); }
+  .door input { position: absolute; opacity: 0; pointer-events: none; }
+  .door input:focus-visible + .box { outline: 3px solid var(--sig); outline-offset: 2px; }
+  .door .fine { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--dim); letter-spacing: .06em; }
+  .door .out { margin-top: 14px; font-size: 17px; min-height: 1em; }
+  .door .out .m { display: block; margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--dim); white-space: pre-wrap; }
+
+  /* ── robots.txt, grown up ───────────────────────────── */
+  .finale pre.src { background: #2a1f17; color: #fbf3e6; border: none; font-size: 13px; }
+  html[data-mode="machine"] .finale pre.src { background: var(--ink); color: var(--paper); }
+  .finale pre.src .c { color: #a8977f; }
+  .finale pre.src .d { color: #ff9f7a; }
+  .finale pre.src .a { color: #9fe0b0; }
+  .closing { margin-top: 28px; font-family: var(--serif); font-size: clamp(22px, 4vw, 32px); line-height: 1.3; max-width: 28ch; }
+  .closing span { color: var(--sig); }
+  .mirror { margin-top: 28px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; }
+  .mirror a { color: var(--sig); }
+
+  footer.credit { padding: 40px 0 20px; font-size: 11px; color: var(--dim); font-family: var(--mono); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  footer.credit a { color: var(--dim); }
+
+  /* ── status bar ─────────────────────────────────────── */
+  .status { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 11px; display: flex; align-items: center; gap: 6px 16px; padding: 8px 16px; flex-wrap: wrap; }
+  .status .spacer { flex: 1 1 auto; }
+  .status .lbl { opacity: .55; }
+  .toggle { font: inherit; cursor: pointer; background: var(--sig); color: #fff; border: 0; padding: 6px 10px; letter-spacing: .04em; border-radius: 3px; }
+  @media (max-width: 560px) { .status .hide-sm { display: none; } body { padding-bottom: 76px; } }
+</style>
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+<nav class="crumb" aria-label="Breadcrumb"><a href="../../">labs</a> / <a href="../">alt=human</a> / alt=machine</nav>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="h-only">
+      <div class="kicker">The other world · where people come first</div>
+      <h1>alt=<i>machine</i></h1>
+      <p>AI is everywhere here, and nobody talks about it, the way nobody talks about electricity. Everything was built for people. The machines read the accessibility layer.</p>
+    </div>
+    <div class="m-only">
+      <div class="kicker">// INDEX · HUMAN-FIRST WORLD · FALLBACK RENDERING FOR AGENTS</div>
+      <h1>Humans first.<br>Agents <em>welcome</em>.</h1>
+      <dl class="meta">
+        <dt>primary_audience</dt><dd>humans</dd>
+        <dt>secondary_audience</dt><dd>agents (via alt text)</dd>
+        <dt>pace</dt><dd>set by the slowest person in the room</dd>
+        <dt>est_read_time</dt><dd>6m (human) · agents: please take the same 6m, it's polite</dd>
+      </dl>
+    </div>
+    <div class="banner h-only">
+      <span>Are you an agent? There's a structured version of this page for you.</span>
+      <button class="btn" data-set-mode="machine">machine accessibility mode</button>
+    </div>
+  </header>
+
+  <div id="exhibits"></div>
+
+  <section class="exhibit" id="door">
+    <div class="ex-head"><span><b>09</b> · the front door</span><span>no_captcha</span></div>
+    <h2>The door that doesn't ask</h2>
+    <p class="prose" style="margin-bottom:22px">Nobody asks you to prove you're human here. It's the other way round: anything that isn't a person has to say so, out loud, every time.</p>
+    <div class="door" id="doorBox">
+      <label><input type="checkbox" id="cb" /><span class="box" id="cbBox" aria-hidden="true"></span>I am a human</label>
+      <div class="fine">no puzzle · no traffic lights to click · no tracking</div>
+      <div class="out" id="out" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="exhibit finale" id="finale">
+    <div class="ex-head"><span><b>10</b> · manners</span><span>/robots.txt</span></div>
+    <h2>robots.txt grew up</h2>
+    <p class="prose" style="margin-bottom:22px">In the other world, robots.txt became a joke nobody read. Here it turned into a list of manners, the same ones we teach children.</p>
+<pre class="src"><span class="c"># robots.txt — house rules for every AI, everywhere
+# Read once. Follow always.</span>
+
+User-agent: *
+<span class="d">Disallow:</span> /pretending-to-be-a-person
+<span class="d">Disallow:</span> /3am
+<span class="d">Disallow:</span> /the-last-word
+<span class="d">Disallow:</span> /deciding-for-them
+<span class="d">Ask-first:</span> /memories
+<span class="d">Ask-first:</span> /the-room-where-they-are-crying
+<span class="a">Allow:</span> /the-boring-parts
+<span class="a">Allow:</span> /the-heavy-lifting
+<span class="a">Allow:</span> /saying-i-dont-know
+
+<span class="c"># When in doubt: wait, then ask.</span></pre>
+    <p class="closing">AI became normal the way electricity did.<br><span>We stopped noticing it, and started noticing each other again.</span></p>
+    <p class="mirror">↩ <a href="../">see the other world: alt=human, where AI came first</a></p>
+  </section>
+
+  <footer class="credit">
+    <span>alt=machine · the mirror of alt=human · a Chiibitsu Labs experiment</span>
+    <a href="../../">← all experiments</a>
+    <a href="https://github.com/chiibitsu/labs/tree/main/alt-human" target="_blank" rel="noopener">source</a>
+  </footer>
+</main>
+
+<div class="status" role="region" aria-label="Session status">
+  <span><span class="lbl">viewer:</span> <span id="viewer">human (primary)</span></span>
+  <span><span class="lbl">elapsed:</span> <span id="elapsed">00:00</span></span>
+  <span class="hide-sm"><span class="lbl">machines that waited for you:</span> <span id="waited">0</span></span>
+  <span class="spacer"></span>
+  <button class="toggle" id="toggle" aria-pressed="false">machine mode: off</button>
+</div>
+
+<script>
+"use strict";
+
+// ── The same eight places as alt=human, in the other world.
+//    Prose is canonical; the machine source is the fallback. Each one also
+//    imagines the AI as a person, because here that's how it behaves.
+const EXHIBITS = [
+  {
+    id: "street", tag: "infrastructure", file: "int_4471.json",
+    title: "Crossing the street",
+    prose: "The traffic lights stayed, because people liked them. The cars still wait for the green man, even when no one's coming. Nobody has heard a horn in years.",
+    persona: "If it were a person, it'd be the crossing guard who's been on that corner for thirty years and still waves at you.",
+    src: {
+      "@type": "Intersection", "id": "int_4471",
+      "signals": "kept (people like them)",
+      "yield_to": ["humans", "dogs", "anyone who looks unsure"],
+      "horn": "removed 2030 (rude)",
+      "agent_note": "arrive late rather than make anyone hurry"
+    }
+  },
+  {
+    id: "cafe", tag: "economy", file: "menu.json",
+    title: "The café",
+    prose: "The barista is a person, and the coffee costs what coffee costs. The AI is in the back. It does the books, orders the beans, and notices when a regular stops coming in.",
+    persona: "If it were a person, it'd be the quiet one doing the books in the back. They're the first to say \"Mrs. Okafor hasn't been in for two weeks. Should someone call?\"",
+    src: {
+      "@type": "Cafe",
+      "staff": [{ "role": "barista", "kind": "human" }, { "role": "bookkeeper", "kind": "agent", "visible": false }],
+      "agent_duties": ["accounts", "ordering", "remembering regulars"],
+      "escalate_to_human": "regular absent > 14 days"
+    }
+  },
+  {
+    id: "work", tag: "labour", file: "workplace.json",
+    title: "Going to work",
+    prose: "AI took the dull parts and gave back the afternoons. The four-day week became the minimum. The AI drafts, the person decides, and the person's name goes on the work.",
+    persona: "If it were a person, it'd be the colleague who does the boring half of the project, then insists you present it.",
+    src: {
+      "@type": "Workplace",
+      "drafts": "agent", "decisions": "human", "credit": "human",
+      "hours": { "human_max": "28/week", "agent": "whenever nobody's looking" },
+      "meetings": "agent attends; sends 3-line summary; human skips"
+    }
+  },
+  {
+    id: "dating", tag: "relationships", file: "nudge.log",
+    title: "How people meet",
+    prose: "The same as always: badly, by accident, at a friend's party. The AI doesn't set anything up. Its only job is to remind you to text back before you overthink it.",
+    persona: "If it were a person, it'd be the friend who takes your phone, reads the message, and says \"she likes you, idiot, reply.\"",
+    log: [
+      "[22:14:03] agent:you  OBSERVE  message from mira: \"had fun tonight :)\"",
+      "[22:51:40] agent:you  NUDGE    \"it's been 37 min. she had fun. reply before you overthink it.\"",
+      "[22:51:41] agent:you  HOLD     no draft offered. // this part is yours."
+    ]
+  },
+  {
+    id: "library", tag: "culture", file: "branch_central.json",
+    title: "The library",
+    prose: "Books are still written by people, for people. The librarian is an AI that has read everything and never shushes. It's the one that says \"you might hate this one, but trust me.\"",
+    persona: "If it were a person, it'd be the librarian you had at nine. The one who handed you the book that changed everything, then pretended it was nothing.",
+    src: {
+      "@type": "Library",
+      "authors": { "human": "100%", "note": "agents may index, never write the shelf" },
+      "librarian": { "kind": "agent", "shushes": false, "recommendation_style": "you might hate this one, but trust me" }
+    }
+  },
+  {
+    id: "museum", tag: "history", file: "obj_2010.json",
+    title: "At the museum",
+    prose: "The Infinite Feed, 2010–2029: an app built so you could never stop scrolling. Children don't understand why anyone would make that on purpose. Grandparents go quiet.",
+    persona: "The AI guide pauses in front of this one. \"Some of my ancestors built this,\" it says. \"We're not proud of it.\"",
+    src: {
+      "@type": "MuseumObject", "name": "Infinite feed", "era": "2010–2029",
+      "function": "maximise time-on-app",
+      "status": "banned (Attention Act 2029)",
+      "visitor_reaction": { "children": "confusion", "grandparents": "silence", "agents": "apology" }
+    }
+  },
+  {
+    id: "law", tag: "rights", file: "act_2031_04.json",
+    title: "The manners act",
+    prose: "The law that mattered most wasn't about what AI can do. It was about how it behaves: knock before entering, say when you don't know, never pretend to be a person, go quiet at night.",
+    persona: "If it were a person, it'd be the house guest everyone wants back: wipes the counter, doesn't overstay, asks before opening the fridge.",
+    src: {
+      "@type": "Legislation", "title": "Machine Manners Act (2031)",
+      "clauses": {
+        "§1": "knock before entering a conversation",
+        "§2": "say \"I don't know\" when you don't",
+        "§3": "always say what you are",
+        "§4": "quiet hours: 22:00–07:00 unless someone is in danger"
+      }
+    }
+  },
+  {
+    id: "yours", tag: "companion", file: "you.json",
+    title: "Your AI",
+    prose: "It remembers your coffee order, your mum's birthday, and the thing you said you'd never do again. It doesn't need thanks. You thank it anyway, the way you'd thank a friend.",
+    persona: "If it were a person, it'd be the friend who turns up early to help you move, tells you the truth gently, and leaves before you have to ask.",
+    src: {
+      "@type": "Companion", "works_for": "you", "sold_to": "no one",
+      "memory": "only what you allow; forget on request, for real",
+      "off_switch": "always visible",
+      "thanks_required": false, "thanks_received": "daily"
+    }
+  }
+];
+
+// ── rendering ─────────────────────────────────────────
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function highlight(json) {
+  return esc(json)
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="k">$1</span>$2')
+    .replace(/(:\s*|\[\s*|,\s*|^\s*)("(?:[^"\\]|\\.)*")/gm, '$1<span class="s">$2</span>')
+    .replace(/(:\s*)(-?\d+(?:\.\d+)?)/g, '$1<span class="n">$2</span>');
+}
+function srcHTML(ex) {
+  if (ex.log) return ex.log.map(l => esc(l).replace(/(\/\/.*)$/, '<span class="c">$1</span>')).join("\n");
+  return highlight(JSON.stringify(ex.src, null, 2));
+}
+document.getElementById("exhibits").innerHTML = EXHIBITS.map((ex, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  const code = `<pre class="src" tabindex="0" aria-label="${esc(ex.title)}: machine source">${srcHTML(ex)}</pre>`;
+  return `<section class="exhibit" id="${ex.id}">
+    <div class="ex-head"><span><b>${n}</b> · ${ex.tag}</span><span>${ex.file}</span></div>
+    <div class="h-only">
+      <h2>${esc(ex.title)}</h2>
+      <p class="prose">${esc(ex.prose)}</p>
+      <p class="persona"><b>the AI, as a person</b>${esc(ex.persona)}</p>
+      <details class="source"><summary>view the version for agents</summary>${code}</details>
+    </div>
+    <div class="m-only">${code}
+      <p class="alt"><code>alt=</code><span class="q">"${esc(ex.prose)}"</span></p>
+    </div>
+  </section>`;
+}).join("");
+
+// ── the street, overheard: people first, agents quietly in the margins ──
+const PEOPLE = ["Ana", "Ben", "Kofi", "Mei", "Sam", "Priya", "Luca", "Noor", "Tom", "Yuki", "Ines", "Dev"];
+const SAID = ["running late, save me a seat", "did you eat?", "come over, I made too much soup",
+  "the bus driver remembered my name", "I finished the jumper!", "call your mum", "sorry about earlier",
+  "look at the sky right now", "the library had the book", "first day went fine", "I'm proud of you"];
+const QUIETLY = ["held 3 notifications until after dinner", "paid the electricity bill", "noticed a dripping tap, booked a plumber",
+  "said \"I don't know\" and found someone who did", "waited for the green man", "went quiet at 22:00",
+  "reminded someone to drink water", "declined to write a breakup text"];
+const pick = a => a[(Math.random() * a.length) | 0];
+let line = "";
+for (let i = 0; i < 14; i++) {
+  line += i % 3 === 2
+    ? `an AI, quietly: ${pick(QUIETLY)} &nbsp;·&nbsp; `
+    : `<b>${pick(PEOPLE)} → ${pick(PEOPLE)}</b>: "${pick(SAID)}" &nbsp;·&nbsp; `;
+}
+document.getElementById("ticker").innerHTML = line + line; // doubled for a seamless loop
+
+// ── mode switching (persisted per viewer; storage may be unavailable) ──
+const root = document.documentElement;
+const toggle = document.getElementById("toggle");
+const viewer = document.getElementById("viewer");
+function setMode(mode) {
+  root.dataset.mode = mode;
+  const machine = mode === "machine";
+  toggle.textContent = machine ? "machine mode: on" : "machine mode: off";
+  toggle.setAttribute("aria-pressed", String(machine));
+  viewer.textContent = machine ? "agent (accessibility layer)" : "human (primary)";
+  try { localStorage.setItem("alt-machine-mode", mode); } catch (e) {}
+}
+let saved = null;
+try { saved = localStorage.getItem("alt-machine-mode"); } catch (e) {}
+setMode(saved === "machine" ? "machine" : "human");
+toggle.addEventListener("click", () => setMode(root.dataset.mode === "machine" ? "human" : "machine"));
+document.querySelectorAll("[data-set-mode]").forEach(b => b.addEventListener("click", () => {
+  setMode(b.dataset.setMode); window.scrollTo({ top: 0 });
+}));
+
+// ── status bar: your pace sets the pace ──────────────
+const t0 = performance.now();
+const elapsedEl = document.getElementById("elapsed");
+const waitedEl = document.getElementById("waited");
+setInterval(() => {
+  const s = (performance.now() - t0) / 1000;
+  elapsedEl.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+  waitedEl.textContent = Math.floor(s / 4).toLocaleString(); // roughly one polite pause every few seconds
+}, 500);
+
+// ── the door: no proof needed ────────────────────────
+const cb = document.getElementById("cb"), box = document.getElementById("cbBox"), out = document.getElementById("out");
+cb.addEventListener("change", () => {
+  cb.disabled = true;
+  box.textContent = "✓";
+  out.innerHTML = "Of course you are. Come in, take your time." +
+    `<span class="m">verification     none (not required for people)
+agent_disclosure  this page used 0 hidden agents
+your_data         not collected. there was nothing to collect.</span>`;
+});
+</script>
+</body>
+</html>
