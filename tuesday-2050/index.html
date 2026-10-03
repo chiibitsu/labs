@@ -27,7 +27,7 @@
   --accent: #0a7a70; --accent-ink: #f2fffd; --alert: #b3261e;
   --narr: "Newsreader", Georgia, "Times New Roman", serif;
   --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px); /*SAFE*/
+  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); /*SAFE*/
   color-scheme: light;
 }
 :root[data-tone="night"] {
@@ -61,11 +61,12 @@ button { font: inherit; color: inherit; }
 
 #app {
   position: relative; z-index: 1; height: 100%; max-width: 1060px; margin: 0 auto;
-  padding: calc(10px + var(--safe-t)) 16px calc(10px + var(--safe-b));
+  padding: calc(10px + var(--safe-t)) max(16px, var(--safe-r)) calc(10px + var(--safe-b)) max(16px, var(--safe-l));
   display: flex; flex-direction: column; gap: 10px;
 }
 .hud { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex: none; transition: opacity .8s; }
-body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
+body.intro .hud, body.intro .feed { display: none; }
+.hud, .feed { animation: in .9s; }
 .clock b { display: block; font: 500 34px/1 var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .clock span { display: block; margin-top: 5px; font: 11px var(--mono); letter-spacing: .06em; color: var(--ink2); }
 .vitals { display: flex; gap: 14px; align-items: flex-end; }
@@ -108,7 +109,7 @@ body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
 .you { font: 13.5px/1.4 var(--mono); color: var(--ink2); }
 .you::before { content: "you  "; letter-spacing: .1em; text-transform: uppercase; font-size: 10px; margin-right: .6em; }
 .slug { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink2); }
-.title { font: italic 500 clamp(46px, 13vw, 78px)/.95 var(--narr); letter-spacing: -.02em; }
+.title { font: italic 500 clamp(34px, min(13vw, 11vh), 78px)/.95 var(--narr); letter-spacing: -.02em; }
 .sub { font: 12px/1.6 var(--mono); color: var(--ink2); }
 .setup { display: flex; flex-direction: column; gap: 22px; }
 .setup .sec { display: flex; flex-direction: column; gap: 8px; }
@@ -230,9 +231,29 @@ body.intro .hud, body.intro .feed { opacity: 0; pointer-events: none; }
 .sheetbox .item:first-of-type { border-top: 0; padding-top: 0; }
 .sheetbox .kind { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
 
+@media (max-height: 520px) {
+  #app { padding-top: calc(6px + var(--safe-t)); padding-bottom: calc(6px + var(--safe-b)); gap: 6px; }
+  .hud { align-items: center; }
+  .clock b { font-size: 22px; }
+  .clock span, .v i, .dots, .feed { display: none; }
+  .vitals { gap: 12px; align-items: center; }
+  .v b { height: auto; line-height: 1; }
+  .snd { width: 30px; height: 30px; font-size: 12px; }
+  .story { padding: 14px 18px 4px; gap: 10px; }
+  .n, .a, .q { font-size: 17px; line-height: 1.45; }
+  .actions { flex-direction: row; flex-wrap: wrap; padding: 6px 12px 8px; }
+  .opt { flex: 1 1 190px; width: auto; min-height: 44px; padding: 8px 12px; }
+  .opt b { font-size: 16px; }
+  .cont { min-height: 46px; padding: 10px; flex: 1 1 100%; }
+  .hold { width: 112px; height: 112px; }
+  .win { height: 90px; }
+  .setup { gap: 16px; }
+  .sheetbox { max-height: 92dvh; }
+}
 @media (prefers-reduced-motion: reduce) {
   .story > *, .feed li { transition: none; animation: none; }
   .win .cl { animation: none; left: 30%; }
+  .hud, .feed { animation: none; }
 }
 </style>
 </head>
@@ -715,6 +736,7 @@ async function title() {
   add(f);
   add(el('div', 'sub', 'Sound on helps. On iPhone, turn off the silent switch. Tap the text to make it go faster.'));
   await wait(300);
+  pinned = false; story.scrollTo({ top: Math.max(0, f.offsetTop - 14), behavior: RM ? 'auto' : 'smooth' });
   await cont('Begin', null);
   const val = (id, d, max) => (q(id).value || '').trim().replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, max) || d;
   S.name = val('nm', 'Wren', 12);
