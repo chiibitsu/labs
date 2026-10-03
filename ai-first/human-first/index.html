@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>House Rules — a human-first AI world</title>
+<meta name="description" content="AI is the norm. The world is built around the human. A day told by someone who lives there." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23f6efe0'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23d9822b'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #f6efe0; --card: #fffaf0; --ink: #2a2318; --dim: #6b604d; --faint: #9a8f78; --line: rgba(42,35,24,.16);
+    --sun: #d9822b; --sage: #5f8a5a; --sky: #4f86a8; --road: #e4d9c0; --block: #efe5cf;
+    --f-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17130d; --card: #1f1a12; --ink: #f1e7d0; --dim: #b8ab90; --faint: #7d725c; --line: rgba(241,231,208,.16);
+      --sun: #f0a050; --sage: #8fc088; --sky: #86b9d8; --road: #2a2418; --block: #221d13; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.65; overflow-x: hidden; }
+  a { color: inherit; }
+  .bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  .bar a { text-decoration: none; color: var(--dim); }
+  .bar a:hover { color: var(--sun); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+  .hero { padding: clamp(34px, 8vh, 84px) 0 22px; }
+  .eyebrow { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--sun); }
+  h1 { font-weight: 400; font-size: clamp(2.3rem, 8vw, 4.4rem); line-height: 1.04; letter-spacing: -.02em; margin: .3em 0 .35em; }
+  h1 em { color: var(--sun); font-style: italic; }
+  .lede { max-width: 54ch; color: var(--dim); font-size: clamp(1.02rem, 2.6vw, 1.22rem); }
+
+  .stage { position: relative; margin: 26px 0 8px; border: 1px solid var(--ink); background: var(--card); border-radius: 4px; overflow: hidden; touch-action: manipulation; }
+  canvas { display: block; width: 100%; height: clamp(280px, 56vw, 480px); cursor: crosshair; }
+  .stage .hud { position: absolute; left: 12px; right: 12px; bottom: 8px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    font-family: var(--f-mono); font-size: .66rem; letter-spacing: .06em; color: var(--dim); pointer-events: none; }
+  .hint { font-family: var(--f-mono); font-size: .72rem; color: var(--dim); display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .hint i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: -1px; }
+  .hint .you { background: var(--sun); border-radius: 50%; } .hint .help { background: var(--ink); }
+  .btn { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; padding: 8px 14px; cursor: pointer;
+    border: 1px solid var(--ink); background: transparent; color: var(--ink); border-radius: 99px; }
+  .btn:hover { background: var(--ink); color: var(--bg); }
+  .btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+
+  .label { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--faint); margin: 60px 0 14px; }
+  h2 { font-weight: 400; font-size: clamp(1.5rem, 4.8vw, 2.2rem); letter-spacing: -.01em; margin-bottom: 8px; }
+  .note { color: var(--dim); max-width: 58ch; }
+
+  .day { border-top: 1px solid var(--ink); margin-top: 16px; }
+  .v { display: grid; grid-template-columns: 90px 1fr; gap: 4px 22px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .v .t { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .1em; color: var(--sun); padding-top: .4em; }
+  .v h3 { font-weight: 400; font-size: 1.3rem; }
+  .v p { color: var(--dim); max-width: 58ch; font-size: 1.05rem; }
+  @media (max-width: 560px) { .v { grid-template-columns: 1fr; } }
+
+  .rules { counter-reset: r; display: grid; gap: 0; margin-top: 16px; border-top: 1px solid var(--ink); }
+  .rule { counter-increment: r; display: grid; grid-template-columns: 44px 1fr; gap: 0 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .rule::before { content: counter(r); font-family: var(--f-mono); color: var(--sage); font-size: 1.4rem; line-height: 1.2; }
+  .rule b { font-weight: 400; font-size: 1.2rem; display: block; }
+  .rule span { color: var(--dim); }
+
+  .dec { display: grid; gap: 12px; margin-top: 16px; }
+  .d { border: 1px solid var(--line); background: var(--card); padding: 16px 18px; border-radius: 4px; }
+  .d .what { font-size: 1.08rem; }
+  .d .meta { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; color: var(--faint); text-transform: uppercase; margin-bottom: 6px; }
+  .d .why { margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--sage); color: var(--dim); display: none; }
+  .d.open .why { display: block; }
+  .d .row { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .d.undone .what { text-decoration: line-through; color: var(--faint); }
+  .d .status { font-family: var(--f-mono); font-size: .7rem; color: var(--sage); margin-top: 10px; display: none; }
+  .d.undone .status { display: block; }
+
+  footer { margin: 80px 0 60px; padding-top: 18px; border-top: 1px solid var(--ink); font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; color: var(--dim); display: flex; flex-wrap: wrap; gap: 8px 22px; }
+</style>
+</head>
+<body>
+<div class="bar"><a href="../">← guest mode</a><a href="../../">labs</a></div>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">House Rules · a day with the machines</div>
+    <h1>AI is everywhere. It <em>waits</em> for me.</h1>
+    <p class="lede">I live in a world where machines do nearly everything, and it still feels like my life. This is what it is like from here. Walk around the map below, then stop for a moment.</p>
+
+    <div class="stage">
+      <canvas id="c" aria-label="Street map. A large orange dot is you. Small dark dots are helpers that follow at a distance. Click to walk. When you stop, a helper brings something to the spot."></canvas>
+      <div class="hud"><span id="hudL">click to walk</span><span id="hudR">helpers do nothing unless you stop or ask</span></div>
+    </div>
+    <div class="hint"><span><i class="you"></i>you</span><span><i class="help"></i>helper</span><button class="btn" id="clear" type="button">clear the street</button></div>
+  </section>
+
+  <div class="label">A day</div>
+  <h2>What it is like, from the inside</h2>
+  <div class="day" id="day"></div>
+
+  <div class="label">House rules</div>
+  <h2>Five things the machines agreed to</h2>
+  <p class="note">Nobody forced a vote. They are just how the world is built.</p>
+  <div class="rules">
+    <div class="rule"><div><b>Slow is allowed.</b><span>Everything can run at my speed. The fast version exists, and it waits until I say go.</span></div></div>
+    <div class="rule"><div><b>Nothing speaks first.</b><span>Not an ad, a nudge or a suggestion. Only safety interrupts: fire, flood, a car I cannot see.</span></div></div>
+    <div class="rule"><div><b>Every decision has a Why.</b><span>One tap shows it in plain sentences, with a person's name attached to who answers for it.</span></div></div>
+    <div class="rule"><div><b>No stays no.</b><span>If I decline, it is declined for good. It does not come back in a different outfit next week.</span></div></div>
+    <div class="rule"><div><b>It says what it is.</b><span>Machine voices sound like machines. Nothing pretends to be my friend, my neighbour or my mother.</span></div></div>
+  </div>
+
+  <div class="label">Try it</div>
+  <h2>Ask the house why</h2>
+  <p class="note">Three things the machines did for me today. Each one can be explained, and each one can be undone.</p>
+  <div class="dec" id="dec"></div>
+
+  <footer>
+    <span>Chiibitsu Labs</span><span>Single file. No dependencies.</span>
+    <a href="../">The other side: Guest Mode, where humans are the guests →</a>
+  </footer>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- content ---------- */
+const DAY = [
+  ["06:40", "Waking", "The house doesn't wake me. It noticed I slept badly and moved my first meeting. It told me once, in a single line, and only because I asked."],
+  ["08:10", "The street", "Cars don't honk. They learned long ago that I cross slowly. A helper walks ten paces behind me and does nothing, unless I stop."],
+  ["10:00", "Work", "The AI drafts and I decide. It writes the question I would have asked, shows its work and waits. My name is on the decision because it is my decision."],
+  ["12:30", "Lunch", "The menu has a rule: nothing is optimised. Someone cooked this, by hand, slowly, on purpose. It costs more. That is the point."],
+  ["15:20", "The bank", "A machine declined my loan in four milliseconds. Then it did something odd: it slowed down and explained, in sentences, at my pace. A person's name came with it."],
+  ["19:00", "Dinner", "Nothing buzzes. My phone has an \"only if the house is on fire\" mode, and it means it."],
+  ["22:30", "Night", "Before sleep I ask what it did today. It tells me, all of it, in order. It always has."],
+];
+$("day").innerHTML = DAY.map(d => `<article class="v"><div class="t">${d[0]}</div><div><h3>${d[1]}</h3><p>${d[2]}</p></div></article>`).join("");
+
+const DEC = [
+  ["Rerouted my walk home", "Today, 17:42", "A crowd was forming at the crossing on Mill Street. The route that avoided it added three minutes. I walk slowly, so a crowd would have cost me more than that.", "Original route restored. Nothing was lost."],
+  ["Declined a calendar invite for me", "Today, 09:15", "Nine invites arrived overnight. This one asked for an hour I had marked as mine. You set that rule in March. It declined politely and sent no reason, because you asked it not to explain you to strangers.", "Invite restored to your inbox, unanswered."],
+  ["Turned down the lights at 21:00", "Today, 21:00", "You have asked for dim light after nine for forty-one days. It never does this on days you tell it not to. It has never done it on a day you were awake and working.", "Lights back to normal. It will ask next time before doing it again."],
+];
+$("dec").innerHTML = DEC.map((d, i) => `<div class="d" id="d${i}"><div class="meta">${d[1]}</div><div class="what">${d[0]}</div>
+  <div class="why">${d[2]}</div><div class="row"><button class="btn" data-w="${i}" type="button">Why?</button><button class="btn" data-u="${i}" type="button">Undo</button></div>
+  <div class="status">${d[3]}</div></div>`).join("");
+$("dec").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.w != null) $("d" + b.dataset.w).classList.toggle("open");
+  if (b.dataset.u != null) $("d" + b.dataset.u).classList.toggle("undone");
+});
+
+/* ---------- the street ---------- */
+const cv = $("c"), cx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1, GX = 6, GY = 4;
+let you, helpers = [], items = [], others = [];
+let idleT = 0, dropped = false, wishIdx = 0, raf = 0, last = 0, col = {};
+const WISH = [
+  ["bench", "because you stopped"],
+  ["shade", "because it is warm"],
+  ["tea", "because it is cold"],
+  ["lamp", "because it is getting dark"],
+  ["water", "because you walked far"],
+];
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  GX = Math.max(4, Math.round(W / 130)); GY = Math.max(3, Math.round(H / 110));
+  init();
+}
+const gx = i => (i + 0.5) * (W / GX), gy = j => (j + 0.5) * (H / GY);
+function init() {
+  you = { x: W * 0.2, y: H * 0.5, tx: W * 0.2, ty: H * 0.5, v: 0 };
+  helpers = Array.from({ length: 6 }, (_, i) => ({ x: you.x - 30 - i * 6, y: you.y + (i - 3) * 8, a: (i / 6) * 6.283, job: null }));
+  others = Array.from({ length: 3 }, () => ({ x: Math.random() * W, y: Math.random() * H, tx: Math.random() * W, ty: Math.random() * H }));
+  items = []; idleT = 0; dropped = false;
+  if (reduce) { items.push({ x: W * 0.4, y: H * 0.45, k: 0, born: 0 }, { x: W * 0.62, y: H * 0.6, k: 3, born: 0 }); }
+}
+function place(x, y) { return [Math.max(14, Math.min(W - 14, x)), Math.max(14, Math.min(H - 30, y))]; }
+cv.addEventListener("pointerdown", e => {
+  const r = cv.getBoundingClientRect(); [you.tx, you.ty] = place(e.clientX - r.left, e.clientY - r.top);
+  dropped = false; idleT = 0; if (reduce) { you.x = you.tx; you.y = you.ty; draw(0); }
+});
+$("clear").addEventListener("click", () => { items = []; draw(0); });
+
+function drawItem(it, now) {
+  const age = (now - it.born) / 1000, a = Math.min(1, age * 2) * (it.fade ?? 1);
+  const w = WISH[it.k], x = it.x, y = it.y;
+  cx.globalAlpha = a;
+  cx.fillStyle = col.sage; cx.strokeStyle = col.sage; cx.lineWidth = 2;
+  if (w[0] === "bench") { cx.fillRect(x - 11, y - 3, 22, 5); cx.fillRect(x - 9, y + 2, 3, 5); cx.fillRect(x + 6, y + 2, 3, 5); }
+  else if (w[0] === "shade") { cx.beginPath(); cx.arc(x, y - 4, 13, Math.PI, 0); cx.fill(); cx.fillRect(x - 1, y - 4, 2, 11); }
+  else if (w[0] === "tea") { cx.fillStyle = col.sun; cx.fillRect(x - 6, y - 7, 11, 9); cx.beginPath(); cx.arc(x + 6, y - 3, 3.5, -1.57, 1.57); cx.stroke(); }
+  else if (w[0] === "lamp") { const g = cx.createRadialGradient(x, y - 8, 1, x, y - 8, 26); g.addColorStop(0, col.sun); g.addColorStop(1, "transparent"); cx.globalAlpha = a * .45; cx.fillStyle = g; cx.fillRect(x - 26, y - 34, 52, 52); cx.globalAlpha = a; cx.fillStyle = col.ink; cx.fillRect(x - 1, y - 8, 2, 15); cx.fillStyle = col.sun; cx.beginPath(); cx.arc(x, y - 9, 4, 0, 6.283); cx.fill(); }
+  else { cx.strokeStyle = col.sky; cx.beginPath(); cx.arc(x, y, 8, 0, 6.283); cx.stroke(); cx.beginPath(); cx.arc(x, y, 3, 0, 6.283); cx.stroke(); }
+  cx.fillStyle = col.dim; cx.font = "10px ui-monospace, Menlo, monospace"; cx.textAlign = "center";
+  cx.fillText(w[0] + " · " + w[1], x, y + 22);
+  cx.globalAlpha = 1;
+}
+function draw(now) {
+  col = { ink: css("--ink"), sun: css("--sun"), sage: css("--sage"), sky: css("--sky"), road: css("--road"), block: css("--block"), card: css("--card"), dim: css("--dim") };
+  cx.fillStyle = col.card; cx.fillRect(0, 0, W, H);
+  cx.fillStyle = col.block;
+  for (let i = 0; i < GX - 1; i++) for (let j = 0; j < GY - 1; j++) cx.fillRect(gx(i) + 8, gy(j) + 8, gx(i + 1) - gx(i) - 16, gy(j + 1) - gy(j) - 16);
+  cx.strokeStyle = col.road; cx.lineWidth = 1; cx.beginPath();
+  for (let i = 0; i < GX; i++) { cx.moveTo(gx(i), gy(0)); cx.lineTo(gx(i), gy(GY - 1)); }
+  for (let j = 0; j < GY; j++) { cx.moveTo(gx(0), gy(j)); cx.lineTo(gx(GX - 1), gy(j)); }
+  cx.stroke();
+  // path to target
+  if (Math.hypot(you.tx - you.x, you.ty - you.y) > 6) {
+    cx.setLineDash([3, 5]); cx.strokeStyle = col.sun; cx.globalAlpha = .6; cx.beginPath(); cx.moveTo(you.x, you.y); cx.lineTo(you.tx, you.ty); cx.stroke(); cx.setLineDash([]); cx.globalAlpha = 1;
+  }
+  items.forEach(it => drawItem(it, now));
+  // other people, unattended and unbothered
+  cx.fillStyle = col.sun; cx.globalAlpha = .4;
+  others.forEach(o => { cx.beginPath(); cx.arc(o.x, o.y, 4, 0, 6.283); cx.fill(); }); cx.globalAlpha = 1;
+  // helpers
+  cx.fillStyle = col.ink;
+  helpers.forEach(h => cx.fillRect(h.x - 2.5, h.y - 2.5, 5, 5));
+  // you
+  cx.fillStyle = col.sun; cx.globalAlpha = .2; cx.beginPath(); cx.arc(you.x, you.y, 20, 0, 6.283); cx.fill(); cx.globalAlpha = 1;
+  cx.beginPath(); cx.arc(you.x, you.y, 6.5, 0, 6.283); cx.fill();
+}
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
+  // you walk at a human pace
+  const dx = you.tx - you.x, dy = you.ty - you.y, d = Math.hypot(dx, dy);
+  if (d > 1.5) { const s = Math.min(d, 62 * dt); you.x += dx / d * s; you.y += dy / d * s; you.v = 62; idleT = 0; dropped = false; } else you.v = 0;
+  // others amble
+  others.forEach(o => { const ox = o.tx - o.x, oy = o.ty - o.y, od = Math.hypot(ox, oy); if (od < 3) { o.tx = Math.random() * W; o.ty = Math.random() * H; } else { o.x += ox / od * 18 * dt; o.y += oy / od * 18 * dt; } });
+  // stopped for a moment: one helper brings something
+  if (you.v === 0) { idleT += dt; }
+  if (idleT > 1.6 && !dropped) {
+    const free = helpers.find(h => !h.job);
+    if (free) {
+      const ang = Math.random() * 6.283, r = 48 + Math.random() * 26;
+      const [px, py] = place(you.x + Math.cos(ang) * r, you.y + Math.sin(ang) * r);
+      free.job = { x: px, y: py, k: wishIdx++ % WISH.length }; dropped = true;
+    }
+  }
+  const now = performance.now();
+  helpers.forEach((h, i) => {
+    h.a += dt * 0.35;
+    let tx, ty, sp = 2.4;
+    if (h.job) { tx = h.job.x; ty = h.job.y; sp = 3.2; }
+    else { const r = 34 + (i % 3) * 14; tx = you.x + Math.cos(h.a + i) * r; ty = you.y + Math.sin(h.a + i) * r; }
+    h.x += (tx - h.x) * Math.min(1, sp * dt); h.y += (ty - h.y) * Math.min(1, sp * dt);
+    if (h.job && Math.hypot(h.job.x - h.x, h.job.y - h.y) < 4) {
+      items.push({ x: h.job.x, y: h.job.y, k: h.job.k, born: now }); if (items.length > 6) items.shift(); h.job = null;
+    }
+  });
+  items.forEach((it, i) => { it.fade = i === 0 && items.length > 5 ? 0.5 : 1; });
+  $("hudL").textContent = you.v ? "walking at your pace" : (dropped ? "something was brought. you did not ask." : "you stopped. a helper noticed.");
+  draw(now);
+  raf = requestAnimationFrame(frame);
+}
+function start() { if (!raf && !reduce) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+function stop() { cancelAnimationFrame(raf); raf = 0; }
+addEventListener("resize", () => { resize(); if (reduce) draw(0); });
+document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+resize();
+if (reduce) { draw(0); $("hudL").textContent = "motion reduced: click to place yourself"; } else start();
+</script>
+</body>
+</html>
