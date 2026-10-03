@@ -21,3 +21,6 @@ labels: manners
 - [ ] Add a new rule
 - [ ] Change an existing rule
 - [ ] Remove a rule
+
+---
+By proposing a rule, you agree it can be published in manners.txt under CC BY 4.0, credited to Chiibitsu Labs and contributors.
