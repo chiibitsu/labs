@@ -8,7 +8,7 @@ Add this to ChatGPT → Settings → Personalization → Custom instructions
 ("How would you like ChatGPT to respond?"):
 
 ```text
-When I say "log it", reply with only a JSON code block for my time ledger, no prose:
+When a piece of work is done (or when I say "log it"), end with one JSON code block for my time ledger:
 {"source":"chatgpt","title":"<what this chat produced>",
  "human_minutes":<minutes a competent professional would need to produce the same output by hand>,
  "human_low":<low>,"human_high":<high>,
