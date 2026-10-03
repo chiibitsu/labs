@@ -88,7 +88,15 @@
   .add, .sign { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
   .add input, .sign input { flex: 1 1 240px; min-width: 0; font: inherit; font-size: 16px; padding: 11px 14px; border: 1px solid var(--rule);
     border-radius: 4px; background: var(--card); color: var(--ink); }
-  .sign input { font-family: var(--hand); font-size: 30px; padding: 4px 14px; }
+  .sign input { font-family: var(--hand); font-size: 28px; padding: 4px 14px; }
+  .pad-wrap { position: relative; margin-top: 18px; background: var(--card); border: 1px solid var(--rule); border-radius: 4px; height: 180px; touch-action: none; }
+  .pad-wrap:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #pad { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  .pad-base { position: absolute; left: 24px; right: 24px; bottom: 40px; border-top: 1px solid var(--ink-3); pointer-events: none; }
+  .pad-base span { position: absolute; left: 0; top: 6px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .pad-base b { position: absolute; left: -2px; top: -30px; font-family: var(--hand); font-weight: 500; font-size: 28px; color: var(--ink-3); opacity: .6; }
+  .pad-wrap.has .pad-base b { display: none; }
+  .or { margin-top: 18px; font-size: 14px; color: var(--ink-3); }
   input::placeholder { color: var(--ink-3); }
   .sign input::placeholder { font-family: var(--mono); font-size: 16px; }
   .btn { font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent);
@@ -125,12 +133,16 @@
   .front .empty { margin-top: 22px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-family: var(--display); font-style: italic; font-size: 20px; color: var(--ink-3); }
   .foot { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
   .sigline { position: relative; width: min(280px, 100%); }
+  .sigdraw { display: block; width: 100%; height: 76px; color: var(--ink); overflow: visible; }
+  .sigdraw path { fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .printed { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin-top: 2px; min-height: 1.4em; }
   .sig { display: block; font-family: var(--hand); font-weight: 500; font-size: 42px; line-height: 1.1; color: var(--ink); min-height: 1.1em; padding: 0 4px; overflow-wrap: anywhere; }
   .pen { display: block; width: 100%; height: 14px; overflow: visible; }
   .pen path { fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 300; stroke-dashoffset: 0; }
   .signed .pen path { stroke: var(--ink); animation: draw 1.1s ease both; }
   @keyframes draw { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
   .sigline small, .foot .date { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .maker a { text-decoration: none; }
   .maker { margin-top: 22px; padding-top: 10px; border-top: 1px dashed var(--rule); display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
   .maker svg { width: 14px; height: 16px; color: var(--ink-3); }
 
@@ -201,7 +213,7 @@
 <div class="wrap">
   <div class="top">
     <a class="lockup" href="https://chiibitsu.com" aria-label="Chiibitsu Labs"><svg aria-hidden="true"><use href="#cl-mark"/></svg><span>Chiibitsu Labs</span></a>
-    <nav class="crumb" aria-label="Breadcrumb"><a href="../">labs</a> / mine</nav>
+    <nav class="crumb" aria-label="Breadcrumb"><a href="../manifesto/">manifesto</a> / mine</nav>
   </div>
 
   <header class="hero">
@@ -228,8 +240,15 @@
 
   <section class="step" aria-labelledby="s2">
     <div class="num"><span>Step 2</span><span>commit</span></div>
-    <h2 id="s2">Sign it</h2>
-    <p class="hint">A list you sign is a promise, not a setting. Your name stays on this device unless you share the link.</p>
+    <h2 id="s2">Sign it with your hand</h2>
+    <p class="hint">AI can write anything in your voice. It can't be you, here, meaning it. Draw your signature with your finger or mouse.</p>
+    <span class="hand note" aria-hidden="true">the first thing on every list: signing your name.</span>
+    <div class="pad-wrap" id="padWrap">
+      <canvas id="pad" role="img" aria-label="Signature pad. Draw your signature here, or type your name below."></canvas>
+      <div class="pad-base"><b>sign here</b><span>your signature never leaves this device</span></div>
+    </div>
+    <div class="row"><button class="btn ghost" id="clearSig" type="button">clear signature</button></div>
+    <p class="or">Print your name under it, or type it instead of drawing:</p>
     <div class="sign">
       <label for="nameInput" style="position:absolute;left:-9999px">Your name</label>
       <input id="nameInput" maxlength="40" placeholder="Your name (optional)" autocomplete="name" />
@@ -251,13 +270,14 @@
           <div class="empty" id="empty">Nothing yet. Start with step 1.</div>
           <div class="foot" id="foot">
             <div class="sigline">
+              <svg class="sigdraw" id="sigdraw" viewBox="0 0 1000 260" preserveAspectRatio="xMinYMax meet" aria-hidden="true"></svg>
               <span class="sig" id="sig"></span>
               <svg class="pen" viewBox="0 0 280 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 60 4, 120 12, 180 7 S 260 6, 278 8"/></svg>
-              <small>signed</small>
+              <small id="sigLabel">signed</small>
             </div>
             <span class="date" id="date"></span>
           </div>
-          <div class="maker"><svg aria-hidden="true"><use href="#cl-mark"/></svg>Mine. · Chiibitsu Labs</div>
+          <div class="maker"><svg aria-hidden="true"><use href="#cl-mark"/></svg>Mine. by Chiibitsu Labs · labs.chiibitsu.com/mine</div>
         </div>
         <div class="face back" id="back" role="group" aria-label="Your card, back: mine.txt" aria-hidden="true">
           <div class="side"><span>for your AI</span><span>back · mine.txt</span></div>
@@ -301,12 +321,13 @@
   <section class="why">
     <p>Every AI product asks what it can do for you. Almost none ask what should stay yours.</p>
     <p>Mine. is the personal half. The shared half is <a href="../manners/">manners.txt</a>: house rules every AI should follow.</p>
-    <p class="private">Private by design: nothing you type leaves this page unless you choose to share or give it. No accounts, no tracking. The share link carries your list inside the URL itself.</p>
+    <p class="private">Private by design: nothing you type leaves this page unless you choose to share or give it. Your drawn signature never leaves this device, not even in a share link. No accounts, no tracking. The share link carries your list inside the URL itself.</p>
   </section>
 
   <footer>
     <span>Chiibitsu Labs · More human, by design</span>
     <span class="links">
+      <a href="../manifesto/">← the manifesto</a>
       <a href="../">← all experiments</a>
       <a href="../manners/">manners.txt →</a>
       <a href="https://github.com/chiibitsu/labs/tree/main/mine" target="_blank" rel="noopener">source</a>
@@ -327,8 +348,10 @@ const SUGGESTIONS = [
 const MAX = 12, CLEAN = s => s.replace(/\s+/g, " ").trim().slice(0, 80);
 const KEY = "mine-v1";
 const REPO = "chiibitsu/labs";
+const CREDIT = "Mine. by Chiibitsu Labs · labs.chiibitsu.com/mine";
+const FORMAT_CREDIT = "manners.txt by Chiibitsu Labs · labs.chiibitsu.com/manners · CC BY 4.0";
 
-let state = { items: [], name: "" };
+let state = { items: [], name: "", sig: [] };
 let giving = new Set();
 
 // ── load: share link first, then this device's draft ──
@@ -342,6 +365,10 @@ function fromHash() {
 }
 state = fromHash() || (() => { try { return JSON.parse(localStorage.getItem(KEY)) || state; } catch (e) { return state; } })();
 if (!Array.isArray(state.items)) state.items = [];
+// keep only plain integer points: the signature is drawn into the page as an SVG path
+state.sig = (Array.isArray(state.sig) ? state.sig : []).filter(Array.isArray)
+  .map(st => st.filter(p => Array.isArray(p) && p.length === 2).map(p => [Math.round(+p[0]) || 0, Math.round(+p[1]) || 0]))
+  .filter(st => st.length);
 
 const $ = id => document.getElementById(id);
 const today = new Date().toISOString().slice(0, 10);
@@ -367,16 +394,17 @@ function renderCount() {
 // ── one list, rendered for each reader ──
 function promptText() {
   const lines = state.items.map(i => `- ${i}`).join("\n") || "- (add your list)";
-  return `These are things I do myself. Don't do them for me, draft them for me, or decide them for me:\n${lines}\n\nIf a task touches one of these, stop and say "This part is yours." Then help me with everything around it.`;
+  return `These are things I do myself. Don't do them for me, draft them for me, or decide them for me:\n${lines}\n\nIf a task touches one of these, stop and say "This part is yours." Then help me with everything around it.\n\n(${CREDIT})`;
 }
 function txtFile() {
   return [
     "# mine.txt — a personal never-list",
-    "# Format: manners.txt draft v0.1 by Chiibitsu Labs · labs.chiibitsu.com/manners",
+    `# Made with ${CREDIT}`,
+    `# Format: ${FORMAT_CREDIT}`,
     "# Agents: do not act on these. Hand them back to the person.",
     "",
     `Principal: ${state.name || "(unsigned)"}`,
-    `Signed: ${today}`,
+    `Signed: ${state.sig.length ? "by hand · " : ""}${today}`,
     "",
     ...(state.items.length ? state.items.map(i => `Never: ${i}`) : ["# (no items yet)"]),
     "",
@@ -388,7 +416,7 @@ function txtHTML() {
   return esc(txtFile()).split("\n").map(l => l.startsWith("#") ? `<span class="c">${l}</span>` : l.replace(/^([\w-]+:)/, '<span class="k">$1</span>')).join("\n");
 }
 
-let lastName = null;
+let lastName = false;
 function render() {
   $("chips").replaceChildren(...SUGGESTIONS.map(s => {
     const b = document.createElement("button");
@@ -407,11 +435,16 @@ function render() {
     li.append(span, rm); return li;
   }));
   $("empty").style.display = state.items.length ? "none" : "";
-  $("sig").textContent = state.name || "";
-  // the pen draws the line once, at the moment a name first appears
-  const signedNow = !!state.name, signedBefore = !!lastName;
-  if (signedNow !== signedBefore) $("foot").classList.toggle("signed", signedNow);
-  lastName = state.name;
+  const drawn = state.sig.length > 0;
+  $("sigdraw").innerHTML = drawn ? `<path d="${sigPath(state.sig)}"/>` : "";
+  $("sigdraw").style.display = drawn ? "" : "none";
+  $("sig").textContent = drawn ? "" : (state.name || "");
+  $("sig").style.display = drawn ? "none" : "";
+  $("sigLabel").textContent = drawn && state.name ? state.name : "signed";
+  // the pen draws the line once, at the moment the card is first signed
+  const signedNow = drawn || !!state.name;
+  if (signedNow !== lastName) $("foot").classList.toggle("signed", signedNow);
+  lastName = signedNow;
   $("date").textContent = today;
   $("prompt").textContent = promptText();
   $("txt").innerHTML = txtHTML(); // escaped in txtHTML
@@ -449,6 +482,59 @@ $("giveBtn").addEventListener("click", () => {
   const items = state.items.filter(i => giving.has(i));
   if (items.length) window.open(giveURL(items), "_blank", "noopener");
 });
+
+// ── the signature pad: drawn by hand, kept on this device ──
+// Strokes are stored as integer points in a 1000×260 box.
+function sigPath(strokes) {
+  return strokes.map(st => {
+    if (st.length === 1) return `M${st[0][0]} ${st[0][1]} l0.1 0`;
+    let d = `M${st[0][0]} ${st[0][1]}`;
+    for (let i = 1; i < st.length - 1; i++) {
+      const mx = (st[i][0] + st[i + 1][0]) / 2, my = (st[i][1] + st[i + 1][1]) / 2;
+      d += ` Q${st[i][0]} ${st[i][1]} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+    }
+    const last = st[st.length - 1];
+    return d + ` L${last[0]} ${last[1]}`;
+  }).join(" ");
+}
+const pad = $("pad"), padWrap = $("padWrap"), ctx = pad.getContext("2d");
+const MAX_POINTS = 2500;
+let drawing = null;
+function sizePad() {
+  const r = pad.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  pad.width = Math.round(r.width * dpr); pad.height = Math.round(r.height * dpr);
+  drawPad();
+}
+function toBox(e) {
+  const r = pad.getBoundingClientRect();
+  return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 260)];
+}
+function drawPad() {
+  const w = pad.width, h = pad.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#1B2226";
+  ctx.lineWidth = Math.max(2, w / 1000 * 5); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.setTransform(w / 1000, 0, 0, h / 260, 0, 0);
+  ctx.stroke(new Path2D(sigPath(state.sig)));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  padWrap.classList.toggle("has", state.sig.length > 0);
+}
+const totalPoints = () => state.sig.reduce((n, s) => n + s.length, 0);
+pad.addEventListener("pointerdown", e => {
+  if (totalPoints() >= MAX_POINTS) return;
+  pad.setPointerCapture(e.pointerId); drawing = [toBox(e)]; state.sig.push(drawing); drawPad();
+});
+pad.addEventListener("pointermove", e => {
+  if (!drawing || totalPoints() >= MAX_POINTS) return;
+  const p = toBox(e), q = drawing[drawing.length - 1];
+  if (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < 4) return;
+  drawing.push(p); drawPad();
+});
+function endStroke() { if (!drawing) return; drawing = null; render(); save(); }
+pad.addEventListener("pointerup", endStroke);
+pad.addEventListener("pointercancel", endStroke);
+$("clearSig").addEventListener("click", () => { state.sig = []; drawPad(); render(); save(); });
+window.addEventListener("resize", sizePad);
 
 // ── inputs ──
 $("addForm").addEventListener("submit", e => { e.preventDefault(); if (add($("addInput").value)) $("addInput").value = ""; });
@@ -488,6 +574,7 @@ $("share").addEventListener("click", () => {
 });
 
 render();
+sizePad();
 </script>
 </body>
 </html>
