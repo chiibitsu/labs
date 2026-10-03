@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Decision Receipt Standard — draft v0.1</title>
+<meta name="description" content="A draft standard: every automated decision about a person should carry five fields — what, why, who answers, undo, carry-over. With a live validator." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Decision Receipt Standard — draft v0.1" />
+<meta property="og:description" content="Five fields every automated decision about a person should carry, with a live validator." />
+<meta property="og:url" content="https://labs.chiibitsu.com/receipt/standard/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/receipt/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Decision Receipt Standard — draft v0.1" />
+<meta name="twitter:description" content="Five fields every automated decision about a person should carry, with a live validator." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/receipt/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d2430'/%3E%3Crect x='9' y='6' width='14' height='20' fill='%23fff'/%3E%3Crect x='11' y='10' width='10' height='2' fill='%231d2430'/%3E%3Crect x='11' y='15' width='10' height='2' fill='%231d2430'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --desk: #dfe5ec; --paper: #fffefa; --ink: #1d2430; --dim: #5b6676; --faint: #8a94a3; --line: rgba(29,36,48,.18);
+    --ok: #1f7a4d; --warn: #b8741a; --bad: #b3261e;
+    --f-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --f-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --desk: #12161d; --paper: #1c222c; --ink: #e8edf5; --dim: #a5afbf; --faint: #6f7a8c; --line: rgba(232,237,245,.18);
+      --ok: #62c28e; --warn: #e0a24a; --bad: #ef7a72; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { background: var(--desk); color: var(--ink); font-family: var(--f-body); line-height: 1.7; overflow-x: hidden; }
+  a { color: inherit; }
+  .bar { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line);
+    font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  .bar a { text-decoration: none; color: var(--dim); } .bar a:hover { color: var(--ink); }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 0 20px 80px; }
+  .hero { padding: clamp(30px, 7vh, 70px) 0 10px; }
+  .eyebrow { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+  h1 { font-weight: 400; font-size: clamp(2rem, 6.5vw, 3.4rem); line-height: 1.08; letter-spacing: -.02em; margin: .3em 0 .3em; }
+  h2 { font-weight: 400; font-size: 1.6rem; margin: 54px 0 10px; letter-spacing: -.01em; }
+  p { max-width: 64ch; color: var(--dim); margin-bottom: 12px; }
+  p b, li b { color: var(--ink); font-weight: 600; }
+  .badge { display: inline-block; font-family: var(--f-mono); font-size: .68rem; letter-spacing: .1em; border: 1px solid var(--ink); padding: 2px 9px; border-radius: 99px; margin-top: 4px; }
+  code, pre { font-family: var(--f-mono); }
+  pre { background: var(--paper); border: 1px solid var(--line); padding: 16px; font-size: .76rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+  .field { background: var(--paper); border: 1px solid var(--line); padding: 16px 18px; margin: 12px 0; }
+  .field .k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; color: var(--faint); text-transform: uppercase; }
+  .field h3 { font-weight: 400; font-size: 1.25rem; margin: 2px 0 6px; }
+  .field ul { margin: 8px 0 0 18px; color: var(--dim); }
+  .field li { margin-bottom: 4px; }
+  .must { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .06em; color: var(--ink); }
+  ol.rules { margin: 8px 0 0 20px; color: var(--dim); max-width: 64ch; }
+  ol.rules li { margin-bottom: 8px; }
+  textarea { width: 100%; min-height: 330px; resize: vertical; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); padding: 14px;
+    font-family: var(--f-mono); font-size: .74rem; line-height: 1.55; tab-size: 2; }
+  textarea:focus-visible, .btn:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .btn { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; padding: 10px 16px; cursor: pointer; border: 1px solid var(--ink); background: var(--ink); color: var(--desk); }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .res { background: var(--paper); border: 1px solid var(--ink); padding: 16px 18px; font-family: var(--f-mono); font-size: .76rem; line-height: 1.7; }
+  .res .head { font-weight: 700; letter-spacing: .08em; margin-bottom: 8px; }
+  .res .fail { color: var(--bad); } .res .warn { color: var(--warn); } .res .pass { color: var(--ok); }
+  .res ul { list-style: none; } .res li { margin: 3px 0; overflow-wrap: anywhere; }
+  .open li { margin-bottom: 8px; color: var(--dim); }
+  footer { margin-top: 70px; padding-top: 16px; border-top: 1px solid var(--ink); font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; color: var(--dim); display: flex; flex-wrap: wrap; gap: 8px 22px; }
+</style>
+</head>
+<body>
+<div class="bar"><a href="../">← receipt generator</a><a href="../../">labs</a></div>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Chiibitsu Labs · proposal</div>
+    <h1>Decision Receipt Standard</h1>
+    <span class="badge">DRAFT v0.1 · not an official standard</span>
+    <p style="margin-top:18px">Every time a system decides something that matters about a person, it should hand back a receipt. This page defines what the receipt contains, so any company can issue one and any person can check it.</p>
+  </section>
+
+  <h2>Why this exists</h2>
+  <p>Decisions now happen in milliseconds. The explanation, if one comes, arrives later, shorter, and from nobody in particular. The speed gap is already here. The accountability gap is the one nobody has put a name on.</p>
+  <p>A receipt closes it at the only moment it can be closed: <b>when the decision is made</b>.</p>
+
+  <h2>Scope</h2>
+  <p>Any decision, automated or automation-assisted, that has a material effect on a person. That means money, work, housing, health, access to a service, or the ability to speak or be heard. Out of scope: recommendations, ranking of content, and decisions with no effect on the person.</p>
+
+  <h2>The five fields</h2>
+
+  <div class="field"><div class="k">1 · key: what</div><h3>What was decided</h3>
+    <ul>
+      <li>The <b>subject</b> (what the decision was about) and the <b>outcome</b> from a fixed list: <code>approved</code>, <code>declined</code>, <code>restricted</code>, <code>ended</code>, <code>changed</code>.</li>
+      <li>A <b>decided_at</b> timestamp and, where relevant, the amount or scope.</li>
+    </ul></div>
+
+  <div class="field"><div class="k">2 · key: why</div><h3>Why it was decided</h3>
+    <ul>
+      <li>At least one <b>specific reason</b>, in a plain sentence, that the person could check against their own facts.</li>
+      <li>Whether it was <b>automated</b> and whether a <b>human reviewed</b> it. Both are required booleans.</li>
+      <li>"After careful consideration" and "for security reasons" are not reasons.</li>
+    </ul></div>
+
+  <div class="field"><div class="k">3 · key: who_answers</div><h3>Who answers for it</h3>
+    <ul>
+      <li>A <b>named person</b> and their role. A team or department name does not count.</li>
+      <li>A <b>working contact</b>, not a no-reply address.</li>
+      <li>A <b>reply_within_days</b> commitment, 10 business days or fewer.</li>
+    </ul></div>
+
+  <div class="field"><div class="k">4 · key: undo</div><h3>How to undo it</h3>
+    <ul>
+      <li>Whether undo is <b>available</b>. If yes: <b>how</b> and a <b>deadline</b> of at least 30 days. If no: a stated <b>reason</b>.</li>
+      <li>What happens to the decision while it is under review (<b>effect</b>).</li>
+      <li>"You may reapply" is not undo. It is starting over.</li>
+    </ul></div>
+
+  <div class="field"><div class="k">5 · key: carry_over</div><h3>Whether it follows you</h3>
+    <ul>
+      <li>Whether the decision or its data is <b>retained</b>, and for how many days.</li>
+      <li>Whether it is <b>used_for_other_decisions</b> about the person. Both are required booleans.</li>
+    </ul></div>
+
+  <h2>Rules</h2>
+  <ol class="rules">
+    <li><b>Issue at decision time</b>, in the same channel as the decision. Not later, not on request.</li>
+    <li><b>Plain sentences.</b> A person who has never heard of the system must be able to read it.</li>
+    <li><b>Machine-readable too.</b> The same receipt exists as JSON, so the person can store it and other tools can check it.</li>
+    <li><b>Human-speed reply.</b> Questions to the named person get an answer in 10 business days or fewer.</li>
+    <li><b>No stays no.</b> If the person declines something, the receipt records it and the system does not ask again in a new form.</li>
+  </ol>
+
+  <h2>Example (JSON)</h2>
+<pre id="ex">{
+  "receipt_version": "0.1",
+  "decided_at": "2026-10-03T09:14:00Z",
+  "what": { "subject": "personal loan application", "outcome": "declined" },
+  "why": {
+    "reasons": ["Your monthly debt payments are 52% of your stated income; our limit is 45%."],
+    "automated": true,
+    "human_reviewed": false
+  },
+  "who_answers": {
+    "name": "Jordan Lee",
+    "role": "Credit Review Lead",
+    "contact": "mailto:review@bank.example",
+    "reply_within_days": 10
+  },
+  "undo": {
+    "available": true,
+    "how": "Reply to the named contact with updated income or debt figures.",
+    "deadline": "2026-11-12",
+    "effect": "Decision is paused while it is reviewed."
+  },
+  "carry_over": { "retained": true, "retention_days": 90, "used_for_other_decisions": false }
+}</pre>
+
+  <h2>Check a receipt</h2>
+  <p>Paste a receipt as JSON. This checks it against the draft. <b>✗</b> is a MUST that failed. <b>!</b> is a SHOULD you can fix. Everything runs in your browser.</p>
+  <textarea id="inp" spellcheck="false" aria-label="Receipt JSON"></textarea>
+  <div class="btns">
+    <button class="btn" id="chk" type="button">Check</button>
+    <button class="btn ghost" id="brk" type="button">Break it on purpose</button>
+    <button class="btn ghost" id="rst" type="button">Reset to example</button>
+  </div>
+  <div class="res" id="res" aria-live="polite">Press Check.</div>
+
+  <h2>Open questions</h2>
+  <ul class="open" style="margin-left:20px">
+    <li>Who verifies that a receipt is true? A receipt can be well formed and still say nothing useful.</li>
+    <li>Where do receipts live so a person can find them again? An inbox is not a record.</li>
+    <li>What counts as "material"? The scope line is a starting point, not a boundary.</li>
+    <li>How should this interact with existing rights to explanation and review, which differ by country?</li>
+  </ul>
+  <p style="margin-top:14px">This is a proposal from Chiibitsu Labs. It is a sketch to argue with, not a legal or technical standard. The <a href="../">receipt generator</a> shows what the gap looks like on real messages.</p>
+
+  <footer><span>Chiibitsu Labs</span><span>Single file. No dependencies.</span><a href="../">Try the generator →</a></footer>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const EXAMPLE = $("ex").textContent;
+$("inp").value = EXAMPLE;
+
+const VAGUE = /(after careful consideration|for security reasons|for your protection|at this time|our policy|internal polic|proprietary|cannot disclose|unfortunately)/i;
+const GENERIC = /(team|department|support|services|customer|care|desk|centre|center|recruit\w*|talent|acquisition)\b/i;
+const OUTCOMES = ["approved", "declined", "restricted", "ended", "changed"];
+const isStr = v => typeof v === "string" && v.trim().length > 0;
+
+function validate(r) {
+  const must = [], should = [];
+  const M = (ok, msg) => { if (!ok) must.push(msg); }, S = (ok, msg) => { if (!ok) should.push(msg); };
+  M(r.receipt_version === "0.1", "receipt_version must be \"0.1\"");
+  const t = Date.parse(r.decided_at);
+  M(isStr(r.decided_at) && !isNaN(t), "decided_at must be an ISO date-time");
+
+  const w = r.what || {};
+  M(isStr(w.subject), "what.subject is required");
+  M(OUTCOMES.includes(w.outcome), "what.outcome must be one of: " + OUTCOMES.join(", "));
+
+  const y = r.why || {};
+  M(Array.isArray(y.reasons) && y.reasons.length > 0 && y.reasons.every(isStr), "why.reasons needs at least one reason, as a sentence");
+  if (Array.isArray(y.reasons)) y.reasons.forEach((x, i) => { if (isStr(x)) { S(!VAGUE.test(x), `why.reasons[${i}] reads as a vague phrase, not a reason you can check`); S(x.trim().length >= 25, `why.reasons[${i}] is very short`); } });
+  M(typeof y.automated === "boolean", "why.automated must be true or false");
+  M(typeof y.human_reviewed === "boolean", "why.human_reviewed must be true or false");
+
+  const a = r.who_answers || {};
+  M(isStr(a.name), "who_answers.name is required (a named person)");
+  if (isStr(a.name)) M(!GENERIC.test(a.name.trim()), "who_answers.name looks like a team, not a person");
+  M(isStr(a.role), "who_answers.role is required");
+  M(isStr(a.contact), "who_answers.contact is required");
+  if (isStr(a.contact)) M(!/no-?reply|donotreply/i.test(a.contact), "who_answers.contact is a no-reply address");
+  M(typeof a.reply_within_days === "number", "who_answers.reply_within_days must be a number");
+  if (typeof a.reply_within_days === "number") S(a.reply_within_days <= 10, "reply_within_days is over 10");
+
+  const u = r.undo || {};
+  M(typeof u.available === "boolean", "undo.available must be true or false");
+  if (u.available === true) {
+    M(isStr(u.how), "undo.how is required when undo is available");
+    const d = Date.parse(u.deadline);
+    M(isStr(u.deadline) && !isNaN(d), "undo.deadline must be a date when undo is available");
+    if (!isNaN(d) && !isNaN(t)) S((d - t) / 864e5 >= 30, "undo deadline is under 30 days after the decision");
+    S(isStr(u.effect), "undo.effect should say what happens to the decision during review");
+    if (isStr(u.how)) S(!/\breappl/i.test(u.how), "undo.how mentions reapplying, which is starting over, not undoing");
+  } else if (u.available === false) {
+    M(isStr(u.reason), "undo.reason is required when undo is not available");
+  }
+
+  const c = r.carry_over || {};
+  M(typeof c.retained === "boolean", "carry_over.retained must be true or false");
+  M(typeof c.used_for_other_decisions === "boolean", "carry_over.used_for_other_decisions must be true or false");
+  if (c.retained === true) M(typeof c.retention_days === "number", "carry_over.retention_days is required when data is retained");
+  return { must, should: should.filter(Boolean) };
+}
+function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+function check() {
+  let r;
+  try { r = JSON.parse($("inp").value); }
+  catch (e) { $("res").innerHTML = `<div class="head fail">✗ NOT VALID JSON</div>${esc(String(e.message))}`; return; }
+  if (!r || typeof r !== "object" || Array.isArray(r)) { $("res").innerHTML = `<div class="head fail">✗ A receipt must be a JSON object</div>`; return; }
+  const v = validate(r);
+  const head = v.must.length ? `<div class="head fail">✗ ${v.must.length} MUST FAILED</div>` : (v.should.length ? `<div class="head warn">✓ VALID · ${v.should.length} SHOULD TO FIX</div>` : `<div class="head pass">✓ VALID · NOTHING TO FIX</div>`);
+  $("res").innerHTML = head + "<ul>" + v.must.map(m => `<li class="fail">✗ ${esc(m)}</li>`).join("") + v.should.map(m => `<li class="warn">! ${esc(m)}</li>`).join("") + "</ul>";
+}
+$("chk").addEventListener("click", check);
+$("rst").addEventListener("click", () => { $("inp").value = EXAMPLE; check(); });
+$("brk").addEventListener("click", () => {
+  try {
+    const r = JSON.parse(EXAMPLE);
+    r.who_answers.name = "Customer Care Team"; r.who_answers.contact = "noreply@bank.example";
+    r.why.reasons = ["After careful consideration, we are unable to approve your application at this time."];
+    r.undo = { available: true, how: "You may reapply in 6 months.", deadline: "2026-10-10" };
+    delete r.carry_over.used_for_other_decisions;
+    $("inp").value = JSON.stringify(r, null, 2);
+  } catch (e) {}
+  check();
+});
+check();
+</script>
+</body>
+</html>
