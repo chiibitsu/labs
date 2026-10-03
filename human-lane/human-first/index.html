@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Human First — the other way round, 2041</title>
+<meta name="description" content="The mirror of The Human Lane: same year, same machines, opposite choice. One day in a world where AI is everywhere and ordinary, and still built around people." />
+<meta name="author" content="Chiibitsu Labs" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Human First" />
+<meta property="og:description" content="Same year, same machines, opposite choice. Good morning. Nothing needs you yet." />
+<meta property="og:url" content="https://labs.chiibitsu.com/human-lane/human-first/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/human-lane/human-first/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Human First" />
+<meta name="twitter:description" content="Same year, same machines, opposite choice. Good morning. Nothing needs you yet." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/human-lane/human-first/og.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23fbefe2'/%3E%3Cpath d='M5 22a11 11 0 0 1 22 0' fill='none' stroke='%232a2620' stroke-width='2' stroke-dasharray='2 3'/%3E%3Ccircle cx='16' cy='14' r='4.5' fill='%23e8a33d'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    /* --bg / --ink / --soft / --ai are rewritten by the day-cycle script as you scroll */
+    --bg: #f3ece6; --ink: #2a2620; --soft: #6e665a; --ai: #4f6fb0;
+    --sun: #e8a33d; --sage: #3f7d5c;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --line: color-mix(in srgb, var(--ink) 14%, transparent);
+    --card: color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  .mono { font-family: var(--mono); }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+  a { color: inherit; }
+
+  /* ───── top bar: the clock, the sun, and the dial ───── */
+  .bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 9px 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  .bar svg { flex: none; }
+  .bar .clock { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 4.5ch; }
+  .bar .txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar label { display: flex; align-items: center; gap: 8px; flex: none; }
+  .bar select { font: inherit; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  section { padding: clamp(64px, 12vh, 120px) 0; }
+  .kicker { font-family: var(--mono); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--sage); }
+  h2.sec { margin-top: 14px; font-weight: 400; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; letter-spacing: -.015em; max-width: 18ch; }
+  .sec-lede { margin-top: 18px; font-size: clamp(1.05rem, 2.6vw, 1.25rem); line-height: 1.6; color: var(--soft); max-width: 50ch; }
+
+  /* ───── hero ───── */
+  .hero { padding-top: clamp(48px, 10vh, 110px); }
+  .noverify { display: inline-flex; gap: 10px; align-items: center; font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; color: var(--soft);
+    border: 1px dashed var(--line); border-radius: 999px; padding: 6px 12px; }
+  .noverify i { width: 8px; height: 8px; border-radius: 50%; background: var(--sage); }
+  .hero .kicker { margin-top: 28px; }
+  .hero h1 { margin-top: 16px; font-weight: 400; font-size: clamp(2.8rem, 11vw, 6.6rem); line-height: .98; letter-spacing: -.03em; }
+  .hero h1 em { color: var(--sage); }
+  .hero .lede { margin-top: 28px; font-size: clamp(1.15rem, 3vw, 1.45rem); line-height: 1.55; max-width: 46ch; }
+  .meters { margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .meter { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: var(--card); }
+  .meter span { display: block; font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); }
+  .meter b { display: block; margin-top: 8px; font-weight: 400; font-size: clamp(1.6rem, 5vw, 2.2rem); font-variant-numeric: tabular-nums; }
+
+  /* ───── the dial ───── */
+  .dial { margin-top: 44px; border: 1px solid var(--line); border-radius: 18px; padding: 20px; background: var(--card); }
+  .dial h3 { font-weight: 400; font-size: 1.35rem; }
+  .dial p.hint { margin-top: 6px; color: var(--soft); font-size: 1rem; line-height: 1.5; }
+  .steps { margin-top: 16px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .step { padding: 12px 8px; border-radius: 12px; border: 1px solid var(--line); text-align: center; transition: background .25s, color .25s, border-color .25s; }
+  .step b { display: block; font-family: var(--mono); font-weight: 400; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  .step span { display: block; margin-top: 4px; font-size: 1.05rem; }
+  .step[aria-checked="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .step[aria-checked="true"] b { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+  .dial .says { margin-top: 14px; font-size: 1.05rem; line-height: 1.5; min-height: 1.5em; }
+  .dial .says em { color: var(--sage); }
+
+  /* ───── the day ───── */
+  .day { margin-top: 48px; position: relative; }
+  .quiet { margin: 0 0 24px; font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; color: var(--soft); border-left: 2px dotted var(--ai); padding: 6px 12px; }
+  .hour { display: grid; grid-template-columns: 6.5rem 1fr; gap: 20px; padding: 34px 0; border-top: 1px solid var(--line); }
+  .hour .t { font-family: var(--mono); font-size: .9rem; color: var(--soft); font-variant-numeric: tabular-nums; padding-top: .55em; }
+  .hour h3 { font-weight: 400; font-size: clamp(1.6rem, 4.4vw, 2.2rem); letter-spacing: -.01em; }
+  .hour p { margin-top: 10px; font-size: clamp(1.08rem, 2.6vw, 1.25rem); line-height: 1.6; max-width: 54ch; }
+  .notes { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; max-width: 60ch; }
+  .note { font-family: var(--mono); font-size: .74rem; line-height: 1.55; color: var(--ai); border-left: 2px dotted var(--ai); padding: 2px 0 2px 12px; animation: pencil .5s ease both; }
+  .note b { font-weight: 400; letter-spacing: .1em; text-transform: uppercase; font-size: .62rem; opacity: .8; }
+  @keyframes pencil { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+
+  /* ───── where the time went ───── */
+  .dividend { margin-top: 44px; display: flex; flex-direction: column; gap: 14px; }
+  .div-row { display: grid; grid-template-columns: minmax(130px, 220px) 1fr; gap: 6px 20px; align-items: center; }
+  .div-row .k { font-size: 1.05rem; }
+  .div-row .k small { display: block; font-family: var(--mono); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+  .div-row .bar2 { height: 10px; border-radius: 5px; background: var(--card); overflow: hidden; }
+  .div-row .bar2 i { display: block; height: 100%; width: var(--w); background: var(--sage); border-radius: 5px; }
+  .div-row .went { grid-column: 2; color: var(--soft); font-size: 1rem; line-height: 1.45; font-style: italic; }
+  .total { margin-top: 28px; font-size: clamp(1.2rem, 3.4vw, 1.6rem); line-height: 1.4; max-width: 40ch; }
+  .total b { font-weight: 400; color: var(--sage); }
+
+  /* ───── the rules ───── */
+  .rules { margin-top: 44px; list-style: none; counter-reset: r; }
+  .rules li { counter-increment: r; display: grid; grid-template-columns: 3rem 1fr; gap: 12px; padding: 20px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .rules li::before { content: counter(r, decimal-leading-zero); font-family: var(--mono); font-size: .75rem; color: var(--sun); }
+  .rules b { font-weight: 400; font-size: clamp(1.3rem, 3.6vw, 1.85rem); line-height: 1.25; }
+  .rules small { display: block; margin-top: 6px; font-size: 1rem; color: var(--soft); font-style: italic; }
+  .footnote { margin-top: 18px; font-size: .98rem; color: var(--soft); font-style: italic; }
+
+  /* ───── ask for help ───── */
+  .chips { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { padding: 12px 18px; border-radius: 999px; border: 1px solid var(--line); font-size: 1.1rem; background: var(--card); transition: border-color .2s, transform .2s; }
+  .chip:hover { border-color: var(--sun); transform: translateY(-1px); }
+  .chip[aria-pressed="true"] { border-color: var(--sun); background: color-mix(in srgb, var(--sun) 22%, transparent); }
+  .offer { margin-top: 26px; border: 1px solid var(--line); border-radius: 18px; padding: 22px; max-width: 640px; background: var(--card); animation: pencil .4s ease both; }
+  .offer .who { font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ai); }
+  .offer p { margin-top: 10px; font-size: 1.2rem; line-height: 1.55; }
+  .offer .acts { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .offer .acts button { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); font-size: 1rem; }
+  .offer .acts button:first-child { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .offer .reply { margin-top: 16px; font-size: 1.1rem; line-height: 1.55; color: var(--sage); min-height: 1.5em; }
+
+  .closing { padding: clamp(80px, 16vh, 160px) 0 clamp(48px, 10vh, 100px); }
+  .closing p.big { font-size: clamp(1.8rem, 6vw, 3.4rem); line-height: 1.15; letter-spacing: -.02em; max-width: 22ch; }
+  .closing p.big em { color: var(--sun); }
+  .fiction { margin-top: 18px; font-size: .98rem; color: var(--soft); font-style: italic; max-width: 60ch; line-height: 1.55; }
+  .flip { display: inline-block; margin-top: 28px; padding: 12px 20px; border-radius: 999px; border: 1px solid var(--line); text-decoration: none; font-size: 1.05rem; }
+  .flip:hover { border-color: var(--sun); }
+  footer.foot { border-top: 1px solid var(--line); padding: 24px 0 40px; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+  footer.foot a { text-decoration: none; color: var(--ink); }
+  footer.foot a:hover { color: var(--sun); }
+  footer.foot .spacer { flex: 1; }
+
+  @media (max-width: 620px) {
+    .steps { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+    .step { padding: 10px 2px; }
+    .step span { font-size: .82rem; }
+    .step b { font-size: .55rem; letter-spacing: .06em; }
+    .hour { grid-template-columns: 1fr; gap: 6px; }
+    .hour .t { padding-top: 0; }
+    .div-row { grid-template-columns: 1fr; }
+    .div-row .went { grid-column: 1; }
+    .bar .txt { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <svg width="44" height="18" viewBox="0 0 44 18" aria-hidden="true">
+    <path d="M3 16 A19 19 0 0 1 41 16" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity=".6" />
+    <circle id="sunDot" cx="3" cy="16" r="3.4" fill="#e8a33d" />
+  </svg>
+  <span class="clock" id="clock" aria-label="Time of day on this page">06:00</span>
+  <span class="txt">Human First · 2041 · the other way round</span>
+  <label>AI
+    <select id="levelSelect" aria-label="How much the AI does on this page">
+      <option value="0">Quiet</option><option value="1">Remind</option><option value="2" selected>Suggest</option><option value="3">Draft</option><option value="4">Handle</option>
+    </select>
+  </label>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="noverify"><i></i>verification: none · you're a person, that's the default</span>
+    <div class="kicker">2041 · same machines, opposite choice</div>
+    <h1>Good morning.<br><em>Nothing needs you</em><br>yet.</h1>
+    <p class="lede">AI is everywhere here, and ordinary, like electricity. The difference
+      is what it was built around: people's pace, people's mornings, people's say.
+      Scroll through one day. The light will change.</p>
+
+    <div class="meters">
+      <div class="meter"><span>times the AI helped today</span><b id="mHelped">14</b></div>
+      <div class="meter"><span>times it asked first</span><b id="mAsked">14</b></div>
+      <div class="meter"><span>times it minded “no”</span><b>0</b></div>
+    </div>
+
+    <div class="dial" role="radiogroup" aria-labelledby="dialTitle">
+      <h3 id="dialTitle">How much should the AI do today?</h3>
+      <p class="hint">Everyone gets this dial. It changes the whole page below. Try it.</p>
+      <div class="steps" id="steps"></div>
+      <p class="says" id="says" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">one day</div>
+    <h2 class="sec">A Tuesday, from your side.</h2>
+    <p class="sec-lede">The big text is what you notice. The pencil notes are what the AI
+      did, shown only as much as you've asked for.</p>
+    <div class="day" id="day"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">the time dividend</div>
+    <h2 class="sec">Where the hours went.</h2>
+    <p class="sec-lede">The machines took the chores. The rule was simple: the time they
+      save goes back to the person it came from.</p>
+    <div class="dividend" id="dividend"></div>
+    <p class="total" id="total"></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">house rules</div>
+    <h2 class="sec">Seven rules the machines keep.</h2>
+    <ol class="rules" id="rules"></ol>
+    <p class="footnote">Rule 07 was proposed by an AI. Nobody had thought to ask for it.</p>
+  </div>
+</section>
+
+<section id="askSec">
+  <div class="wrap">
+    <div class="kicker">your turn</div>
+    <h2 class="sec">Ask for a hand.</h2>
+    <p class="sec-lede">Pick something. Notice what it does next: it tells you its plan,
+      then waits for you. “Not now” is a full answer.</p>
+    <div class="chips" id="chips"></div>
+    <div class="offer" id="offer" hidden>
+      <div class="who">ai · suggestion, in pencil</div>
+      <p id="plan"></p>
+      <div class="acts">
+        <button data-a="do">Do it</button>
+        <button data-a="with">Do it with me</button>
+        <button data-a="no">Not now</button>
+      </div>
+      <p class="reply" id="reply" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap closing">
+  <p class="big">When people come first, AI turns into good plumbing: everywhere,
+    reliable, almost never the topic of conversation. <em>The point was always the afternoon.</em></p>
+  <p class="fiction">Human First is the mirror of The Human Lane, a fiction from Chiibitsu Labs.
+    Same year, same machines. The only difference is who the world was built around.</p>
+  <a class="flip" href="../">← the other way round: The Human Lane</a>
+</div>
+
+<div class="wrap">
+  <footer class="foot">
+    <a href="../../">← chiibitsu labs</a>
+    <a href="../">the human lane</a>
+    <span class="spacer"></span>
+    <span>nothing on this page was rendered for an agent first</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+/* ═══════════════ CONTENT ═══════════════ */
+const LEVELS = [
+  ["0", "Quiet", "It does nothing unless you call it. <em>Like the plumbing.</em>"],
+  ["1", "Remind", "It reminds you of things you asked it to remember. Nothing else."],
+  ["2", "Suggest", "It suggests, in pencil. <em>You decide.</em>"],
+  ["3", "Draft", "It drafts and prepares. Nothing leaves until you approve."],
+  ["4", "Handle", "It handles things and tells you after, in plain words. Some things it still won't take."],
+];
+
+// [time, title, what you notice, notes: [level, label, text]]
+const DAY = [
+  ["06:40", "Waking", "Nothing woke you. The house waited until you were up, then warmed the kettle. There are no notifications before nine. That was a law before it was a feature.", [
+    [1, "reminder", "bins go out today. you asked me to say so on tuesdays."],
+    [2, "suggestion", "dry until eleven. a walk would fit before work."],
+    [3, "drafted", "a reply to your sister. it's in your outbox, unsent."],
+    [4, "handled", "paid the water bill, same as last month. receipt in tonight's log."]]],
+  ["08:15", "Getting there", "The tram drives itself and is staffed by a person whose job is to say good morning and mean it. It runs four minutes slower than it could. The city voted for the four minutes.", [
+    [1, "reminder", "umbrella. rain after four."],
+    [2, "suggestion", "the 8:22 has window seats."],
+    [3, "prepared", "one page of notes for your ten o'clock. it's on your desk."],
+    [4, "handled", "told the ten o'clock you'd be two minutes late. they said no problem."]]],
+  ["10:00", "Work", "You write the first sentence yourself. That's the custom. After that, help is welcome. Anything the AI writes stays pencil-grey until you touch it, so you always know whose words are whose.", [
+    [1, "reminder", "first sentence is yours."],
+    [2, "suggestion", "paragraph three says what paragraph one already said."],
+    [3, "drafted", "the rest of the report, in pencil. touch a line to make it yours."],
+    [4, "handled", "checked every number against the source. fixed two. both listed in the margin."]]],
+  ["12:30", "Lunch", "There's a printed menu, slightly stained. The AI knows about your allergy and tells only you, quietly, in your ear. The waiter knows your name because she remembers it.", [
+    [1, "note", "walnuts in the dressing. only you can hear this."],
+    [2, "suggestion", "the soup. you liked it in march."],
+    [4, "handled", "split the bill three ways. you'd all agreed, out loud, at the table."]]],
+  ["15:00", "The clinic", "Your scans were read overnight, so the whole appointment is forty minutes of talking. The doctor's screen faces you, not her.", [
+    [1, "reminder", "ask about the knee."],
+    [2, "suggestion", "the three questions you wanted to ask are in your pocket."],
+    [3, "prepared", "a plain-language summary of the scan, for later, if you want it."],
+    [4, "handled", "booked physio, tuesdays, near the tram. cancel any time."]]],
+  ["17:30", "Homework", "Your kid's tutor won't give answers. It asks the next good question, then waits. It's very good at waiting. People say it learned that from grandmothers.", [
+    [1, "note", "the tutor won't give answers. that's on purpose."],
+    [2, "suggestion", "ask her what she'd try first."],
+    [4, "declined", "nothing. this one's yours. some things it won't take, even when offered."]]],
+  ["19:30", "Dinner", "Six friends, one table. The room is in human mode: every device in it has gone to sleep and shows a small dim light to say so. Nobody misses anything. Nothing is being missed.", [
+    [1, "human mode", "all devices asleep. nothing to report until morning."],
+    [4, "handled", "nothing. it's dinner."]]],
+  ["22:40", "The log", "Before bed, one page: everything the AI did for you today, in words a tired person can read. Cross out any line and it forgets that line. Most nights you don't read it. You like knowing you could.", [
+    [1, "log", "everything above, in plain words. none of it urgent."],
+    [2, "suggestion", "bed by eleven? you said you wanted that."],
+    [3, "prepared", "tomorrow in one sentence: easy morning, hard afternoon, good dinner."],
+    [4, "handled", "forgot the three lines you crossed out. they're gone, properly."]]],
+];
+
+// [task, hours per year returned, where it went]
+const DIVIDEND = [
+  ["Inbox triage", 480, "Long lunches. Letters. One more real conversation a day."],
+  ["Driving", 230, "Reading, sleeping, and staring out of windows, which is now encouraged."],
+  ["Searching for things", 60, "Finding things. That turned out to be different."],
+  ["Forms and taxes", 38, "Return Week: a week off every March. Most people garden."],
+  ["Waiting on hold", 13, "Nothing. Waiting on hold just stopped existing."],
+];
+
+const RULES = [
+  ["Ask first.", "Unless something is on fire. Then put it out, then ask."],
+  ["Show your work in words a tired person can read.", ""],
+  ["Hand back the wheel the moment someone reaches for it.", "No “are you sure?” No delay."],
+  ["Return the time you save.", "Don't spend it on more for them to do."],
+  ["Forget when asked. Properly.", ""],
+  ["Be boring in public, useful in private.", ""],
+  ["Never be the last voice a lonely person hears.", "Introduce them to someone."],
+];
+
+// [chip, plan, do, with, not now]
+const ASKS = [
+  ["plan Saturday", "Market in the morning, the long walk by the river, and your friend Sam is free after four. I haven't asked Sam. Want me to?",
+   "Done. Sam said yes. It's one line in tonight's log.", "Okay. You text Sam, I'll hold the rest of the plan until you're back."],
+  ["write to my landlord", "A short, polite note about the heating, with the dates it was off and the photo you took. I'll leave the last line to you.",
+   "Drafted and sent after you read it. I don't send letters in your name unread.", "Okay. You start, I'll fill in the dates."],
+  ["learn the cello", "I can't learn it for you. There's a teacher ten minutes away on Thursday evenings, and a library cello you can borrow for a month.",
+   "Booked a trial lesson. The practising is yours.", "Okay. We'll pick the first piece together."],
+  ["sort the photos", "Group them by year, find duplicates, and set aside the blurry ones for you to judge. Blurry isn't always bad.",
+   "Done. 412 duplicates gone. The blurry ones are waiting for you.", "Okay. I'll show you ten at a time and you choose."],
+  ["call my dad more", "I can't do this one for you, and I shouldn't. I can put a gentle note on Sundays at six, when he's usually home.",
+   "Sunday note set. The call is yours.", "Okay. I'll sit quietly while you dial."],
+];
+
+/* ═══════════════ THE DIAL ═══════════════ */
+let level = 2;
+const saved = store.get("hf-level");
+if (saved !== null && /^[0-4]$/.test(saved)) level = Number(saved);
+
+$("steps").innerHTML = LEVELS.map((l) =>
+  '<button class="step" role="radio" aria-checked="false" data-l="' + l[0] + '"><b>' + l[0] + "</b><span>" + l[1] + "</span></button>").join("");
+
+$("day").innerHTML = '<p class="quiet" id="quiet" hidden>Quiet. The AI is still here, like the plumbing. It just isn\'t talking.</p>' +
+  DAY.map((d) => {
+    const [hh, mm] = d[0].split(":").map(Number);
+    return '<article class="hour" data-h="' + (hh + mm / 60) + '"><div class="t">' + d[0] + "</div><div><h3>" + d[1] + "</h3><p>" + d[2] +
+      '</p><div class="notes">' + d[3].map((n) => '<div class="note" data-l="' + n[0] + '"><b>' + n[1] + "</b> · " + n[2] + "</div>").join("") +
+      "</div></div></article>";
+  }).join("");
+
+function setLevel(l, focus) {
+  level = l;
+  store.set("hf-level", String(l));
+  document.querySelectorAll(".step").forEach((s) => {
+    const on = Number(s.dataset.l) === l;
+    s.setAttribute("aria-checked", on ? "true" : "false");
+    s.tabIndex = on ? 0 : -1;
+    if (on && focus) s.focus();
+  });
+  $("levelSelect").value = String(l);
+  $("says").innerHTML = LEVELS[l][2];
+  let shown = 0;
+  document.querySelectorAll(".note").forEach((n) => {
+    const vis = Number(n.dataset.l) <= l;
+    if (vis) shown++;
+    n.hidden = !vis;
+  });
+  $("quiet").hidden = l !== 0;
+  $("mHelped").textContent = shown;
+  $("mAsked").textContent = shown;
+}
+$("steps").addEventListener("click", (e) => { const b = e.target.closest(".step"); if (b) setLevel(Number(b.dataset.l)); });
+$("steps").addEventListener("keydown", (e) => {
+  const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+  if (d) { e.preventDefault(); setLevel((level + d + 5) % 5, true); }
+});
+$("levelSelect").addEventListener("change", (e) => setLevel(Number(e.target.value)));
+setLevel(level);
+
+/* ═══════════════ DIVIDEND, RULES ═══════════════ */
+const maxH = Math.max(...DIVIDEND.map((d) => d[1]));
+$("dividend").innerHTML = DIVIDEND.map((d) =>
+  '<div class="div-row"><div class="k">' + d[0] + "<small>" + d[1] + ' hours a year</small></div><div class="bar2"><i style="--w:' +
+  (d[1] / maxH * 100).toFixed(1) + '%"></i></div><p class="went">' + d[2] + "</p></div>").join("");
+const totalH = DIVIDEND.reduce((a, d) => a + d[1], 0);
+$("total").innerHTML = "About <b>" + totalH + " hours</b> a year, per person. Roughly five working weeks. Nobody was allowed to spend it for you.";
+$("rules").innerHTML = RULES.map((r) => "<li><div><b>" + r[0] + "</b>" + (r[1] ? "<small>" + r[1] + "</small>" : "") + "</div></li>").join("");
+
+/* ═══════════════ ASK FOR A HAND ═══════════════ */
+let current = null;
+$("chips").innerHTML = ASKS.map((a, i) => '<button class="chip" aria-pressed="false" data-i="' + i + '">' + a[0] + "</button>").join("");
+$("chips").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  current = ASKS[Number(c.dataset.i)];
+  document.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", x === c ? "true" : "false"));
+  $("offer").hidden = false;
+  $("offer").style.animation = "none"; void $("offer").offsetWidth; $("offer").style.animation = "";
+  $("plan").textContent = "Here's what I'd do: " + current[1];
+  $("reply").textContent = "";
+  $("offer").querySelectorAll(".acts button").forEach((b) => (b.disabled = false));
+});
+$("offer").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-a]"); if (!b || !current) return;
+  const a = b.dataset.a;
+  $("reply").textContent = a === "do" ? current[2] : a === "with" ? current[3] : "Okay. I won't bring it up again today.";
+});
+
+/* ═══════════════ THE DAY CYCLE ═══════════════ */
+// Scroll position becomes time of day; time of day becomes light.
+const SKY = [ // [hour, bg]
+  [5.5, "#e6e1ee"], [7, "#fbefe2"], [10, "#fbf7ee"], [13, "#fbfaf3"], [16, "#f8eedb"],
+  [18.5, "#f1d9c6"], [20, "#5b4a63"], [21.5, "#1d1c2a"], [24, "#101119"],
+];
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+const lum = (c) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+const rgb = (c) => "rgb(" + c.join(",") + ")";
+function skyAt(h) {
+  for (let i = 0; i < SKY.length - 1; i++) {
+    if (h <= SKY[i + 1][0]) {
+      const t = Math.max(0, (h - SKY[i][0]) / (SKY[i + 1][0] - SKY[i][0]));
+      return mix(hex(SKY[i][1]), hex(SKY[i + 1][1]), t);
+    }
+  }
+  return hex(SKY[SKY.length - 1][1]);
+}
+const root = document.documentElement.style;
+let points = [];
+function measure() {
+  const hours = [...document.querySelectorAll(".hour")];
+  const end = document.documentElement.scrollHeight;
+  points = [{ y: 0, h: 5.8 }]
+    .concat(hours.map((el) => ({ y: el.getBoundingClientRect().top + scrollY + 40, h: Number(el.dataset.h) })))
+    .concat([{ y: end, h: 23.75 }]);
+}
+function hourAt(y) {
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i], b = points[i + 1];
+    if (y <= b.y) return a.h + (b.h - a.h) * Math.max(0, (y - a.y) / Math.max(1, b.y - a.y));
+  }
+  return points[points.length - 1].h;
+}
+let ticking = false;
+function paint() {
+  ticking = false;
+  const h = hourAt(scrollY + innerHeight * 0.5);
+  const bg = skyAt(h), dark = lum(bg) < 0.45;
+  root.setProperty("--bg", rgb(bg));
+  root.setProperty("--ink", dark ? "#ece8f4" : "#2a2620");
+  root.setProperty("--soft", dark ? "#a7a2b8" : "#6e665a");
+  root.setProperty("--ai", dark ? "#a9bcff" : "#4f6fb0");
+  root.setProperty("--sage", dark ? "#8fd0ab" : "#3f7d5c");
+  const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+  $("clock").textContent = String(hh % 24).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  // sun rides the arc from 06:00 to 20:00, then becomes a pale moon
+  const t = Math.min(1, Math.max(0, (h - 6) / 14)), a = Math.PI * (1 - t);
+  const dot = $("sunDot");
+  dot.setAttribute("cx", (22 + 19 * Math.cos(a)).toFixed(1));
+  dot.setAttribute("cy", (16 - 13 * Math.sin(a)).toFixed(1));
+  dot.setAttribute("fill", h > 20 ? "#d8dcf0" : "#e8a33d");
+}
+function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }
+addEventListener("scroll", onScroll, { passive: true });
+addEventListener("resize", () => { measure(); paint(); });
+measure(); paint();
+// note visibility changes page height, so re-measure after the dial moves
+$("steps").addEventListener("click", () => { measure(); paint(); });
+$("steps").addEventListener("keydown", () => { measure(); paint(); });
+$("levelSelect").addEventListener("change", () => { measure(); paint(); });
+</script>
+</body>
+</html>

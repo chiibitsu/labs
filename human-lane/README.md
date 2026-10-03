@@ -16,6 +16,17 @@ accessibility layer.
 4. **One unoptimized choice.** Pick between two things for no reason; the agent
    network lights up around it.
 
+## The mirror: Human First
+
+[`human-first/`](./human-first/) is the same year and the same machines with the
+opposite choice. AI is everywhere and ordinary, and the world is still built
+around people. One Tuesday from your side, 06:40 to 22:40. The page's light
+moves from dawn to night as you scroll. A dial (Quiet → Remind → Suggest →
+Draft → Handle) sets how much the AI does, and the AI's pencil notes on every
+hour of the day appear or disappear to match. Then come the hours the machines
+gave back, the seven rules they keep, and an "ask for a hand" demo where the AI
+says its plan and waits, and "Not now" is a full answer.
+
 The point: when AI comes first, speed is free and answers are everywhere.
 What stays scarce is a person wanting something.
 
@@ -31,3 +42,4 @@ Open <http://localhost:8000>. Add `?lane` to skip the gate.
 
 - `index.html` — the whole thing. No build, no dependencies.
 - `og.png` — social card, made by `scripts/gen-og.js` (Playwright screenshot of the hero).
+- `human-first/index.html` + `human-first/og.png` — the mirror page and its card (same script).
