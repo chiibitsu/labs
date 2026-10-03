@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Decision Receipt — what a machine owes you</title>
 <meta name="description" content="Paste any automated rejection. Get back the receipt it should have come with: what, why, who answers, how to undo it, and whether it follows you." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Decision Receipt — what a machine owes you" />
+<meta property="og:description" content="Paste any automated rejection. Get the receipt it should have come with." />
+<meta property="og:url" content="https://labs.chiibitsu.com/ai-first/receipt/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/ai-first/receipt/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Decision Receipt — what a machine owes you" />
+<meta name="twitter:description" content="Paste any automated rejection. Get the receipt it should have come with." />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/ai-first/receipt/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d2430'/%3E%3Crect x='9' y='6' width='14' height='20' fill='%23fff'/%3E%3Crect x='11' y='10' width='10' height='2' fill='%231d2430'/%3E%3Crect x='11' y='15' width='10' height='2' fill='%231d2430'/%3E%3C/svg%3E" />
 <style>
   :root {
@@ -62,8 +74,8 @@
   .ask { margin-top: 5px; color: var(--dim); } .ask li { margin-left: 16px; }
   .score { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--ink); }
   .score .n { font-size: 1.5rem; font-weight: 700; }
-  .stamp { position: absolute; right: 18px; top: 64px; transform: rotate(-9deg); border: 2px solid var(--stamp); color: var(--stamp); padding: 2px 10px;
-    font-weight: 700; letter-spacing: .14em; font-size: .78rem; opacity: .82; pointer-events: none; }
+  .stamp { transform: rotate(-6deg); border: 2px solid var(--stamp); color: var(--stamp); padding: 1px 9px; white-space: nowrap;
+    font-weight: 700; letter-spacing: .14em; font-size: .72rem; opacity: .85; }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 
   .draft { margin-top: 34px; display: none; }
@@ -268,9 +280,8 @@ function run() {
   const verdict = a.score >= 4.5 ? "COMPLETE" : a.score >= 3 ? "PARTIAL" : "INCOMPLETE";
   $("rc").innerHTML =
     `<div class="rh"><b>DECISION RECEIPT</b><span>NO. ${a.id}</span></div>` +
-    (a.score < 4.5 ? `<div class="stamp">${verdict}</div>` : "") +
     rows.map(r => `<div class="row"><div class="k">${r[0]}</div><div class="v"><span class="st ${r[1]}">${MARK[r[1]]}</span>${r[2]}</div></div>`).join("") +
-    `<div class="score"><span>OWED TO YOU: 5 THINGS</span><span class="n">${a.score} / 5</span></div>`;
+    `<div class="score"><span>OWED TO YOU</span>${a.score < 4.5 ? `<span class="stamp">${verdict}</span>` : "<span></span>"}<span class="n">${a.score} / 5</span></div>`;
   $("acts").hidden = false;
 
   // follow-up message
