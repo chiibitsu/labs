@@ -808,10 +808,17 @@ async function titleScreen() {
   const p3 = el("p", "n", "Almost nothing needs you anymore. Today, you’ll find out what still does.");
   t.append(p1, p2, p3, el("p", "meta-note", "About 15 minutes · best with sound · you set the pace: tap to continue, or switch on Auto"));
   put(t);
-  const k = await choose([
-    { k: "snd", label: "Wake up", meta: "with sound", kind: "ai", echo: false },
-    { k: "quiet", label: "Wake up without sound", kind: "plain", echo: false }
-  ]);
+  let k;
+  for (;;) {
+    const opts = [
+      { k: "snd", label: "Wake up", meta: "with sound", kind: "ai", echo: false },
+      { k: "quiet", label: "Wake up without sound", kind: "plain", echo: false }
+    ];
+    if (AGENT) opts.push({ k: "rename", label: "Rename " + AGENT, meta: "your agent", kind: "plain", echo: false });
+    k = await choose(opts);
+    if (k !== "rename") break;
+    AGENT = ""; store.set("wwk.name", ""); setWren(true);
+  }
   A.set(k === "snd");
   if (!AGENT) await nameAgent();
 }
