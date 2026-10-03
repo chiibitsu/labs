@@ -12,3 +12,11 @@ is the `alt` text: the fallback for a slower kind of reader.
 - **humans.txt:** the inverse of robots.txt. Lists the places agents agree not to optimise.
 
 One `index.html`, no dependencies, no build step. `og.png` is a screenshot of the page.
+
+## The mirror: alt=machine
+
+`human-first/` is the other world: AI is everywhere and ordinary, and everything is built
+for people. The same eight places, with prose as the primary view and the machine source
+as the fallback ("machine accessibility mode"). Each place also imagines the AI as a person
+you'd know. Instead of a reverse CAPTCHA, a door that doesn't ask, and a `robots.txt` that
+grew up into a list of manners. Linked from the end of alt=human; no homepage card.
