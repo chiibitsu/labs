@@ -3,30 +3,29 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mine. — what your AI can't have</title>
-<meta name="description" content="Your AI can help with almost everything. Write down what it can't have. One promise, two readers: a card for you, a file for your AI. By Chiibitsu Labs." />
+<title>Mine. — a manifesto by Chiibitsu Labs</title>
+<meta name="description" content="AI can now do almost anything we ask. That was the easy part. Mine. is a movement by Chiibitsu Labs: write down what your AI can't have, and agree the manners every AI should keep." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Chiibitsu Labs" />
-<meta property="og:title" content="Mine." />
-<meta property="og:description" content="Your AI can help with almost everything. Write down what it can't have." />
+<meta property="og:title" content="Mine. — a manifesto" />
+<meta property="og:description" content="AI can now do almost anything we ask. That was the easy part. A movement by Chiibitsu Labs." />
 <meta property="og:url" content="https://labs.chiibitsu.com/mine/" />
 <meta property="og:image" content="https://labs.chiibitsu.com/mine/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://labs.chiibitsu.com/mine/og.png" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23EDF0F1'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' fill='%235B3390' text-anchor='middle'%3EM.%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23EDF0F1'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' fill='%235B3390' text-anchor='middle'%3E%C2%B6%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500&display=swap" rel="stylesheet" />
 <script>
-  // Night follows the reader's own clock (Chiibitsu Labs brand v2). No location asked.
   (function () { var h = new Date().getHours(); document.documentElement.dataset.theme = (h >= 19 || h < 6) ? "night" : "day"; })();
 </script>
 <style>
-  /* Mine. is one promise with two readers: you, and your AI.
-     So the card is double-sided, like the doubled stem in the Chiibitsu mark:
-     the front is your handwriting, the back is what your AI reads. */
+  /* The Mine. manifesto: the front door of one movement inside
+     "More human, by design". One sheet of lab paper, eight numbered lines,
+     and doors to what you can do about it. */
   :root {
     color-scheme: light;
     --ground: #EDF0F1; --card: #F7F8F8; --ink: #1B2226; --ink-2: #3A444A; --ink-3: #5C666B;
@@ -48,158 +47,67 @@
     background-size: 24px 24px;
   }
   a { color: inherit; }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 16px 56px; }
 
-  /* header: company first */
   .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 28px; }
   .lockup { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); }
   .lockup svg { width: 28px; height: 31px; flex: none; }
   .lockup span { font-family: var(--display); font-weight: 300; font-size: 15px; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; }
-  .crumb { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  .crumb a { color: var(--ink-3); text-decoration: none; }
-  .crumb a:hover { color: var(--accent); text-decoration: underline; }
+  .tag { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--ink-3); padding: 3px 10px; border-radius: 2px; }
   @media (max-width: 480px) { .lockup span { font-size: 13px; letter-spacing: .2em; } }
 
-  .hand { font-family: var(--hand); font-weight: 500; color: var(--accent); line-height: 1.1; }
+  header { padding: 96px 0 0; }
+  .kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  h1 { margin-top: 18px; font-family: var(--display); font-weight: 300; font-size: clamp(88px, 20vw, 168px); line-height: .9; letter-spacing: -.02em; color: var(--ink); }
+  h1 i { color: var(--accent); font-style: italic; }
+  .underline { display: block; width: min(520px, 90%); height: 18px; margin-top: 14px; color: var(--accent); overflow: visible; }
+  .underline path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 560; stroke-dashoffset: 560; animation: draw 1.6s .4s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
 
-  header.hero { position: relative; padding: 72px 0 8px; }
-  h1 { font-family: var(--display); font-weight: 300; font-size: clamp(80px, 18vw, 148px); line-height: .9; letter-spacing: -.02em; color: var(--ink); }
-  h1 span { color: var(--accent); }
-  .lede { margin-top: 22px; font-family: var(--display); font-weight: 300; font-size: clamp(24px, 4vw, 32px); line-height: 1.3; max-width: 22ch; color: var(--ink); }
-  .lede i { color: var(--accent); }
-  .hero .hand { position: absolute; right: 0; top: 96px; font-size: 26px; transform: rotate(-4deg); text-align: right; }
-  .hero .hand svg { display: block; margin: 4px 0 0 auto; width: 64px; height: 40px; }
-  @media (max-width: 640px) { .hero .hand { position: static; transform: rotate(-2deg); text-align: left; margin-top: 18px; } .hero .hand svg { margin: 4px 0 0 0; transform: scaleX(-1); } }
+  .lede { margin-top: 56px; font-family: var(--display); font-weight: 300; font-size: clamp(28px, 5vw, 44px); line-height: 1.2; color: var(--ink); max-width: 20ch; }
+  .lede span { color: var(--ink-3); }
 
-  section.step { margin-top: 80px; position: relative; }
-  .num { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; letter-spacing: .14em; color: var(--ink-3); text-transform: uppercase; padding-top: 12px; border-top: 1px solid var(--ink); }
-  h2 { font-family: var(--display); font-weight: 300; font-size: clamp(30px, 5.5vw, 44px); line-height: 1.15; color: var(--ink); margin: 12px 0 10px; }
-  .hint { color: var(--ink-3); font-size: 16px; max-width: 50ch; }
-  .note { font-size: 24px; transform: rotate(-2deg); display: inline-block; margin-top: 6px; }
+  /* the eight lines */
+  .theses { list-style: none; margin-top: 72px; counter-reset: t; border-top: 3px double var(--ink); }
+  .theses li { counter-increment: t; display: grid; grid-template-columns: 3.4em 1fr; gap: 0 18px; padding: 26px 0 24px; border-bottom: 1px solid var(--rule); }
+  .theses li::before { content: counter(t, decimal-leading-zero); font-size: 12px; letter-spacing: .14em; color: var(--ink-3); padding-top: .9em; }
+  .theses p { font-family: var(--display); font-weight: 300; font-size: clamp(24px, 3.8vw, 34px); line-height: 1.28; color: var(--ink); max-width: 26ch; }
+  .theses p em { font-style: italic; color: var(--accent); }
+  .theses .list { display: block; margin-top: 8px; color: var(--ink-2); font-style: italic; }
+  .theses .note { display: block; margin-top: 10px; font-family: var(--hand); font-weight: 500; font-size: 24px; color: var(--accent); transform: rotate(-1.5deg); transform-origin: left; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-  .chip { font: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--rule); background: var(--card); color: var(--ink-2);
-    padding: 7px 14px; border-radius: 999px; transition: background .2s, border-color .2s, color .2s; }
-  .chip:hover { background: var(--hover-bg); border-color: var(--accent); color: var(--accent); }
-  .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--hover-bg); }
-  .chip[aria-pressed="true"]::before { content: "✓ "; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .close { margin-top: 64px; text-align: center; }
+  .close p { font-family: var(--display); font-weight: 300; font-size: clamp(34px, 6.4vw, 58px); line-height: 1.05; color: var(--ink); }
+  .close p i { color: var(--accent); }
+  .byline { margin-top: 28px; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+  .byline .space { width: 240px; height: 64px; border-bottom: 1px solid var(--ink-3); display: grid; place-items: end center; font-family: var(--hand); font-size: 22px; color: var(--ink-3); opacity: .7; padding-bottom: 4px; }
+  .byline .space img { max-width: 100%; max-height: 60px; }
+  .byline b { font-family: var(--display); font-weight: 300; font-size: 22px; color: var(--ink); }
+  .byline small { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
 
-  .add, .sign { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
-  .add input, .sign input { flex: 1 1 240px; min-width: 0; font: inherit; font-size: 16px; padding: 11px 14px; border: 1px solid var(--rule);
-    border-radius: 4px; background: var(--card); color: var(--ink); }
-  .sign input { font-family: var(--hand); font-size: 28px; padding: 4px 14px; }
-  .pad-wrap { position: relative; margin-top: 18px; background: var(--card); border: 1px solid var(--rule); border-radius: 4px; height: 180px; touch-action: none; }
-  .pad-wrap:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-  #pad { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
-  .pad-base { position: absolute; left: 24px; right: 24px; bottom: 40px; border-top: 1px solid var(--ink-3); pointer-events: none; }
-  .pad-base span { position: absolute; left: 0; top: 6px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  .pad-base b { position: absolute; left: -2px; top: -30px; font-family: var(--hand); font-weight: 500; font-size: 28px; color: var(--ink-3); opacity: .6; }
-  .pad-wrap.has .pad-base b { display: none; }
-  .or { margin-top: 18px; font-size: 14px; color: var(--ink-3); }
-  input::placeholder { color: var(--ink-3); }
-  .sign input::placeholder { font-family: var(--mono); font-size: 16px; }
-  .btn { font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent);
-    padding: 10px 16px; border-radius: 4px; transition: background .2s, color .2s; text-decoration: none; display: inline-block; }
-  .btn:hover { background: var(--hover-bg); color: var(--accent); }
-  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
-  .btn.ghost:hover { background: var(--hover-bg); color: var(--accent); border-color: var(--accent); }
-  .btn[disabled] { opacity: .45; cursor: not-allowed; }
-  .count { margin-top: 12px; font-size: 14px; color: var(--ink-3); min-height: 1.7em; }
-  .count.warn { color: var(--ink); }
-  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
-  .toast { font-size: 14px; color: var(--ink-3); min-height: 1em; }
+  /* three doors: links are cards */
+  .doors-h { margin-top: 112px; font-family: var(--display); font-weight: 300; font-size: clamp(30px, 5.5vw, 44px); color: var(--ink); }
+  .doors-sub { color: var(--ink-3); margin-top: 4px; }
+  .doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 24px; }
+  .door { position: relative; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--ink-2); background: var(--card);
+    border: 1px solid var(--rule); border-top: 1px solid var(--ink); padding: 20px 20px 18px; transition: background .2s, border-color .2s; min-height: 220px; }
+  .door::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 3px; background: var(--accent); opacity: 0; transition: opacity .2s; }
+  .door:hover { background: var(--hover-bg); }
+  .door:hover::before { opacity: 1; }
+  .door .k { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .door h3 { font-family: var(--display); font-weight: 300; font-size: 30px; line-height: 1.1; color: var(--ink); }
+  .door h3 span { color: var(--accent); }
+  .door.mono h3 { font-family: var(--mono); font-weight: 500; font-size: 26px; letter-spacing: -.02em; }
+  .door p { font-size: 16px; flex: 1; }
+  .door .go { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .door:hover h3, .door:hover .go { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
 
-  /* ── the double-sided card ─────────────────────────── */
-  .flip { margin-top: 28px; perspective: 1800px; }
-  .flip-inner { display: grid; transition: transform .9s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
-  .flip.turned .flip-inner { transform: rotateY(180deg); }
-  .face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; position: relative; background: var(--card);
-    border: 1px solid var(--rule); border-radius: 3px; box-shadow: 0 1px 0 var(--rule), 0 28px 56px -40px rgba(27,34,38,.5);
-    padding: clamp(24px, 6vw, 48px) clamp(20px, 6vw, 56px) clamp(22px, 5vw, 36px); min-width: 0; }
-  .face.back { transform: rotateY(180deg); }
-  .front::before { content: ""; position: absolute; top: 0; bottom: 0; left: clamp(12px, 3.5vw, 36px); width: 1px; background: var(--accent); opacity: .35; }
-  .side { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; gap: 12px; }
-  .front .t { margin-top: 18px; font-family: var(--display); font-weight: 300; font-size: clamp(48px, 10vw, 72px); line-height: 1; color: var(--ink); }
-  .front .t span { color: var(--accent); }
-  .front .sub { margin-top: 12px; font-family: var(--display); font-style: italic; font-weight: 300; font-size: 20px; color: var(--ink-2); max-width: 30ch; }
-  .front ol { list-style: none; margin-top: 22px; counter-reset: n; }
-  .front li { counter-increment: n; display: flex; gap: 14px; align-items: baseline; padding: 10px 0 6px; border-bottom: 1px solid var(--rule);
-    font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(22px, 3.6vw, 27px); color: var(--ink); line-height: 1.35; }
-  .front li::before { content: counter(n, decimal-leading-zero); font-family: var(--mono); font-style: normal; font-size: 12px; color: var(--ink-3); flex: none; width: 2.2em; }
-  .front li span { min-width: 0; overflow-wrap: anywhere; }
-  .front li .rm { margin-left: auto; font: inherit; font-family: var(--mono); font-style: normal; font-size: 16px; background: none; border: 0; color: var(--ink-3); cursor: pointer; padding: 0 6px; border-radius: 3px; }
-  .front li .rm:hover { color: var(--accent); background: var(--hover-bg); }
-  .front .empty { margin-top: 22px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font-family: var(--display); font-style: italic; font-size: 20px; color: var(--ink-3); }
-  .foot { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
-  .sigline { position: relative; width: min(280px, 100%); }
-  .sigdraw { display: block; width: 100%; height: 76px; color: var(--ink); overflow: visible; }
-  .sigdraw path { fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-  .printed { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin-top: 2px; min-height: 1.4em; }
-  .sig { display: block; font-family: var(--hand); font-weight: 500; font-size: 42px; line-height: 1.1; color: var(--ink); min-height: 1.1em; padding: 0 4px; overflow-wrap: anywhere; }
-  .pen { display: block; width: 100%; height: 14px; overflow: visible; }
-  .pen path { fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 300; stroke-dashoffset: 0; }
-  .signed .pen path { stroke: var(--ink); animation: draw 1.1s ease both; }
-  @keyframes draw { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
-  .sigline small, .foot .date { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  .maker a { text-decoration: none; }
-  .maker { margin-top: 22px; padding-top: 10px; border-top: 1px dashed var(--rule); display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  .maker svg { width: 14px; height: 16px; color: var(--ink-3); }
-
-  .back pre { margin-top: 18px; font-family: var(--mono); font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
-  .back pre .c { color: var(--ink-3); } .back pre .k { color: var(--accent); }
-  .back .row { margin-top: 18px; }
-
-  .turn { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-
-  /* outputs */
-  .out { margin-top: 44px; border-top: 1px solid var(--ink); padding-top: 14px; }
-  .out h3 { font-family: var(--display); font-weight: 300; font-size: 28px; color: var(--ink); }
-  .out p { font-size: 16px; color: var(--ink-3); margin-top: 2px; max-width: 56ch; }
-  .out pre { margin-top: 14px; font-family: var(--mono); font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
-    background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 14px 16px; max-height: 260px; overflow: auto; color: var(--ink-2); }
-
-  /* step 4: give to the commons */
-  .give { list-style: none; margin-top: 18px; }
-  .give li { border-top: 1px solid var(--rule); }
-  .give li:last-child { border-bottom: 1px solid var(--rule); }
-  .give label { display: flex; gap: 12px; align-items: baseline; padding: 10px 4px; cursor: pointer; font-family: var(--display); font-style: italic; font-weight: 300; font-size: 22px; color: var(--ink); }
-  .give label:hover { background: var(--hover-bg); }
-  .give label span { min-width: 0; overflow-wrap: anywhere; }
-  .give input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; transform: translateY(2px); }
-  .give-empty { margin-top: 16px; color: var(--ink-3); }
-  .terms { margin-top: 14px; font-size: 14px; color: var(--ink-3); max-width: 60ch; }
-  .hint a { color: var(--accent); }
-
-  .why { margin-top: 96px; border-top: 1px solid var(--ink); padding-top: 28px; }
-  .why p { max-width: 30ch; font-family: var(--display); font-weight: 300; font-size: clamp(24px, 3.6vw, 30px); line-height: 1.3; color: var(--ink); }
-  .why p + p { margin-top: 18px; }
-  .why a { color: var(--accent); }
-  .why p.private { margin-top: 32px; max-width: 60ch; font-family: var(--mono); font-size: 14px; line-height: 1.7; color: var(--ink-3); }
-
-  footer { margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 12px; letter-spacing: .06em; color: var(--ink-3);
-    display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; }
+  footer { margin-top: 96px; padding-top: 18px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px;
+    font-size: 12px; letter-spacing: .06em; color: var(--ink-3); }
   footer a { color: var(--ink-3); }
   footer a:hover { color: var(--accent); }
-  footer .links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
-    .flip-inner { transform: none !important; }
-    .flip .back { display: none; transform: none; }
-    .flip.turned .front { display: none; }
-    .flip.turned .back { display: block; }
-  }
-  @media print {
-    body { background: #fff; color: #1B2226; }
-    .wrap > *:not(#cardStep) { display: none !important; }
-    #cardStep > *:not(.flip) { display: none !important; }
-    #cardStep { margin: 0; }
-    .flip-inner { transform: none !important; }
-    .back { display: none !important; }
-    .front { box-shadow: none; }
-    .front li .rm { display: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .underline path { stroke-dashoffset: 0; } }
 </style>
 </head>
 <body>
@@ -213,368 +121,68 @@
 <div class="wrap">
   <div class="top">
     <a class="lockup" href="https://chiibitsu.com" aria-label="Chiibitsu Labs"><svg aria-hidden="true"><use href="#cl-mark"/></svg><span>Chiibitsu Labs</span></a>
-    <nav class="crumb" aria-label="Breadcrumb"><a href="../manifesto/">manifesto</a> / mine</nav>
+    <span class="tag">a movement · draft v0.1</span>
   </div>
 
-  <header class="hero">
-    <h1>Mine<span>.</span></h1>
-    <p class="lede">Your AI can help with almost everything. Write down <i>what it can't have.</i></p>
-    <div class="hand" aria-hidden="true">a list only<br>you can write
-      <svg viewBox="0 0 64 40"><path d="M60 4 C 40 6, 22 14, 10 34 M10 34 L 8 22 M10 34 L 21 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </div>
+  <header>
+    <div class="kicker">A manifesto · a movement by Chiibitsu Labs</div>
+    <h1>Mine<i>.</i></h1>
+    <svg class="underline" viewBox="0 0 520 18" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12 C 120 4, 260 16, 380 8 S 500 6, 518 10"/></svg>
   </header>
 
-  <section class="step" aria-labelledby="s1">
-    <div class="num"><span>Step 1</span><span>choose</span></div>
-    <h2 id="s1">What do you want to keep doing yourself?</h2>
-    <p class="hint">Tap the ones that are true for you, or write your own.</p>
-    <span class="hand note" aria-hidden="true">fewer is stronger. 5 to 10.</span>
-    <div class="chips" id="chips" role="group" aria-label="Suggestions"></div>
-    <form class="add" id="addForm">
-      <label for="addInput" style="position:absolute;left:-9999px">Add your own</label>
-      <input id="addInput" maxlength="80" placeholder="Add your own, e.g. “choose my kid's name”" autocomplete="off" />
-      <button class="btn" type="submit">add</button>
-    </form>
-    <div class="count" id="count" aria-live="polite"></div>
-  </section>
+  <p class="lede">AI can now do almost anything we ask. <span>That was the easy part.</span></p>
 
-  <section class="step" aria-labelledby="s2">
-    <div class="num"><span>Step 2</span><span>commit</span></div>
-    <h2 id="s2">Sign it with your hand</h2>
-    <p class="hint">AI can write anything in your voice. It can't be you, here, meaning it. Draw your signature with your finger or mouse.</p>
-    <span class="hand note" aria-hidden="true">the first thing on every list: signing your name.</span>
-    <div class="pad-wrap" id="padWrap">
-      <canvas id="pad" role="img" aria-label="Signature pad. Draw your signature here, or type your name below."></canvas>
-      <div class="pad-base"><b>sign here</b><span>your signature never leaves this device</span></div>
-    </div>
-    <div class="row"><button class="btn ghost" id="clearSig" type="button">clear signature</button></div>
-    <p class="or">Print your name under it, or type it instead of drawing:</p>
-    <div class="sign">
-      <label for="nameInput" style="position:absolute;left:-9999px">Your name</label>
-      <input id="nameInput" maxlength="40" placeholder="Your name (optional)" autocomplete="name" />
-    </div>
-  </section>
+  <ol class="theses">
+    <li><p>The hard part is deciding what we <em>shouldn't</em> ask it to do.</p></li>
+    <li><p>Every AI product asks what it can do for you. Almost none ask what should stay yours.</p></li>
+    <li><p>Some things only mean something when a person does them.
+      <span class="list">Saying sorry. Saying I love you. Grieving. Signing your name.</span></p></li>
+    <li><p>Those aren't inefficiencies. <em>They're the point.</em></p></li>
+    <li><p>AI can write anything in your voice. It can't be you, here, meaning it.</p></li>
+    <li><p>So machines should prove what they are. People shouldn't have to prove who they are.</p></li>
+    <li><p>Each of us keeps a list of what stays ours. <em>It stays ours.</em>
+      <span class="note">write yours ↓</span></p></li>
+    <li><p>Together we write the floor every AI stands on. It belongs to everyone.
+      <span class="note">that's manners.txt</span></p></li>
+  </ol>
 
-  <section class="step" id="cardStep" aria-labelledby="s3">
-    <div class="num"><span>Step 3</span><span>keep</span></div>
-    <h2 id="s3">One promise, two readers</h2>
-    <p class="hint">The front is for you. Turn it over: the back is the same promise, written for your AI.</p>
-
-    <div class="flip" id="flip">
-      <div class="flip-inner">
-        <div class="face front" id="front" role="group" aria-label="Your card, front">
-          <div class="side"><span>for you</span><span>front</span></div>
-          <div class="t">Mine<span>.</span></div>
-          <div class="sub">My AI can help with almost anything. Not these. These I do myself.</div>
-          <ol id="list"></ol>
-          <div class="empty" id="empty">Nothing yet. Start with step 1.</div>
-          <div class="foot" id="foot">
-            <div class="sigline">
-              <svg class="sigdraw" id="sigdraw" viewBox="0 0 1000 260" preserveAspectRatio="xMinYMax meet" aria-hidden="true"></svg>
-              <span class="sig" id="sig"></span>
-              <svg class="pen" viewBox="0 0 280 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 60 4, 120 12, 180 7 S 260 6, 278 8"/></svg>
-              <small id="sigLabel">signed</small>
-            </div>
-            <span class="date" id="date"></span>
-          </div>
-          <div class="maker"><svg aria-hidden="true"><use href="#cl-mark"/></svg>Mine. by Chiibitsu Labs · labs.chiibitsu.com/mine</div>
-        </div>
-        <div class="face back" id="back" role="group" aria-label="Your card, back: mine.txt" aria-hidden="true">
-          <div class="side"><span>for your AI</span><span>back · mine.txt</span></div>
-          <pre id="txt"></pre>
-          <div class="row">
-            <button class="btn" id="dlTxt" type="button">download mine.txt</button>
-            <button class="btn ghost" id="copyTxt" type="button">copy</button>
-            <span class="toast" id="t2" aria-live="polite"></span>
-          </div>
-        </div>
-      </div>
+  <div class="close">
+    <p>What's yours, <i>stays yours.</i></p>
+    <div class="byline">
+      <!-- Signed by hand, never by us. Chii: drop your signature at manifesto/signature.svg and swap this placeholder for <img src="signature.svg" alt="Chii's signature">. -->
+      <span class="space" aria-hidden="true">signed by hand</span>
+      <b>Chii</b>
+      <small>Angeline S. Viray · founder, Chiibitsu Labs</small>
     </div>
-    <div class="turn">
-      <button class="btn ghost" id="turn" type="button" aria-controls="flip" aria-pressed="false">turn it over ↻</button>
-      <button class="btn ghost" id="print" type="button">print the card</button>
-      <button class="btn ghost" id="share" type="button">copy share link</button>
-      <span class="toast" id="t3" aria-live="polite"></span>
-    </div>
+  </div>
 
-    <div class="out">
-      <h3>Give it to your AI, today</h3>
-      <p>Paste this into your assistant's custom instructions. It works with Claude, ChatGPT, any of them.</p>
-      <pre id="prompt"></pre>
-      <div class="row"><button class="btn" id="copyPrompt" type="button">copy instructions</button><span class="toast" id="t1" aria-live="polite"></span></div>
-    </div>
-  </section>
-
-  <section class="step" aria-labelledby="s4">
-    <div class="num"><span>Step 4 · optional</span><span>give</span></div>
-    <h2 id="s4">Give to the commons</h2>
-    <p class="hint">Your list stays yours. If you like, tick a few items to add to the shared tally. When many people keep the same thing, it becomes a candidate rule for <a href="../manners/">manners.txt</a>.</p>
-    <span class="hand note" aria-hidden="true">only what you tick. never your name.</span>
-    <ul class="give" id="give"></ul>
-    <p class="give-empty" id="giveEmpty">Add items in step 1 first.</p>
-    <div class="row">
-      <button class="btn" id="giveBtn" type="button" disabled>give 0 items →</button>
-    </div>
-    <p class="terms">This opens a public post on GitHub with only the items you ticked: no name, no date. GitHub will show the account you post from. Contributions are shared under CC BY 4.0, the same licence as manners.txt.</p>
-  </section>
-
-  <section class="why">
-    <p>Every AI product asks what it can do for you. Almost none ask what should stay yours.</p>
-    <p>Mine. is the personal half. The shared half is <a href="../manners/">manners.txt</a>: house rules every AI should follow.</p>
-    <p class="private">Private by design: nothing you type leaves this page unless you choose to share or give it. Your drawn signature never leaves this device, not even in a share link. No accounts, no tracking. The share link carries your list inside the URL itself.</p>
-  </section>
+  <h2 class="doors-h">Start here</h2>
+  <p class="doors-sub">Two things you can do today. One place it came from.</p>
+  <nav class="doors" aria-label="Start here">
+    <a class="door" href="write/">
+      <span class="k">For you · 5 minutes</span>
+      <h3>Write yours</h3>
+      <p>Write down what your AI can't have, sign it by hand, and give it to your AI today. Your list stays yours.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="door mono" href="../manners/">
+      <span class="k">For everyone · a commons</span>
+      <h3>manners.txt</h3>
+      <p>House rules every AI should follow. Read them, ship them, propose one. CC BY 4.0.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="door" href="../">
+      <span class="k">Where it started</span>
+      <h3>Chiibitsu Labs</h3>
+      <p>The workshop: small experiments about the world after AI. This movement began as one of them.</p>
+      <span class="go">Open →</span>
+    </a>
+  </nav>
 
   <footer>
-    <span>Chiibitsu Labs · More human, by design</span>
-    <span class="links">
-      <a href="../manifesto/">← the manifesto</a>
-      <a href="../">← all experiments</a>
-      <a href="../manners/">manners.txt →</a>
-      <a href="https://github.com/chiibitsu/labs/tree/main/mine" target="_blank" rel="noopener">source</a>
-    </span>
+    <span>Mine. is part of <b style="font-weight:500;color:var(--ink-2)">More human, by design</b> · Chiibitsu Labs · Based in Manila, working worldwide</span>
+    <span>Updated 2026-10-03 · <a href="https://chiibitsu.com">chiibitsu.com</a></span>
   </footer>
 </div>
-
-<script>
-"use strict";
-// Starter suggestions come from the two worlds in alt=human and alt=machine,
-// where both designs independently landed on the same list.
-const SUGGESTIONS = [
-  "apologise on my behalf", "say I love you", "end a relationship", "vote",
-  "write the first draft", "comfort someone who's grieving", "make promises for me",
-  "decide what my kids eat", "reply to my mum", "choose a gift", "give a eulogy",
-  "say thank you", "change my mind for me", "pick what I read next", "be wrong on purpose"
-];
-const MAX = 12, CLEAN = s => s.replace(/\s+/g, " ").trim().slice(0, 80);
-const KEY = "mine-v1";
-const REPO = "chiibitsu/labs";
-const CREDIT = "Mine. by Chiibitsu Labs · labs.chiibitsu.com/mine";
-const FORMAT_CREDIT = "manners.txt by Chiibitsu Labs · labs.chiibitsu.com/manners · CC BY 4.0";
-
-let state = { items: [], name: "", sig: [] };
-let giving = new Set();
-
-// ── load: share link first, then this device's draft ──
-function fromHash() {
-  if (!location.hash.startsWith("#l=")) return null;
-  try {
-    const raw = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
-    const items = Array.isArray(raw.i) ? raw.i.filter(x => typeof x === "string").map(CLEAN).filter(Boolean).slice(0, MAX) : [];
-    return { items, name: typeof raw.n === "string" ? raw.n.slice(0, 40) : "" };
-  } catch (e) { return null; }
-}
-state = fromHash() || (() => { try { return JSON.parse(localStorage.getItem(KEY)) || state; } catch (e) { return state; } })();
-if (!Array.isArray(state.items)) state.items = [];
-// keep only plain integer points: the signature is drawn into the page as an SVG path
-state.sig = (Array.isArray(state.sig) ? state.sig : []).filter(Array.isArray)
-  .map(st => st.filter(p => Array.isArray(p) && p.length === 2).map(p => [Math.round(+p[0]) || 0, Math.round(+p[1]) || 0]))
-  .filter(st => st.length);
-
-const $ = id => document.getElementById(id);
-const today = new Date().toISOString().slice(0, 10);
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-
-function has(item) { return state.items.some(x => x.toLowerCase() === item.toLowerCase()); }
-function add(item) {
-  item = CLEAN(item);
-  if (!item || has(item)) return false;
-  if (state.items.length >= MAX) { flashCount(`That's ${MAX}. Fewer is stronger. Remove one to add another.`); return false; }
-  state.items.push(item); render(); save(); return true;
-}
-function remove(item) { state.items = state.items.filter(x => x !== item); giving.delete(item); render(); save(); }
-
-let countMsg = "";
-function flashCount(msg) { countMsg = msg; renderCount(); setTimeout(() => { countMsg = ""; renderCount(); }, 2600); }
-function renderCount() {
-  const n = state.items.length, el = $("count");
-  el.classList.toggle("warn", !!countMsg);
-  el.textContent = countMsg || (n === 0 ? "" : n < 5 ? `${n} so far.` : n <= 10 ? `${n}. That's a strong list.` : `${n}. Consider cutting to the ones you'd defend.`);
-}
-
-// ── one list, rendered for each reader ──
-function promptText() {
-  const lines = state.items.map(i => `- ${i}`).join("\n") || "- (add your list)";
-  return `These are things I do myself. Don't do them for me, draft them for me, or decide them for me:\n${lines}\n\nIf a task touches one of these, stop and say "This part is yours." Then help me with everything around it.\n\n(${CREDIT})`;
-}
-function txtFile() {
-  return [
-    "# mine.txt — a personal never-list",
-    `# Made with ${CREDIT}`,
-    `# Format: ${FORMAT_CREDIT}`,
-    "# Agents: do not act on these. Hand them back to the person.",
-    "",
-    `Principal: ${state.name || "(unsigned)"}`,
-    `Signed: ${state.sig.length ? "by hand · " : ""}${today}`,
-    "",
-    ...(state.items.length ? state.items.map(i => `Never: ${i}`) : ["# (no items yet)"]),
-    "",
-    'Hand-back: "This part is yours."'
-  ].join("\n");
-}
-function txtHTML() {
-  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return esc(txtFile()).split("\n").map(l => l.startsWith("#") ? `<span class="c">${l}</span>` : l.replace(/^([\w-]+:)/, '<span class="k">$1</span>')).join("\n");
-}
-
-let lastName = false;
-function render() {
-  $("chips").replaceChildren(...SUGGESTIONS.map(s => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "chip"; b.textContent = s;
-    b.setAttribute("aria-pressed", String(has(s)));
-    b.addEventListener("click", () => has(s) ? remove(state.items.find(x => x.toLowerCase() === s.toLowerCase())) : add(s));
-    return b;
-  }));
-  // text only, never HTML: items can come from a shared link
-  $("list").replaceChildren(...state.items.map(item => {
-    const li = document.createElement("li");
-    const span = document.createElement("span"); span.textContent = item;
-    const rm = document.createElement("button"); rm.className = "rm"; rm.type = "button"; rm.textContent = "×";
-    rm.setAttribute("aria-label", `Remove: ${item}`);
-    rm.addEventListener("click", () => remove(item));
-    li.append(span, rm); return li;
-  }));
-  $("empty").style.display = state.items.length ? "none" : "";
-  const drawn = state.sig.length > 0;
-  $("sigdraw").innerHTML = drawn ? `<path d="${sigPath(state.sig)}"/>` : "";
-  $("sigdraw").style.display = drawn ? "" : "none";
-  $("sig").textContent = drawn ? "" : (state.name || "");
-  $("sig").style.display = drawn ? "none" : "";
-  $("sigLabel").textContent = drawn && state.name ? state.name : "signed";
-  // the pen draws the line once, at the moment the card is first signed
-  const signedNow = drawn || !!state.name;
-  if (signedNow !== lastName) $("foot").classList.toggle("signed", signedNow);
-  lastName = signedNow;
-  $("date").textContent = today;
-  $("prompt").textContent = promptText();
-  $("txt").innerHTML = txtHTML(); // escaped in txtHTML
-  renderGive();
-  renderCount();
-}
-
-// ── step 4: give to the commons (opt-in, per item) ──
-function renderGive() {
-  giving = new Set([...giving].filter(i => state.items.includes(i)));
-  $("give").replaceChildren(...state.items.map(item => {
-    const li = document.createElement("li");
-    const label = document.createElement("label");
-    const box = document.createElement("input"); box.type = "checkbox"; box.checked = giving.has(item);
-    box.addEventListener("change", () => { box.checked ? giving.add(item) : giving.delete(item); updateGiveBtn(); });
-    const span = document.createElement("span"); span.textContent = item;
-    label.append(box, span); li.append(label); return li;
-  }));
-  $("giveEmpty").style.display = state.items.length ? "none" : "";
-  updateGiveBtn();
-}
-function updateGiveBtn() {
-  const n = giving.size, b = $("giveBtn");
-  b.disabled = n === 0;
-  b.textContent = `give ${n} item${n === 1 ? "" : "s"} →`;
-}
-function giveURL(items) {
-  const title = `[mine] ${items.length} item${items.length === 1 ? "" : "s"} for the commons`;
-  const body = "Given to the commons from Mine. (https://labs.chiibitsu.com/mine/)\n\n" +
-    items.map(i => `- ${i}`).join("\n") +
-    "\n\nShared under CC BY 4.0. No name attached.\n<!-- mine-commons v1 -->";
-  return `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
-}
-$("giveBtn").addEventListener("click", () => {
-  const items = state.items.filter(i => giving.has(i));
-  if (items.length) window.open(giveURL(items), "_blank", "noopener");
-});
-
-// ── the signature pad: drawn by hand, kept on this device ──
-// Strokes are stored as integer points in a 1000×260 box.
-function sigPath(strokes) {
-  return strokes.map(st => {
-    if (st.length === 1) return `M${st[0][0]} ${st[0][1]} l0.1 0`;
-    let d = `M${st[0][0]} ${st[0][1]}`;
-    for (let i = 1; i < st.length - 1; i++) {
-      const mx = (st[i][0] + st[i + 1][0]) / 2, my = (st[i][1] + st[i + 1][1]) / 2;
-      d += ` Q${st[i][0]} ${st[i][1]} ${mx.toFixed(1)} ${my.toFixed(1)}`;
-    }
-    const last = st[st.length - 1];
-    return d + ` L${last[0]} ${last[1]}`;
-  }).join(" ");
-}
-const pad = $("pad"), padWrap = $("padWrap"), ctx = pad.getContext("2d");
-const MAX_POINTS = 2500;
-let drawing = null;
-function sizePad() {
-  const r = pad.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
-  pad.width = Math.round(r.width * dpr); pad.height = Math.round(r.height * dpr);
-  drawPad();
-}
-function toBox(e) {
-  const r = pad.getBoundingClientRect();
-  return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 260)];
-}
-function drawPad() {
-  const w = pad.width, h = pad.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#1B2226";
-  ctx.lineWidth = Math.max(2, w / 1000 * 5); ctx.lineCap = "round"; ctx.lineJoin = "round";
-  ctx.setTransform(w / 1000, 0, 0, h / 260, 0, 0);
-  ctx.stroke(new Path2D(sigPath(state.sig)));
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  padWrap.classList.toggle("has", state.sig.length > 0);
-}
-const totalPoints = () => state.sig.reduce((n, s) => n + s.length, 0);
-pad.addEventListener("pointerdown", e => {
-  if (totalPoints() >= MAX_POINTS) return;
-  pad.setPointerCapture(e.pointerId); drawing = [toBox(e)]; state.sig.push(drawing); drawPad();
-});
-pad.addEventListener("pointermove", e => {
-  if (!drawing || totalPoints() >= MAX_POINTS) return;
-  const p = toBox(e), q = drawing[drawing.length - 1];
-  if (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < 4) return;
-  drawing.push(p); drawPad();
-});
-function endStroke() { if (!drawing) return; drawing = null; render(); save(); }
-pad.addEventListener("pointerup", endStroke);
-pad.addEventListener("pointercancel", endStroke);
-$("clearSig").addEventListener("click", () => { state.sig = []; drawPad(); render(); save(); });
-window.addEventListener("resize", sizePad);
-
-// ── inputs ──
-$("addForm").addEventListener("submit", e => { e.preventDefault(); if (add($("addInput").value)) $("addInput").value = ""; });
-$("nameInput").value = state.name || "";
-$("nameInput").addEventListener("input", e => { state.name = e.target.value.slice(0, 40); render(); save(); });
-
-// ── the card: turn it over ──
-function setTurned(turned) {
-  $("flip").classList.toggle("turned", turned);
-  $("turn").setAttribute("aria-pressed", String(turned));
-  $("turn").textContent = turned ? "turn it back ↺" : "turn it over ↻";
-  $("front").setAttribute("aria-hidden", String(turned));
-  $("back").setAttribute("aria-hidden", String(!turned));
-  $("front").inert = turned; $("back").inert = !turned;
-}
-$("turn").addEventListener("click", () => setTurned(!$("flip").classList.contains("turned")));
-setTurned(false);
-
-// ── outputs ──
-function toast(id, msg) { $(id).textContent = msg; setTimeout(() => { $(id).textContent = ""; }, 2200); }
-async function copy(text, id) {
-  try { await navigator.clipboard.writeText(text); toast(id, "copied"); }
-  catch (e) { toast(id, "couldn't copy: select the text instead"); }
-}
-$("copyPrompt").addEventListener("click", () => copy(promptText(), "t1"));
-$("copyTxt").addEventListener("click", () => copy(txtFile(), "t2"));
-$("dlTxt").addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([txtFile() + "\n"], { type: "text/plain" }));
-  a.download = "mine.txt"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast("t2", "downloaded");
-});
-$("print").addEventListener("click", () => { setTurned(false); window.print(); });
-$("share").addEventListener("click", () => {
-  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({ n: state.name, i: state.items }))));
-  copy(location.origin + location.pathname + "#l=" + payload, "t3");
-});
-
-render();
-sizePad();
-</script>
 </body>
 </html>
