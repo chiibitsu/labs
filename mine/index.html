@@ -399,6 +399,8 @@ function fromHash() {
 }
 state = fromHash() || (() => { try { return JSON.parse(localStorage.getItem(KEY)) || state; } catch (e) { return state; } })();
 if (!Array.isArray(state.items)) state.items = [];
+// the day it was signed is kept, so the card doesn't re-date itself on later visits
+state.signedOn = /^\d{4}-\d{2}-\d{2}$/.test(state.signedOn || "") ? state.signedOn : null;
 // a seal holds only public data: key id, public key, algorithm, date and proof
 {
   const B = /^[A-Za-z0-9_-]+$/, sl = state.seal;
@@ -413,7 +415,8 @@ state.sig = (Array.isArray(state.sig) ? state.sig : []).filter(Array.isArray)
   .filter(st => st.length);
 
 const $ = id => document.getElementById(id);
-const today = new Date().toISOString().slice(0, 10);
+// the person's own calendar date, not UTC
+const today = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`)(new Date());
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
 function has(item) { return state.items.some(x => x.toLowerCase() === item.toLowerCase()); }
@@ -438,7 +441,14 @@ function promptText() {
   const lines = state.items.map(i => `- ${i}`).join("\n") || "- (add your list)";
   return `These are things I do myself. Don't do them for me, draft them for me, or decide them for me:\n${lines}\n\nIf a task touches one of these, stop and say "This part is yours." Then help me with everything around it.\n\n(${CREDIT})`;
 }
-function baseFile(date) {
+function isSigned() { return !!(state.signedOn && (state.sig.length || state.name)); }
+// record the signing day the moment the card is first signed; forget it when unsigned
+function syncSigned() {
+  const signed = state.sig.length > 0 || !!state.name;
+  if (signed && !state.signedOn) state.signedOn = today;
+  if (!signed) state.signedOn = null;
+}
+function baseFile() {
   return [
     "# mine.txt — a personal never-list",
     `# Made with ${CREDIT}`,
@@ -447,7 +457,7 @@ function baseFile(date) {
     "# Verify the seal (if any): labs.chiibitsu.com/mine/verify",
     "",
     `Principal: ${state.name || "(unsigned)"}`,
-    `Signed: ${state.sig.length ? "by hand · " : ""}${date}`,
+    `Signed: ${isSigned() ? (state.sig.length ? "by hand · " : "") + state.signedOn : "(not yet)"}`,
     "",
     ...(state.items.length ? state.items.map(i => `Never: ${i}`) : ["# (no items yet)"]),
     "",
@@ -458,12 +468,12 @@ function baseFile(date) {
 function sealStatus() {
   const sl = state.seal;
   if (!sl || !sl.proof || !sl.date) return "none";
-  return Seal.canonical(baseFile(sl.date)) === sl.canon ? "sealed" : "stale";
+  return Seal.canonical(baseFile()) === sl.canon ? "sealed" : "stale";
 }
 function txtFile() {
-  if (sealStatus() !== "sealed") return baseFile(today);
+  if (sealStatus() !== "sealed") return baseFile();
   const sl = state.seal;
-  return baseFile(sl.date) + "\n\n" + [
+  return baseFile() + "\n\n" + [
     `Seal: passkey · ${sl.date} · verify at labs.chiibitsu.com/mine/verify`,
     `Seal-key: ${sl.alg} ${sl.key}`,
     `Seal-proof: ${sl.proof}`
@@ -504,7 +514,7 @@ function render() {
   if (signedNow !== lastName) $("foot").classList.toggle("signed", signedNow);
   lastName = signedNow;
   const ss = sealStatus();
-  $("date").textContent = ss === "sealed" ? state.seal.date : today;
+  $("date").textContent = state.signedOn || "";
   $("stamp").classList.toggle("on", ss === "sealed");
   $("sealState").textContent = ss === "sealed" ? `sealed ${state.seal.date}` : ss === "stale" ? "changed since sealing" : "not sealed";
   $("sealState").classList.toggle("on", ss === "sealed");
@@ -593,16 +603,16 @@ pad.addEventListener("pointermove", e => {
   if (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < 4) return;
   drawing.push(p); drawPad();
 });
-function endStroke() { if (!drawing) return; drawing = null; render(); save(); }
+function endStroke() { if (!drawing) return; drawing = null; syncSigned(); render(); save(); }
 pad.addEventListener("pointerup", endStroke);
 pad.addEventListener("pointercancel", endStroke);
-$("clearSig").addEventListener("click", () => { state.sig = []; drawPad(); render(); save(); });
+$("clearSig").addEventListener("click", () => { state.sig = []; syncSigned(); drawPad(); render(); save(); });
 window.addEventListener("resize", sizePad);
 
 // ── inputs ──
 $("addForm").addEventListener("submit", e => { e.preventDefault(); if (add($("addInput").value)) $("addInput").value = ""; });
 $("nameInput").value = state.name || "";
-$("nameInput").addEventListener("input", e => { state.name = e.target.value.slice(0, 40); render(); save(); });
+$("nameInput").addEventListener("input", e => { state.name = e.target.value.slice(0, 40); syncSigned(); render(); save(); });
 
 // ── the card: turn it over ──
 function setTurned(turned) {
@@ -646,7 +656,7 @@ async function sealList() {
     let key = state.seal && state.seal.id ? state.seal : null;
     if (!key) { $("t4").textContent = "making your seal key…"; key = await Seal.createKey(state.name); }
     $("t4").textContent = "sealing…";
-    const date = today, text = baseFile(date);
+    const date = today, text = baseFile();
     let proof;
     try { proof = await Seal.sign(key, text); }
     catch (e) {
@@ -663,6 +673,7 @@ async function sealList() {
 }
 $("sealBtn").addEventListener("click", sealList);
 
+syncSigned();
 render();
 sizePad();
 </script>
