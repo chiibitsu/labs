@@ -41,8 +41,13 @@ curl -s -X POST "https://wguhmblrcfcvbheusizt.supabase.co/rest/v1/rpc/ledger_ing
        \"tokens_input\":<input tokens used, if known>,\"tokens_output\":<output tokens, if known>,
        \"actions\":[{\"kind\":\"did\",\"line\":\"...\"}]}}"
 
-Keep list: never do anything on Chii's keep list (shown on the ledger page); leave it
-for her and add a `handed_back` action saying so.
+Keep list: before starting, read it and never do anything on it; leave it for her and
+add a `handed_back` action saying so:
+
+curl -s -X POST "https://wguhmblrcfcvbheusizt.supabase.co/rest/v1/rpc/ledger_keep_for" \
+  -H "apikey: sb_publishable_Y_jI74qFxdAlZb4elby75A_7QlUky9a" \
+  -H "Content-Type: application/json" \
+  -d "{\"p_token\":\"$LEDGER_TOKEN\"}"
 ```
 
 Your own minutes on a Codex task are usually the review: add or correct
