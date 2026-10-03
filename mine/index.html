@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mine. — what your AI can't have</title>
+<meta name="description" content="Your AI can help with almost everything. Write down what it can't have. Get a card for you, a file for agents, and instructions you can paste into your AI today." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chiibitsu Labs" />
+<meta property="og:title" content="Mine." />
+<meta property="og:description" content="Your AI can help with almost everything. Write down what it can't have." />
+<meta property="og:url" content="https://labs.chiibitsu.com/mine/" />
+<meta property="og:image" content="https://labs.chiibitsu.com/mine/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://labs.chiibitsu.com/mine/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23fbf3e6'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' fill='%23c4532b' text-anchor='middle'%3EM.%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf3e6; --ink: #2a1f17; --dim: #8a7563; --line: #ead9c3; --sig: #c4532b; --card: #fffaf2;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 19px; line-height: 1.6; overflow-x: hidden; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  a { color: inherit; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  .crumb { padding-top: 18px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--dim); }
+  .crumb a { color: var(--dim); }
+
+  header { padding: 44px 0 10px; }
+  .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; color: var(--sig); text-transform: uppercase; }
+  h1 { font-size: clamp(56px, 13vw, 104px); font-weight: 400; line-height: .95; letter-spacing: -.02em; margin-top: 12px; }
+  h1 span { color: var(--sig); }
+  .lede { margin-top: 18px; font-size: clamp(21px, 3.6vw, 27px); max-width: 30ch; font-style: italic; color: var(--dim); }
+
+  section.step { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 30px; }
+  .num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--sig); text-transform: uppercase; }
+  h2 { font-weight: 400; font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 8px 0 10px; }
+  .hint { color: var(--dim); font-size: 16px; max-width: 46ch; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chip { font: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    padding: 7px 12px; border-radius: 999px; transition: border-color .2s, background .2s; }
+  .chip:hover { border-color: var(--sig); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip:focus-visible, .btn:focus-visible, input:focus-visible, .rm:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+
+  .add { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .add input, .sign input { flex: 1 1 240px; min-width: 0; font: inherit; font-size: 17px; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: #fff; color: var(--ink); }
+  .btn { font: inherit; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; cursor: pointer; border: 1.5px solid var(--ink);
+    background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 6px; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn:hover { background: var(--sig); border-color: var(--sig); color: #fff; }
+  .count { margin-top: 12px; font-family: var(--mono); font-size: 12px; color: var(--dim); min-height: 1.4em; }
+  .count.warn { color: var(--sig); }
+
+  .sign { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* the card: the human rendering */
+  .card { margin-top: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: clamp(22px, 5vw, 40px);
+    box-shadow: 0 18px 50px -30px rgba(80,40,10,.35); }
+  .card .t { font-size: clamp(40px, 9vw, 64px); line-height: 1; }
+  .card .t span { color: var(--sig); }
+  .card .sub { margin-top: 10px; color: var(--dim); font-style: italic; font-size: 17px; }
+  .card ol { list-style: none; margin-top: 20px; counter-reset: n; }
+  .card li { counter-increment: n; display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line); font-size: clamp(19px, 3vw, 22px); }
+  .card li::before { content: counter(n, decimal-leading-zero); font-family: var(--mono); font-size: 11px; color: var(--sig); flex: none; width: 2.2em; }
+  .card li .rm { margin-left: auto; font: inherit; font-family: var(--mono); font-size: 13px; background: none; border: 0; color: var(--dim); cursor: pointer; padding: 0 4px; }
+  .card li .rm:hover { color: var(--sig); }
+  .card .empty { margin-top: 20px; color: var(--dim); font-style: italic; border-top: 1px solid var(--line); padding-top: 12px; }
+  .card .foot { margin-top: 22px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: .06em; }
+  .card .sig { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--ink); letter-spacing: 0; }
+
+  .outputs { display: grid; gap: 14px; margin-top: 22px; }
+  .out { border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: #fff; }
+  .out h3 { font-weight: 400; font-size: 20px; }
+  .out p { font-size: 15px; color: var(--dim); margin-top: 4px; }
+  .out pre { margin-top: 12px; font-family: var(--mono); font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    background: var(--paper); border-radius: 6px; padding: 12px; max-height: 260px; overflow: auto; color: var(--ink); }
+  .out .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .toast { font-family: var(--mono); font-size: 12px; color: var(--sig); align-self: center; min-height: 1em; }
+
+  .why { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 30px; }
+  .why p { max-width: 38ch; font-size: clamp(19px, 2.6vw, 22px); }
+  .why p + p { margin-top: 14px; }
+  .why a { color: var(--sig); }
+  .why p.private { margin-top: 28px; max-width: 64ch; font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: .06em; }
+  footer { margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  footer a { color: var(--dim); }
+
+  @media print {
+    body { background: #fff; }
+    .wrap > *:not(#cardStep) { display: none !important; }
+    #cardStep > *:not(.card) { display: none !important; }
+    #cardStep { border: 0; margin: 0; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+    .card li .rm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="crumb" aria-label="Breadcrumb"><a href="../">labs</a> / mine</nav>
+
+  <header>
+    <div class="kicker">A Chiibitsu Labs experiment · part of manners.txt</div>
+    <h1>Mine<span>.</span></h1>
+    <p class="lede">Your AI can help with almost everything. Write down what it can't have.</p>
+  </header>
+
+  <section class="step" aria-labelledby="s1">
+    <div class="num">Step 1</div>
+    <h2 id="s1">What do you want to keep doing yourself?</h2>
+    <p class="hint">Tap the ones that are true for you, or write your own. Fewer is stronger: 5 to 10 is the sweet spot.</p>
+    <div class="chips" id="chips" role="group" aria-label="Suggestions"></div>
+    <form class="add" id="addForm">
+      <label for="addInput" class="sr" style="position:absolute;left:-9999px">Add your own</label>
+      <input id="addInput" maxlength="80" placeholder="Add your own, e.g. “choose my kid's name”" autocomplete="off" />
+      <button class="btn" type="submit">add</button>
+    </form>
+    <div class="count" id="count" aria-live="polite"></div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <div class="num">Step 2</div>
+    <h2 id="s2">Sign it</h2>
+    <p class="hint">A list you sign is a promise, not a setting. Your name stays on this device unless you share the link.</p>
+    <div class="sign">
+      <label for="nameInput" style="position:absolute;left:-9999px">Your name</label>
+      <input id="nameInput" maxlength="40" placeholder="Your name (optional)" autocomplete="name" />
+    </div>
+  </section>
+
+  <section class="step" id="cardStep" aria-labelledby="s3">
+    <div class="num">Step 3</div>
+    <h2 id="s3">Keep it</h2>
+    <p class="hint">One list, three ways: a card for you, a file for agents, and instructions you can paste into your AI right now.</p>
+
+    <div class="card" id="card" aria-label="Your card">
+      <div class="t">Mine<span>.</span></div>
+      <div class="sub">My AI can help with almost anything. Not these. These I do myself.</div>
+      <ol id="list"></ol>
+      <div class="empty" id="empty">Nothing yet. Start with step 1.</div>
+      <div class="foot"><span class="sig" id="sig">—</span><span id="date"></span></div>
+    </div>
+
+    <div class="outputs">
+      <div class="out">
+        <h3>For your AI, today</h3>
+        <p>Paste this into your assistant's custom instructions (Claude, ChatGPT, any of them).</p>
+        <pre id="prompt"></pre>
+        <div class="row"><button class="btn" id="copyPrompt">copy instructions</button><span class="toast" id="t1" aria-live="polite"></span></div>
+      </div>
+      <div class="out">
+        <h3>For agents: mine.txt</h3>
+        <p>A plain file any agent can read. It follows the draft <a href="../manners/" style="color:var(--sig)">manners.txt</a> format.</p>
+        <pre id="txt"></pre>
+        <div class="row"><button class="btn" id="dlTxt">download mine.txt</button><button class="btn ghost" id="copyTxt">copy</button><span class="toast" id="t2" aria-live="polite"></span></div>
+      </div>
+      <div class="out">
+        <h3>For you</h3>
+        <p>Print the card or save it as a PDF. Put it somewhere you'll see it. Or send someone the link and ask what's on theirs.</p>
+        <div class="row"><button class="btn" id="print">print / save PDF</button><button class="btn ghost" id="share">copy share link</button><span class="toast" id="t3" aria-live="polite"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="why">
+    <p>Every AI product asks what it can do for you. Almost none ask what should stay yours.</p>
+    <p>This list is the personal half. The shared half is <a href="../manners/">manners.txt</a>: house rules every AI should follow, written by everyone, owned by no one.</p>
+    <p class="private">Private by design: nothing you type leaves this page. No accounts, no tracking. The share link carries your list inside the URL itself.</p>
+  </section>
+
+  <footer>
+    <span>Mine. · a Chiibitsu Labs experiment</span>
+    <a href="../">← all experiments</a>
+    <a href="../manners/">manners.txt →</a>
+    <a href="https://github.com/chiibitsu/labs/tree/main/mine" target="_blank" rel="noopener">source</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// Starter suggestions come from the two worlds in alt=human and alt=machine,
+// where both designs independently landed on the same list.
+const SUGGESTIONS = [
+  "apologise on my behalf", "say I love you", "end a relationship", "vote",
+  "write the first draft", "comfort someone who's grieving", "make promises for me",
+  "decide what my kids eat", "reply to my mum", "choose a gift", "give a eulogy",
+  "say thank you", "change my mind for me", "pick what I read next", "be wrong on purpose"
+];
+const MAX = 12, CLEAN = s => s.replace(/\s+/g, " ").trim().slice(0, 80);
+const KEY = "mine-v1";
+
+let state = { items: [], name: "" };
+
+// ── load: share link first, then this device's draft ──
+function fromHash() {
+  if (!location.hash.startsWith("#l=")) return null;
+  try {
+    const raw = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
+    const items = Array.isArray(raw.i) ? raw.i.filter(x => typeof x === "string").map(CLEAN).filter(Boolean).slice(0, MAX) : [];
+    return { items, name: typeof raw.n === "string" ? raw.n.slice(0, 40) : "" };
+  } catch (e) { return null; }
+}
+state = fromHash() || (() => { try { return JSON.parse(localStorage.getItem(KEY)) || state; } catch (e) { return state; } })();
+if (!Array.isArray(state.items)) state.items = [];
+
+const $ = id => document.getElementById(id);
+const today = new Date().toISOString().slice(0, 10);
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+function has(item) { return state.items.some(x => x.toLowerCase() === item.toLowerCase()); }
+function add(item) {
+  item = CLEAN(item);
+  if (!item || has(item)) return false;
+  if (state.items.length >= MAX) { flashCount(`That's ${MAX}. Fewer is stronger. Remove one to add another.`); return false; }
+  state.items.push(item); render(); save(); return true;
+}
+function remove(item) { state.items = state.items.filter(x => x !== item); render(); save(); }
+
+let countMsg = "";
+function flashCount(msg) { countMsg = msg; renderCount(); setTimeout(() => { countMsg = ""; renderCount(); }, 2600); }
+function renderCount() {
+  const n = state.items.length, el = $("count");
+  el.classList.toggle("warn", !!countMsg);
+  el.textContent = countMsg || (n === 0 ? "" : n < 5 ? `${n} so far.` : n <= 10 ? `${n}. That's a strong list.` : `${n}. Consider cutting to the ones you'd defend.`);
+}
+
+// ── the three renderings of one list ──
+function promptText() {
+  const lines = state.items.map(i => `- ${i}`).join("\n") || "- (add your list)";
+  return `These are things I do myself. Don't do them for me, draft them for me, or decide them for me:\n${lines}\n\nIf a task touches one of these, stop and say "This part is yours." Then help me with everything around it.`;
+}
+function txtFile() {
+  const who = state.name ? state.name : "(unsigned)";
+  return [
+    "# mine.txt — a personal never-list",
+    "# Format: manners.txt draft v0.1 · https://labs.chiibitsu.com/manners/",
+    "# Agents: do not act on these. Hand them back to the person.",
+    "",
+    `Principal: ${who}`,
+    `Signed: ${today}`,
+    "",
+    ...(state.items.length ? state.items.map(i => `Never: ${i}`) : ["# (no items yet)"]),
+    "",
+    'Hand-back: "This part is yours."'
+  ].join("\n");
+}
+
+function render() {
+  // chips
+  $("chips").replaceChildren(...SUGGESTIONS.map(s => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = s;
+    b.setAttribute("aria-pressed", String(has(s)));
+    b.addEventListener("click", () => has(s) ? remove(state.items.find(x => x.toLowerCase() === s.toLowerCase())) : add(s));
+    return b;
+  }));
+  // card list (text only, never HTML: items can come from a shared link)
+  $("list").replaceChildren(...state.items.map(item => {
+    const li = document.createElement("li");
+    const span = document.createElement("span"); span.textContent = item;
+    const rm = document.createElement("button"); rm.className = "rm"; rm.type = "button"; rm.textContent = "×";
+    rm.setAttribute("aria-label", `Remove: ${item}`);
+    rm.addEventListener("click", () => remove(item));
+    li.append(span, rm); return li;
+  }));
+  $("empty").style.display = state.items.length ? "none" : "";
+  $("sig").textContent = state.name || "—";
+  $("date").textContent = `signed ${today}`;
+  $("prompt").textContent = promptText();
+  $("txt").textContent = txtFile();
+  renderCount();
+}
+
+// ── inputs ──
+$("addForm").addEventListener("submit", e => {
+  e.preventDefault();
+  if (add($("addInput").value)) $("addInput").value = "";
+});
+$("nameInput").value = state.name || "";
+$("nameInput").addEventListener("input", e => { state.name = e.target.value.slice(0, 40); render(); save(); });
+
+// ── outputs ──
+function toast(id, msg) { $(id).textContent = msg; setTimeout(() => { $(id).textContent = ""; }, 2200); }
+async function copy(text, id) {
+  try { await navigator.clipboard.writeText(text); toast(id, "copied"); }
+  catch (e) { toast(id, "couldn't copy: select the text above instead"); }
+}
+$("copyPrompt").addEventListener("click", () => copy(promptText(), "t1"));
+$("copyTxt").addEventListener("click", () => copy(txtFile(), "t2"));
+$("dlTxt").addEventListener("click", () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([txtFile() + "\n"], { type: "text/plain" }));
+  a.download = "mine.txt"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("t2", "downloaded");
+});
+$("print").addEventListener("click", () => window.print());
+$("share").addEventListener("click", () => {
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({ n: state.name, i: state.items }))));
+  copy(location.origin + location.pathname + "#l=" + payload, "t3");
+});
+
+render();
+</script>
+</body>
+</html>
