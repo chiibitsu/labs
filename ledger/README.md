@@ -21,18 +21,14 @@ Parkinson's law can't quietly fill it with more work.
 
 Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/chatgpt-and-codex.md).
 
-**Any Claude Code repo without the plugin** (the canon rule in vibeOS points here): with
-`LEDGER_TOKEN` in the environment, fetch the client and record the entry. It finds the
-session's transcript itself, so time, cost and tokens still come from the real record:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/main/ledger/plugin/scripts/ledger.py -o /tmp/ledger.py
-python3 /tmp/ledger.py keep            # the keep list, before starting work
-python3 /tmp/ledger.py entry <<'JSON'  # when the work is done
-{"title": "...", "human_minutes": 180, "human_low": 120, "human_high": 240,
- "estimate_basis": "...", "actions": [{"kind": "did", "line": "..."}]}
-JSON
-```
+**Any Claude Code repo without the plugin:** vibeOS's standing orders carry the exact
+commands, pinned to a reviewed commit of `ledger.py` with its sha256 checked before it runs,
+so a change here reaches sessions only through a vibeOS PR that moves the pin. The client
+identifies the session by the harness's `CLAUDE_CODE_SESSION_ID` and reads every copy of its
+transcript (Claude Code starts a new copy when the working directory changes, and the cost
+records can stay in the old one); subagent transcripts never count. Cost is recorded when the
+transcript carries Claude Code's cost records, and the client says so when it cannot find them
+rather than estimating. Only the top-level session logs; subagents never do.
 
 ## One-time setup (about 10 minutes)
 
