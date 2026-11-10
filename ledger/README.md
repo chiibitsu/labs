@@ -58,7 +58,7 @@ rather than estimating. Only the top-level session logs; subagents never do.
 
 ## How the numbers work
 
-- **AI time:** sum of gaps between AI events in the transcript, ignoring gaps over 10 min.
+- **AI time:** sum of gaps between AI events in the transcript, ignoring gaps of 10 min or more.
 - **Your time:** for each of your prompts, the time since the AI last finished (reading
   and typing), capped at 5 min so time away doesn't count, plus 2 min for the first
   prompt and the final read.
