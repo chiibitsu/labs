@@ -27,7 +27,8 @@ commands, pinned to a reviewed commit of `ledger.py` with its sha256 checked bef
 so a change here reaches sessions only through a vibeOS PR that moves the pin. The client
 identifies the session by the harness's `CLAUDE_CODE_SESSION_ID` and reads every copy of its
 transcript (Claude Code starts a new copy when the working directory changes, and the cost
-records can stay in the old one); subagent transcripts never count. Cost is recorded when the
+records can stay in the old one). Time is merged across the copies, a line in two copies
+counting once; subagent transcripts never count. Cost is recorded when the
 transcript carries Claude Code's cost records, and the client says so when it cannot find them
 rather than estimating. Only the top-level session logs; subagents never do.
 

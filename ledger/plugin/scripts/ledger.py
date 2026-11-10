@@ -88,9 +88,10 @@ def usage_totals(snap):
     return tot, mu
 
 
-def measure(path):
-    """Return timing and cost for a transcript: start, end, ai/you minutes, cost, tokens, first prompt."""
-    ai_events, prompts, first_text = [], [], None
+def scan(path):
+    """Read one transcript copy: its AI events and her prompts, each keyed so a line that appears
+    in two copies counts once, plus the cost totals that copy reports (or None)."""
+    ai, prompts = {}, {}
     # cost-state lines are running totals for the current process; if a resumed
     # session restarts them, bank the earlier run and keep adding.
     banked, last, models, banked_models = None, None, {}, {}
@@ -98,64 +99,76 @@ def measure(path):
         for line in f:
             try:
                 d = json.loads(line)
-            except Exception:
-                continue
-            if not isinstance(d, dict):
-                continue
-            if d.get("type") == "cost-state":
-                try:
-                    cur, mu = usage_totals(d)
-                except Exception:
+                if not isinstance(d, dict):
                     continue
-                if last and cur["cost_usd"] + 1e-9 < last["cost_usd"]:
-                    banked = {k: (banked or {}).get(k, 0) + last[k] for k in last}
-                    for name, u in models.items():
-                        b = banked_models.setdefault(name, {})
-                        for k, v in u.items():
-                            b[k] = b.get(k, 0) + v
-                    models = {}
-                last = cur
-                for name, u in mu.items():
-                    models[name] = {k: v for k, v in u.items() if isinstance(v, (int, float))}
-                continue
-            t = ts(d.get("timestamp") or "")
-            if t is None or d.get("isSidechain"):
-                continue
-            if is_human_prompt(d):
-                prompts.append(t)
-                if first_text is None:
+                if d.get("type") == "cost-state":
+                    cur, mu = usage_totals(d)
+                    if last and cur["cost_usd"] + 1e-9 < last["cost_usd"]:
+                        banked = {k: (banked or {}).get(k, 0) + last[k] for k in last}
+                        for name, u in models.items():
+                            b = banked_models.setdefault(name, {})
+                            for k, v in u.items():
+                                b[k] = b.get(k, 0) + v
+                        models = {}
+                    last = cur
+                    for name, u in mu.items():
+                        models[name] = {k: v for k, v in u.items() if isinstance(v, (int, float))}
+                    continue
+                t = ts(d.get("timestamp") or "")
+                if t is None or d.get("isSidechain"):
+                    continue
+                key = d.get("uuid") or f"{d.get('type')}|{d.get('timestamp')}"
+                if is_human_prompt(d):
                     c = (d.get("message") or {}).get("content")
                     if isinstance(c, list):
-                        c = " ".join(b.get("text", "") for b in c if isinstance(b, dict))
-                    first_text = " ".join(str(c or "").split())[:90]
-            elif d.get("type") in ("assistant", "user"):
-                ai_events.append(t)
-    if not prompts and not ai_events:
-        return None
-    every = sorted(ai_events + prompts)
-    ai = sum(min(b - a, AI_GAP_CAP) for a, b in zip(ai_events, ai_events[1:]) if b - a < AI_GAP_CAP)
-    # A copy with no prompt of hers (a session resumed in a fresh container) still has the AI's
-    # time and cost; her minutes are then unknown, never a guess.
-    you = FIRST_READ if prompts else None
-    for p in prompts[1:]:
-        before = [e for e in ai_events if e < p]
-        if before:
-            you += min(p - before[-1], IDLE_CAP)
-    if prompts and ai_events and ai_events[-1] > prompts[-1]:
-        you += FIRST_READ
-    iso = lambda x: datetime.fromtimestamp(x, timezone.utc).isoformat()
-    out = {"started_at": iso(every[0]), "ended_at": iso(every[-1]),
-           "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1) if you is not None else None,
-           "first_prompt": first_text or ""}
+                        c = " ".join(str(b.get("text") or "") for b in c if isinstance(b, dict))
+                    prompts[key] = (t, " ".join(str(c or "").split())[:90])
+                elif d.get("type") in ("assistant", "user"):
+                    ai[key] = t
+            except Exception:
+                continue  # one odd line never costs the whole measurement
+    cost = None
     if last:
         total = {k: last[k] + (banked or {}).get(k, 0) for k in last}
         for name, b in banked_models.items():
             u = models.setdefault(name, {})
             for k, v in b.items():
                 u[k] = u.get(k, 0) + v
-        out.update({"cost_usd": round(total["cost_usd"], 4), "tokens_input": total["tokens_input"],
-                    "tokens_cache_read": total["tokens_cache_read"], "tokens_output": total["tokens_output"],
-                    "model_usage": models, "cost_basis": "reported"})
+        cost = {"cost_usd": round(total["cost_usd"], 4), "tokens_input": total["tokens_input"],
+                "tokens_cache_read": total["tokens_cache_read"], "tokens_output": total["tokens_output"],
+                "model_usage": models, "cost_basis": "reported"}
+    return ai, prompts, cost
+
+
+def timing(ai_events, prompts):
+    """Start, end, AI minutes, her minutes and first prompt from sorted event times."""
+    ai_events = sorted(ai_events)
+    prompts = sorted(prompts)
+    if not prompts and not ai_events:
+        return None
+    every = sorted(ai_events + [t for t, _ in prompts])
+    ai = sum(min(b - a, AI_GAP_CAP) for a, b in zip(ai_events, ai_events[1:]) if b - a < AI_GAP_CAP)
+    # A record with no prompt of hers (a session resumed in a fresh container) still has the AI's
+    # time and cost; her minutes are then unknown, never a guess.
+    you = FIRST_READ if prompts else None
+    for p, _ in prompts[1:]:
+        before = [e for e in ai_events if e < p]
+        if before:
+            you += min(p - before[-1], IDLE_CAP)
+    if prompts and ai_events and ai_events[-1] > prompts[-1][0]:
+        you += FIRST_READ
+    iso = lambda x: datetime.fromtimestamp(x, timezone.utc).isoformat()
+    return {"started_at": iso(every[0]), "ended_at": iso(every[-1]),
+            "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1) if you is not None else None,
+            "first_prompt": prompts[0][1] if prompts else ""}
+
+
+def measure(path):
+    """Timing and cost for one transcript copy."""
+    ai, prompts, cost = scan(path)
+    out = timing(list(ai.values()), list(prompts.values()))
+    if out and cost:
+        out.update(cost)
     return out
 
 
@@ -178,23 +191,27 @@ def session_copies(sid):
 
 
 def measure_session(sid, hint=None):
-    """Timing from the copy that runs latest; cost from the highest-cost copy. If that copy
-    stopped well before the session did, its cost misses the later work: basis 'partial'."""
+    """Timing from every copy merged (a line in two copies counts once); cost from the highest-cost
+    copy. If that copy stopped well before the session did, its cost misses the later work:
+    basis 'partial'."""
     paths = session_copies(sid)
     if hint and os.path.isfile(hint) and hint not in paths and "/subagents/" not in hint:
         paths.append(hint)
-    found = [m for m in (measure(p) for p in paths) if m]
-    if not found:
+    ai, prompts, costs = {}, {}, []
+    for p in paths:
+        a, q, c = scan(p)
+        ai.update(a)
+        prompts.update(q)
+        if c:
+            ends = list(a.values()) + [t for t, _ in q.values()]
+            costs.append((c, max(ends) if ends else None))
+    out = timing(list(ai.values()), list(prompts.values()))
+    if not out:
         return None
-    out = dict(max(found, key=lambda m: m["ended_at"]))
-    for k in ("cost_usd", "tokens_input", "tokens_cache_read", "tokens_output", "model_usage", "cost_basis"):
-        out.pop(k, None)
-    costed = [m for m in found if m.get("cost_usd") is not None]
-    if costed:
-        best = max(costed, key=lambda m: m["cost_usd"])
-        for k in ("cost_usd", "tokens_input", "tokens_cache_read", "tokens_output", "model_usage", "cost_basis"):
-            out[k] = best[k]
-        if ts(out["ended_at"]) - ts(best["ended_at"]) > COST_FRESH:
+    if costs:
+        best, best_end = max(costs, key=lambda x: x[0]["cost_usd"])
+        out.update(best)
+        if best_end is None or ts(out["ended_at"]) - best_end > COST_FRESH:
             out["cost_basis"] = "partial"
     return out
 
@@ -256,7 +273,9 @@ def hook():
         data = json.load(sys.stdin)
     except Exception:
         return
-    sid, cwd, path = data.get("session_id"), data.get("cwd") or os.getcwd(), data.get("transcript_path")
+    if not isinstance(data, dict):
+        return
+    sid, cwd, path = data.get("session_id"), str(data.get("cwd") or os.getcwd()), data.get("transcript_path")
     event = data.get("hook_event_name", "")
     if not sid or not TOKEN:
         return
