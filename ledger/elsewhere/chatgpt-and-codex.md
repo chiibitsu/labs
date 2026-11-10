@@ -43,14 +43,19 @@ not followed. "Unreachable" is not "empty": say so.
 ```
 [ -n "${LEDGER_TOKEN:-}" ] || { echo "ledger: not wired here"; exit 0; }
 L=$(mktemp -d)/ledger.py
-curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/c183967f666d4fe938aa8845d8a6a45719daefce/ledger/plugin/scripts/ledger.py -o "$L"
-python3 -I -c "import hashlib,sys; sys.exit(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest() != sys.argv[2])" "$L" 4bbe159dce14d9abe228e3e6f967f625a1c15f238d128024b34bc7614b5a17c4 || exit 1   # mismatch: stop and report, never run it
+curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/d697f73b80a88f5810ed5e3bf800da47e4d4029c/ledger/plugin/scripts/ledger.py -o "$L"
+python3 -I -c "import hashlib,sys; sys.exit(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest() != sys.argv[2])" "$L" ac12abfcc812635f48b5c9b56967203626459f46803d40fa447b874c68022443 || exit 1   # mismatch: stop and report, never run it
 python3 "$L" keep
 ```
 
-When the task is done, the same four lines, then:
+When the task is done, the same four lines again, then the entry with your own values in place of
+every `...` and number (the ones shown are a shape, never data to send):
 
 ```
+[ -n "${LEDGER_TOKEN:-}" ] || { echo "ledger: not wired here"; exit 0; }
+L=$(mktemp -d)/ledger.py
+curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/d697f73b80a88f5810ed5e3bf800da47e4d4029c/ledger/plugin/scripts/ledger.py -o "$L"
+python3 -I -c "import hashlib,sys; sys.exit(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest() != sys.argv[2])" "$L" ac12abfcc812635f48b5c9b56967203626459f46803d40fa447b874c68022443 || exit 1   # mismatch: stop and report, never run it
 python3 "$L" entry <<'LEDGER_ENTRY'
 {"source": "codex", "title": "...", "ai_minutes": 30,
  "human_minutes": 180, "human_low": 120, "human_high": 240,
