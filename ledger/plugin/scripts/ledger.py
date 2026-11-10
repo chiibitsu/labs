@@ -119,20 +119,22 @@ def measure(path):
                     first_text = " ".join(str(c or "").split())[:90]
             elif d.get("type") in ("assistant", "user"):
                 ai_events.append(t)
-    if not prompts:
+    if not prompts and not ai_events:
         return None
     every = sorted(ai_events + prompts)
     ai = sum(min(b - a, AI_GAP_CAP) for a, b in zip(ai_events, ai_events[1:]) if b - a < AI_GAP_CAP)
-    you = FIRST_READ
+    # A copy with no prompt of hers (a session resumed in a fresh container) still has the AI's
+    # time and cost; her minutes are then unknown, never a guess.
+    you = FIRST_READ if prompts else None
     for p in prompts[1:]:
         before = [e for e in ai_events if e < p]
         if before:
             you += min(p - before[-1], IDLE_CAP)
-    if ai_events and ai_events[-1] > prompts[-1]:
+    if prompts and ai_events and ai_events[-1] > prompts[-1]:
         you += FIRST_READ
     iso = lambda x: datetime.fromtimestamp(x, timezone.utc).isoformat()
     out = {"started_at": iso(every[0]), "ended_at": iso(every[-1]),
-           "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1),
+           "ai_minutes": round(ai / 60, 1), "you_minutes": round(you / 60, 1) if you is not None else None,
            "first_prompt": first_text or ""}
     if last:
         total = {k: last[k] + (banked or {}).get(k, 0) for k in last}
@@ -259,6 +261,8 @@ def hook():
     m = measure_session(sid, path)
     if not m:
         return
+    if m.get("you_minutes") is None:
+        m.pop("you_minutes")
     entry = {"source": "claude-code", "external_id": sid, "project": os.path.basename(cwd.rstrip("/")) or None,
              "title_if_empty": m.pop("first_prompt") or None, **m}
     try:
@@ -289,6 +293,10 @@ def entry():
         measured = measure_session(sid)
     if measured:
         measured.pop("first_prompt", None)
+        if measured.get("you_minutes") is None:
+            measured.pop("you_minutes")
+            print("ledger: no prompt of Chii's in this session's transcript, so her minutes are NOT "
+                  "recorded; AI time and cost are.")
         for k, v in measured.items():
             e.setdefault(k, v)
     if e["source"] == "claude-code" and not measured:

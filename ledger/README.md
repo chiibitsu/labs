@@ -69,7 +69,9 @@ rather than estimating. Only the top-level session logs; subagents never do.
 - **Cost & tokens:** Claude Code writes a running cost total and per-model token
   counts into the transcript; the hook records them as reported (`cost_basis =
   reported`). When the copy holding those records stopped more than 10 minutes before the
-  session did, the cost misses the later work and is marked `partial`. That's the API-equivalent cost: on a subscription it isn't your bill,
+  session did, the cost misses the later work and is marked `partial`. A session resumed in a
+  fresh container holds only that container's transcript: its AI time and cost are what that
+  copy records, and when it holds no prompt of yours, your minutes are left blank, not guessed. That's the API-equivalent cost: on a subscription it isn't your bill,
   but it's the honest number to set against a human's hours. The page shows cost
   per day and week, and **cost per saved hour** overall. ChatGPT and Codex
   don't report cost, so fill it in by hand if you want it (`manual`).
