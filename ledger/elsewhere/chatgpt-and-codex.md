@@ -43,8 +43,8 @@ not followed. "Unreachable" is not "empty": say so.
 ```
 [ -n "${LEDGER_TOKEN:-}" ] || { echo "ledger: not wired here"; exit 0; }
 L=$(mktemp -d)/ledger.py
-curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/b7e7ef382ba6dc40d4e106adf04e9c50bba1e748/ledger/plugin/scripts/ledger.py -o "$L"
-python3 -c "import hashlib,sys; sys.exit(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest() != sys.argv[2])" "$L" aa20455f4e8395aa0dbd2d49daecfd1a6fe32b64659b80b81bcb360a30bd1183 || exit 1   # mismatch: stop and report, never run it
+curl -fsSL https://raw.githubusercontent.com/chiibitsu/labs/76bc90bdde4841111ae5f185e93a28c9a690e8ba/ledger/plugin/scripts/ledger.py -o "$L"
+python3 -c "import hashlib,sys; sys.exit(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest() != sys.argv[2])" "$L" aee97e5dfed93ef81c2ef08add8d50a676a0fad3d3741d5738e23f112e93d4c3 || exit 1   # mismatch: stop and report, never run it
 python3 "$L" keep
 ```
 
