@@ -2,8 +2,9 @@
 
 Private. For every AI job session it records **how long it would have taken a
 competent human by hand** next to **how much of your own time it took** and **what the AI cost**. It also
-keeps a daily plain-language log of what was done, and a **keep list**: tasks the
-AI hands back to you, plus pre-set shares for where saved time goes, so
+keeps a daily plain-language log of what was done, and a **keep list**: tasks you
+keep for yourself (the AI volunteers nothing on them and names a match when an assigned task
+includes one), plus pre-set shares for where saved time goes, so
 Parkinson's law can't quietly fill it with more work.
 
 - **Daily page:** [labs.chiibitsu.com/ledger](https://labs.chiibitsu.com/ledger/) (magic-link login, owners only)
@@ -66,7 +67,7 @@ rather than estimating. Only the top-level session logs; subagents never do.
   the page each week; that calibration is what makes the data worth something.
 - **Saved** = human-equivalent − your time. Sessions without an estimate aren't counted.
 - **Cost & tokens:** Claude Code writes a running cost total and per-model token
-  counts into every transcript; the hook records them as reported (`cost_basis =
+  counts into the transcript; the hook records them as reported (`cost_basis =
   reported`). When the copy holding those records stopped more than 10 minutes before the
   session did, the cost misses the later work and is marked `partial`. That's the API-equivalent cost: on a subscription it isn't your bill,
   but it's the honest number to set against a human's hours. The page shows cost

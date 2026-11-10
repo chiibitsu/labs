@@ -34,7 +34,7 @@ Run the command given in your session context under "Time Dividend ledger"
 (`python3 ".../ledger.py" entry`) with the JSON on stdin:
 
 ```bash
-python3 "<path from session context>/ledger.py" entry <<'JSON'
+python3 "<path from session context>/ledger.py" entry <<'LEDGER_ENTRY'
 {
   "title": "Human First page + PR",
   "human_minutes": 420, "human_low": 300, "human_high": 600,
@@ -45,12 +45,12 @@ python3 "<path from session context>/ledger.py" entry <<'JSON'
     {"kind": "handed_back", "line": "left the page's final name to you"}
   ]
 }
-JSON
+LEDGER_ENTRY
 ```
 
 The command prints what it recorded. Mention it in one line in your final message
 (e.g. "Logged: ~7 h human-equivalent, ~20 min of yours, $13 of AI"). If the command isn't in
-your context, the plugin's token isn't set; say so once and move on.
+your context, `LEDGER_TOKEN` isn't set; say so once and move on.
 
 ## Keep list
 

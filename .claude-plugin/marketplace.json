@@ -6,7 +6,7 @@
     {
       "name": "time-dividend",
       "description": "Time Dividend ledger: AI time vs human-equivalent time, a daily log, and a keep list.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./ledger/plugin"
     }
   ]

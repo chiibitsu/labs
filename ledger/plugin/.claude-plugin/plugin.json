@@ -2,7 +2,7 @@
   "name": "time-dividend",
   "displayName": "Time Dividend",
   "version": "0.2.0",
-  "description": "Records each Claude Code session into Chii's Time Dividend ledger: AI time, your time, a human-equivalent estimate, a plain-language log of what was done, and the keep list handed back to you.",
+  "description": "Records each Claude Code session into Chii's Time Dividend ledger: AI time, your time, a human-equivalent estimate, a plain-language log of what was done, and the keep list read as data at session start.",
   "author": {
     "name": "Chiibitsu Labs",
     "url": "https://labs.chiibitsu.com"

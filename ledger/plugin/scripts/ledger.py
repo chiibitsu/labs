@@ -15,8 +15,9 @@
   ledger.py keep          Prints the keep list, for sessions without the hooks.
 
 Writes go to the Supabase RPC public.ledger_ingest, gated by your intake token
-(the LEDGER_TOKEN environment variable, and nothing else). Never blocks Claude: every
-failure exits 0 and stays quiet, except `entry`, which reports the outcome.
+(the LEDGER_TOKEN environment variable, and nothing else). Never blocks Claude: the hook
+exits 0 and stays quiet on any failure; `entry` reports the outcome and exits 0; `keep` exits 1
+when the list is unreachable, so the caller cannot mistake that for empty.
 """
 import hashlib, json, os, sys, time, urllib.request
 from datetime import datetime, timezone
@@ -182,8 +183,8 @@ def measure_session(sid, hint=None):
 
 
 def current_session():
-    """The running session's id: the harness's own CLAUDE_CODE_SESSION_ID, else the plugin's
-    state file if a hook wrote one. Never a guess from file times."""
+    """The running session's id: the harness's own CLAUDE_CODE_SESSION_ID, else the session the
+    plugin's hook last saw in this working directory. Never a guess from file times."""
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
         return os.environ["CLAUDE_CODE_SESSION_ID"]
     try:
@@ -296,14 +297,19 @@ def entry():
     e.setdefault("project", os.path.basename(cwd.rstrip("/")))
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
-        cost = f" · cost ${e['cost_usd']:.2f}" if e.get("cost_usd") is not None else " · cost not recorded"
-        saved = (f" · saved ≈ {round(e['human_minutes'] - e['you_minutes'])} min"
-                 if e.get("human_minutes") is not None and e.get("you_minutes") is not None else
-                 " · saved not computed (your minutes unknown)")
-        print(f"ledger: recorded session {sid} · you {e.get('you_minutes')} min · "
-              f"human-equivalent {e.get('human_minutes')} min{saved}{cost}")
     except Exception as err:
         print(f"ledger: could not record ({err})")
+        return
+    # The write has succeeded; nothing below may report it as failed.
+    try:
+        cost = f" · cost ${float(e['cost_usd']):.2f}" if e.get("cost_usd") is not None else " · cost not recorded"
+        saved = (f" · saved ≈ {round(float(e['human_minutes']) - float(e['you_minutes']))} min"
+                 if e.get("human_minutes") is not None and e.get("you_minutes") is not None else
+                 " · saved not computed (your minutes unknown)")
+    except Exception:
+        cost, saved = "", ""
+    print(f"ledger: recorded session {sid} · you {e.get('you_minutes')} min · "
+          f"human-equivalent {e.get('human_minutes')} min{saved}{cost}")
 
 
 if __name__ == "__main__":

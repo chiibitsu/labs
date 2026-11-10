@@ -51,12 +51,12 @@ python3 "$L" keep
 When the task is done, the same four lines, then:
 
 ```
-python3 "$L" entry <<'JSON'
+python3 "$L" entry <<'LEDGER_ENTRY'
 {"source": "codex", "title": "...", "ai_minutes": 30,
  "human_minutes": 180, "human_low": 120, "human_high": 240,
  "estimate_basis": "<files, lines, tests counted>",
  "actions": [{"kind": "did", "line": "..."}]}
-JSON
+LEDGER_ENTRY
 ```
 Give honest human-equivalent minutes with a range. Add `tokens_input` / `tokens_output` only
 if the harness shows them.
