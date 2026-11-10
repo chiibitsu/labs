@@ -15,9 +15,9 @@ Parkinson's law can't quietly fill it with more work.
 | Where you work | How it's recorded | What you do |
 |---|---|---|
 | Claude Code (cloud, CLI, desktop) | `time-dividend` plugin. Hooks record AI time and your time automatically; the `log-session` skill adds the human-equivalent estimate and the log lines | One-time setup below |
-| Claude chat & Cowork | [`elsewhere/claude-chat-skill`](./elsewhere/claude-chat-skill/SKILL.md) writes through the Supabase connector | Upload the skill once, say "log it" |
-| ChatGPT | Custom instruction makes it reply with a JSON block | Say "log it", paste the block on the page |
-| Codex | `AGENTS.md` snippet posts with your token | One-time setup |
+| Claude chat & Cowork | [`elsewhere/claude-chat-skill`](./elsewhere/claude-chat-skill/SKILL.md) writes through the Supabase connector | Upload the skill once; it logs when work wraps up |
+| ChatGPT | Custom instruction makes it end finished work with a JSON block | Paste the block on the page |
+| Codex | `AGENTS.md` snippet runs the pinned client with your token | One-time setup |
 
 Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/chatgpt-and-codex.md).
 
@@ -36,8 +36,9 @@ rather than estimating. Only the top-level session logs; subagents never do.
    Configuration → Redirect URLs: add `https://labs.chiibitsu.com/ledger/`.
 2. **Sign in** at labs.chiibitsu.com/ledger and create a token under
    *Intake tokens* (one per tool, e.g. "Claude Code cloud").
-3. **Claude Code on the web:** add the token to your cloud environment as an
-   environment variable named `LEDGER_TOKEN` (environment menu → Edit). Any repo
+3. **Claude Code on the web:** add the token as an environment variable named
+   `LEDGER_TOKEN` in **each** cloud environment that should log (environment menu → Edit).
+   A session in an environment without it says the ledger is not wired and logs nothing. Any repo
    that should log sessions needs this in `.claude/settings.json` (this repo
    already has it):
 
@@ -49,8 +50,8 @@ rather than estimating. Only the top-level session logs; subagents never do.
    ```
 
 4. **Claude Code on your Mac:** `/plugin marketplace add chiibitsu/labs`, then
-   `/plugin install time-dividend@chiibitsu-labs`. It asks for the token
-   (stored securely), or set `LEDGER_TOKEN` in your shell.
+   `/plugin install time-dividend@chiibitsu-labs`, and set `LEDGER_TOKEN` in your
+   shell profile. That variable is the only place the client looks for the token.
 5. **Claude chat / Cowork:** upload `elsewhere/claude-chat-skill/SKILL.md` as a
    skill. It uses your Supabase connector.
 
@@ -66,7 +67,8 @@ rather than estimating. Only the top-level session logs; subagents never do.
 - **Saved** = human-equivalent − your time. Sessions without an estimate aren't counted.
 - **Cost & tokens:** Claude Code writes a running cost total and per-model token
   counts into every transcript; the hook records them as reported (`cost_basis =
-  reported`). That's the API-equivalent cost: on a subscription it isn't your bill,
+  reported`). When the copy holding those records stopped more than 10 minutes before the
+  session did, the cost misses the later work and is marked `partial`. That's the API-equivalent cost: on a subscription it isn't your bill,
   but it's the honest number to set against a human's hours. The page shows cost
   per day and week, and **cost per saved hour** overall. ChatGPT and Codex
   don't report cost, so fill it in by hand if you want it (`manual`).
