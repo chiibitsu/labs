@@ -178,7 +178,7 @@
       <div class="two">
         <div class="card">
           <div class="kicker" style="color:var(--warm)">kept tasks</div>
-          <p class="hint">The AI hands these back instead of doing them.</p>
+          <p class="hint">Yours to keep. The AI never volunteers these; if a task you give it includes one, it does it and tells you, so you can take it back next time.</p>
           <ul class="keep-list" id="keepTasks"></ul>
           <form class="row" id="addTask">
             <input id="taskLabel" placeholder="Something that stays yours" required aria-label="Kept task" />
@@ -210,7 +210,7 @@
     <section>
       <div class="kicker">add an entry</div>
       <h2>From ChatGPT or anywhere else.</h2>
-      <p class="hint">Paste the JSON block an AI gave you when you said “log it”. Code fences are fine. Missing source defaults to ChatGPT.</p>
+      <p class="hint">Paste the JSON block ChatGPT ends finished work with. Code fences are fine. Missing source defaults to ChatGPT.</p>
       <textarea class="paste" id="pasteBox" placeholder='{"source":"chatgpt","title":"...","human_minutes":120,"you_minutes":20,"actions":[{"kind":"did","line":"..."}]}' aria-label="Entry JSON"></textarea>
       <div class="row"><button class="btn primary" id="pasteSave">Save entry</button></div>
     </section>
@@ -218,7 +218,7 @@
     <section>
       <div class="kicker">intake tokens</div>
       <h2>Let tools write here.</h2>
-      <p class="hint">A token lets one tool (Claude Code, Codex) <em>add</em> entries. It can't read anything. You see it once, so put it straight into that tool's environment as <span class="mono">LEDGER_TOKEN</span>.</p>
+      <p class="hint">A token lets one tool (Claude Code, Codex) <em>add</em> entries and read this keep list, nothing else. You see it once, so put it straight into that tool's environment as <span class="mono">LEDGER_TOKEN</span>.</p>
       <form class="row" id="newToken">
         <input id="tokenLabel" placeholder="Label, e.g. Claude Code cloud" required aria-label="Token label" />
         <button class="btn small" type="submit">New token</button>
