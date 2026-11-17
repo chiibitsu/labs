@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Say It Well — a human way to say no, ask, and own it</title>
+<title>Say No For Me — a human way to say no, ask, and own it</title>
 <meta name="description" content="Machines say “Rejected.” You can do better. Pick a moment, answer a few questions in your own words, and get a message that is clear, kind and yours." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Chiibitsu Labs" />
-<meta property="og:title" content="Say It Well — a human way to say no, ask, and own it" />
+<meta property="og:title" content="Say No For Me — a human way to say no, ask, and own it" />
 <meta property="og:description" content="Machines say “Rejected.” You can do better. Answer a few questions, get a message that is clear, kind and yours." />
 <meta property="og:url" content="https://labs.chiibitsu.com/receipt/" />
 <meta property="og:image" content="https://labs.chiibitsu.com/receipt/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Say It Well — a human way to say no, ask, and own it" />
+<meta name="twitter:title" content="Say No For Me — a human way to say no, ask, and own it" />
 <meta name="twitter:description" content="Machines say “Rejected.” You can do better. Answer a few questions, get a message that is clear, kind and yours." />
 <meta name="twitter:image" content="https://labs.chiibitsu.com/receipt/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23f6f0e4'/%3E%3Cpath d='M9 11h14v9H14l-4 3v-3H9z' fill='%23b8532c'/%3E%3C/svg%3E" />
@@ -511,7 +511,7 @@ const SUGGEST_URL = "https://github.com/chiibitsu/labs/issues/new";
 $("sgBtn").addEventListener("click", () => {
   const t = $("sgText").value.trim();
   if (!t) { $("sgText").focus(); return; }
-  const url = SUGGEST_URL + "?title=" + encodeURIComponent("Say It Well: " + t.slice(0, 70)) + "&body=" + encodeURIComponent("**Kind of moment:** " + $("sgMode").value + "\n\n**The moment:**\n" + t + "\n\n_Suggested from labs.chiibitsu.com/receipt/_");
+  const url = SUGGEST_URL + "?title=" + encodeURIComponent("Say No For Me: " + t.slice(0, 70)) + "&body=" + encodeURIComponent("**Kind of moment:** " + $("sgMode").value + "\n\n**The moment:**\n" + t + "\n\n_Suggested from labs.chiibitsu.com/receipt/_");
   window.open(url, "_blank", "noopener");
   $("sgNote").textContent = "Thank you. A GitHub page opened with your suggestion filled in. Press “Submit new issue” there to send it.";
 });
