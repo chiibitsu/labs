@@ -15,9 +15,10 @@ here.**
 > Not sure what "sub-agents" even means? Play the demo. Pitch a company in one
 > sentence and watch the team actually get to work — a live build log — and
 > **ship you a real landing page** you can preview and download. No install, no
-> account. It's free and scripted by default; flip on **⚡ Real Claude**, pick a
-> model, and paste your own Anthropic key to have actual Claude build it (your
-> key stays in your browser). Then come back here to run them for real.
+> account. It's free and scripted by default; flip on **⚡ Real AI**, choose a
+> provider (**Claude, OpenAI, or OpenRouter** — one OpenRouter key gets you any
+> model), name a model, and paste your own key to have a real model build it
+> (your key stays in your browser). Then come back here to run them for real.
 
 ---
 
