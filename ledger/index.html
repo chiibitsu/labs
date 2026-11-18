@@ -84,6 +84,7 @@
   .src { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ai); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
   .figs { margin-top: 6px; font-family: var(--mono); font-size: .72rem; color: var(--soft); line-height: 1.6; }
   .figs b { color: var(--sage); font-weight: 400; }
+  .figs b.needs { color: var(--warm); }
   .basis { margin-top: 4px; font-size: .92rem; color: var(--soft); font-style: italic; }
   .lines { margin-top: 10px; list-style: none; }
   .lines li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 1.02rem; line-height: 1.45; }
@@ -347,7 +348,7 @@ function render() {
 
   const nudges = [];
   const missing = daySes.length - estimated.length;
-  if (missing > 0) nudges.push(missing + (missing === 1 ? " session has" : " sessions have") + " no human-equivalent estimate yet, so they aren't counted as saved. Add one below.");
+  if (missing > 0) nudges.push(missing + (missing === 1 ? " session needs" : " sessions need") + " a human-equivalent estimate, so " + (missing === 1 ? "it isn't" : "they aren't") + " counted as saved yet. Each is marked “needs estimate” below; add one with edit.");
   $("nudges").innerHTML = nudges.map((n) => '<p class="nudge">' + esc(n) + "</p>").join("");
 
   renderDividend(ws, we, weekSaved);
@@ -383,7 +384,7 @@ function renderLog(daySes) {
   if (!daySes.length) { $("log").innerHTML = '<p class="empty">Nothing logged on this day.</p>'; return; }
   $("log").innerHTML = daySes.map((s) => {
     const lines = (s.ledger_actions || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
-    const saved = num(s.human_minutes) !== null ? "<b>saved " + fmt(s.saved_minutes) + "</b> · " : "";
+    const saved = num(s.human_minutes) !== null ? "<b>saved " + fmt(s.saved_minutes) + "</b> · " : '<b class="needs">needs estimate</b> · ';
     const range = num(s.human_low) !== null ? " (" + fmt(s.human_low) + "–" + fmt(s.human_high) + ")" : "";
     return '<div class="card sess" data-sid="' + s.id + '">' +
       '<div class="sess-head"><h3>' + esc(s.title || "Untitled session") + '</h3><span class="src">' + esc(s.source) + "</span>" +
@@ -432,7 +433,7 @@ function renderAll() {
   const savedAll = sum(est, "saved_minutes"), costEst = sum(est, "cost_usd");
   const perHour = savedAll > 0 && costEst > 0 ? costEst / (savedAll / 60) : null;
   $("allStats").innerHTML = [
-    ["hero", "saved, all time", fmt(savedAll), est.length + " estimated sessions"],
+    ["hero", "saved, all time", fmt(savedAll), est.length + " estimated sessions" + (rows.length > est.length ? " · " + (rows.length - est.length) + " need an estimate" : "")],
     ["", "human-equivalent", fmt(human), "by hand"],
     ["", "your time", fmt(you), "on those sessions"],
     ["", "leverage", mult ? mult.toFixed(1) + "×" : "—", "human-equivalent ÷ your time"],

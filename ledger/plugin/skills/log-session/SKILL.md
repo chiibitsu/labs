@@ -49,9 +49,10 @@ LEDGER_ENTRY
 ```
 
 The command prints what it recorded. Mention it in one line in your final message
-(e.g. "Logged: ~7 h human-equivalent, ~20 min of yours, $13 of AI"). If the command isn't in
-your context, the ledger is not wired for this session (most often `LEDGER_TOKEN` isn't set, or
-the plugin isn't enabled); say so once and move on.
+(e.g. "Logged: ~7 h human-equivalent, ~20 min of yours, $13 of AI"). If your context says the
+ledger is NOT wired, or has no "Time Dividend ledger" line at all, nothing is being recorded
+(most often `LEDGER_TOKEN` isn't set in the environment, or the repo has no ledger hooks); say so
+once and move on. If it says the last automatic write failed, say that once too.
 
 ## Keep list
 

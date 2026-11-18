@@ -1,10 +1,59 @@
 {
   "extraKnownMarketplaces": {
     "chiibitsu-labs": {
-      "source": { "source": "github", "repo": "chiibitsu/labs" }
+      "source": {
+        "source": "github",
+        "repo": "chiibitsu/labs"
+      }
     }
   },
   "enabledPlugins": {
     "time-dividend@chiibitsu-labs": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/ledger/plugin/scripts/ledger.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/ledger/plugin/scripts/ledger.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/ledger/plugin/scripts/ledger.py\" hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/ledger/plugin/scripts/ledger.py\" hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   }
 }

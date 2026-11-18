@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Time Dividend ledger client for Claude Code.
 
-  ledger.py hook          Stop / SessionStart hook. Reads the hook JSON on stdin.
-                          On Stop it measures the session from its transcript and
-                          upserts timing (AI minutes, your minutes) and the cost and
-                          token totals Claude Code reports into the ledger.
-                          On SessionStart it only prints the keep list and the
-                          logging command as session context.
+  ledger.py hook          SessionStart / UserPromptSubmit / Stop / SessionEnd hook.
+                          Reads the hook JSON on stdin. On Stop and SessionEnd it
+                          measures the session from its transcript and upserts timing
+                          (AI minutes, your minutes) and the cost and token totals
+                          Claude Code reports into the ledger. On SessionStart and the
+                          first prompt it tells the session, once, whether the ledger is
+                          wired, plus the keep list and the logging command.
   ledger.py entry         Reads an entry JSON on stdin (title, human estimate,
                           actions...) and records it against the current session.
                           Works without the plugin: the session is identified by the
@@ -16,9 +17,10 @@
 
 Writes go to the Supabase RPC public.ledger_ingest, gated by your intake token
 (the LEDGER_TOKEN environment variable, and nothing else). Never blocks Claude: the hook
-exits 0 on any failure, and its only words are the SessionStart context (which says when the
-keep list is unreachable); `entry` reports the outcome and exits 0; `keep` exits 1 when the list
-is unreachable, so the caller cannot mistake that for empty.
+exits 0 on any failure. It says once per session when the ledger is not wired (no token) and
+once per distinct failure when a write did not land; nothing else. `entry` reports the outcome
+and exits 0; `keep` exits 1 when the list is unreachable, so the caller cannot mistake that for
+empty.
 """
 import hashlib, json, os, sys, time, urllib.request
 from datetime import datetime, timezone
@@ -35,16 +37,62 @@ COST_FRESH = 10 * 60   # a cost record older than this, against the session's en
 
 
 def state_dir():
-    d = os.environ.get("CLAUDE_PLUGIN_DATA") or os.path.join(os.path.expanduser("~"), ".claude", "time-dividend")
+    # One folder whoever runs the client (plugin hook, repo hook, or `entry` from a shell), so they
+    # all see the same per-session state.
+    d = os.environ.get("LEDGER_STATE_DIR") or os.path.join(os.path.expanduser("~"), ".claude", "time-dividend")
     os.makedirs(d, exist_ok=True)
     return d
 
 
-def state_file(cwd):
-    return os.path.join(state_dir(), "session-" + hashlib.sha1((cwd or "").encode()).hexdigest()[:16] + ".json")
+def _h(s):
+    return hashlib.sha1((s or "").encode()).hexdigest()[:16]
+
+
+def state_file(sid):
+    """One state file per session, so two sessions in one folder never overwrite each other."""
+    return os.path.join(state_dir(), "sid-" + _h(sid) + ".json")
+
+
+def folder_file(cwd):
+    """Which sessions the hooks have seen in a folder, and when: only a fallback for `entry`
+    when the harness gives no session id."""
+    return os.path.join(state_dir(), "dir-" + _h(cwd) + ".json")
+
+
+def load_json(path, default):
+    try:
+        with open(path) as f:
+            v = json.load(f)
+        return v if isinstance(v, type(default)) else default
+    except Exception:
+        return default
+
+
+def save_json(path, value):
+    try:
+        tmp = path + ".tmp" + str(os.getpid())
+        with open(tmp, "w") as f:
+            json.dump(value, f)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
+
+def dry_run_file():
+    """When a file named `dry-run` sits in the state folder, writes go to `dry-run.jsonl` beside it
+    instead of the ledger (reads such as the keep list still go out). For testing a change in a
+    real session without touching the live ledger."""
+    d = state_dir()
+    return os.path.join(d, "dry-run.jsonl") if os.path.exists(os.path.join(d, "dry-run")) else None
 
 
 def rpc(fn, payload, timeout=8):
+    dry = dry_run_file() if fn == "ledger_ingest" else None
+    if dry:
+        shown = {k: v for k, v in payload.items() if k != "p_token"}
+        with open(dry, "a") as f:
+            f.write(json.dumps({"at": time.time(), "fn": fn, **shown}) + "\n")
+        return "dry-run"
     req = urllib.request.Request(
         f"{URL}/rest/v1/rpc/{fn}", data=json.dumps(payload).encode(), method="POST",
         headers={"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "application/json"})
@@ -60,21 +108,56 @@ def ts(s):
         return None
 
 
+# Texts Claude Code writes into the transcript as a "user" line although no person typed them.
+SYNTHETIC_PREFIXES = (
+    "[Request interrupted",      # "...by user]", "...by user for tool use]", "...: the session ended..."
+    "[Tool use interrupted",
+    "[Tool call interrupted",
+    "Caveat: The messages below were generated by the user while running local commands",
+    "This session is being continued from a previous conversation",
+    "[SYSTEM NOTIFICATION",
+)
+
+
+def prompt_text(content):
+    """The typed text of a user line (text blocks only), or '' when it has none."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return " ".join(str(b.get("text") or "") for b in content
+                        if isinstance(b, dict) and b.get("type") == "text")
+    return ""
+
+
+def is_synthetic(text):
+    t = (text or "").lstrip()
+    return t.startswith("<") or t.startswith(SYNTHETIC_PREFIXES)
+
+
 def is_human_prompt(d):
     if d.get("type") != "user" or d.get("isMeta") or d.get("isSidechain"):
+        return False
+    if d.get("isCompactSummary") or d.get("isVisibleInTranscriptOnly"):
+        return False
+    content = (d.get("message") or {}).get("content")
+    if isinstance(content, list):
+        types = {b.get("type") for b in content if isinstance(b, dict)}
+        if "tool_result" in types or not (types & {"text", "image"}):
+            return False
+    elif not isinstance(content, str):
+        return False
+    text = prompt_text(content)
+    # A synthetic text is never hers, whatever origin it carries. An image with no text is.
+    if text.strip() and is_synthetic(text):
+        return False
+    if not text.strip() and not (isinstance(content, list) and "image" in types):
         return False
     origin = d.get("origin") or {}
     if isinstance(origin, dict) and origin.get("kind"):
         return origin.get("kind") == "human"
     if d.get("turnOrigin"):
         return d.get("turnOrigin") == "human"
-    content = (d.get("message") or {}).get("content")
-    if isinstance(content, str):
-        return not content.lstrip().startswith("<")
-    if isinstance(content, list):
-        types = {b.get("type") for b in content if isinstance(b, dict)}
-        return "text" in types and "tool_result" not in types
-    return False
+    return True
 
 
 def usage_totals(snap):
@@ -95,6 +178,7 @@ def scan(path):
     # cost-state lines are running totals for the current process; if a resumed
     # session restarts them, bank the earlier run and keep adding.
     banked, last, models, banked_models = None, None, {}, {}
+    last_event, cost_end = None, None
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
             try:
@@ -111,6 +195,7 @@ def scan(path):
                                 b[k] = b.get(k, 0) + v
                         models = {}
                     last = cur
+                    cost_end = cost_covers_until(d, last_event)
                     for name, u in mu.items():
                         models[name] = {k: v for k, v in u.items() if isinstance(v, (int, float))}
                     continue
@@ -119,12 +204,12 @@ def scan(path):
                     continue
                 key = d.get("uuid") or f"{d.get('type')}|{d.get('timestamp')}"
                 if is_human_prompt(d):
-                    c = (d.get("message") or {}).get("content")
-                    if isinstance(c, list):
-                        c = " ".join(str(b.get("text") or "") for b in c if isinstance(b, dict))
-                    prompts[key] = (t, " ".join(str(c or "").split())[:90])
+                    text = prompt_text((d.get("message") or {}).get("content"))
+                    prompts[key] = (t, " ".join(text.split())[:90])
+                    last_event = max(last_event or t, t)
                 elif d.get("type") in ("assistant", "user"):
                     ai[key] = t
+                    last_event = max(last_event or t, t)
             except Exception:
                 continue  # one odd line never costs the whole measurement
     cost = None
@@ -136,8 +221,32 @@ def scan(path):
                 u[k] = u.get(k, 0) + v
         cost = {"cost_usd": round(total["cost_usd"], 4), "tokens_input": total["tokens_input"],
                 "tokens_cache_read": total["tokens_cache_read"], "tokens_output": total["tokens_output"],
-                "model_usage": models, "cost_basis": "reported"}
+                "model_usage": models, "cost_basis": "reported", "_covers_until": cost_end}
     return ai, prompts, cost
+
+
+def cost_covers_until(d, last_event):
+    """When a cost record's totals stop: its process start plus its duration, both in ms, when the
+    record carries them; else the last event written before it. Claude Code writes these records
+    only when its process ends, so a session still running has none for its current run."""
+    try:
+        start, dur = float(d.get("startTime") or 0), float(d.get("totalDuration") or 0)
+        if start > 1e12 and dur >= 0:
+            return (start + dur) / 1000
+    except Exception:
+        pass
+    return last_event
+
+
+def settle_cost(out, cost):
+    """Attach a cost record to a measurement. If its totals stop well before the session's last
+    event, the later work is missing from them: basis 'partial', never filled in."""
+    cost = dict(cost)
+    until = cost.pop("_covers_until", None)
+    out.update(cost)
+    end = ts(out["ended_at"])
+    if until is None or (end is not None and end - until > COST_FRESH):
+        out["cost_basis"] = "partial"
 
 
 def timing(ai_events, prompts):
@@ -168,7 +277,7 @@ def measure(path):
     ai, prompts, cost = scan(path)
     out = timing(list(ai.values()), list(prompts.values()))
     if out and cost:
-        out.update(cost)
+        settle_cost(out, cost)
     return out
 
 
@@ -203,32 +312,27 @@ def measure_session(sid, hint=None):
         ai.update(a)
         prompts.update(q)
         if c:
-            ends = list(a.values()) + [t for t, _ in q.values()]
-            costs.append((c, max(ends) if ends else None))
+            costs.append(c)
     out = timing(list(ai.values()), list(prompts.values()))
     if not out:
         return None
     if costs:
-        best, best_end = max(costs, key=lambda x: x[0]["cost_usd"])
-        out.update(best)
-        if best_end is None or ts(out["ended_at"]) - best_end > COST_FRESH:
-            out["cost_basis"] = "partial"
+        settle_cost(out, max(costs, key=lambda c: c["cost_usd"]))
     return out
 
 
+FOLDER_WINDOW = 12 * 3600   # sessions the hooks saw in a folder this recently count as "running"
+
+
 def current_session():
-    """The running session's id: the harness's own CLAUDE_CODE_SESSION_ID, else the session the
-    plugin's hook last saw in this working directory. Never a guess from file times."""
+    """The running session's id: the harness's own CLAUDE_CODE_SESSION_ID, else the one session the
+    hooks saw in this folder lately. Two sessions there is ambiguous: no id, never a guess."""
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
         return os.environ["CLAUDE_CODE_SESSION_ID"]
-    try:
-        with open(state_file(os.getcwd())) as f:
-            sid = json.load(f).get("session_id")
-            if sid:
-                return sid
-    except Exception:
-        pass
-    return None
+    seen = load_json(folder_file(os.getcwd()), {})
+    now = time.time()
+    recent = [s for s, at in seen.items() if isinstance(at, (int, float)) and now - at < FOLDER_WINDOW]
+    return recent[0] if len(recent) == 1 else None
 
 
 def keep():
@@ -268,7 +372,38 @@ def keep_context():
     return format_keep(rows)
 
 
+def context_text():
+    """What a session is told about the ledger, once."""
+    here = os.path.abspath(__file__)
+    skill = os.path.normpath(os.path.join(os.path.dirname(here), "..", "skills", "log-session", "SKILL.md"))
+    if not TOKEN:
+        return ("Time Dividend ledger is NOT wired in this session: LEDGER_TOKEN is not set in this "
+                "environment, so nothing about this session is recorded. Tell Chii that once, in one line, "
+                "in your next reply (she adds the token in the environment's settings), then carry on.")
+    return ("Time Dividend ledger is on for this session. AI time, Chii's time and any cost Claude Code reports "
+            "are recorded automatically at the end of every turn. When a piece of work is finished, add the "
+            f"human-equivalent estimate and the log lines with the log-session skill ({skill}); it records "
+            f"through: python3 \"{here}\" entry\n\n" + keep_context())
+
+
+def remember(sid, cwd, path):
+    st = load_json(state_file(sid), {})
+    st.update({"session_id": sid, "cwd": cwd, "at": time.time()})
+    if path and "/subagents/" not in path:
+        st["transcript_path"] = path
+    save_json(state_file(sid), st)
+    seen = load_json(folder_file(cwd), {})
+    now = time.time()
+    seen = {k: v for k, v in seen.items() if isinstance(v, (int, float)) and now - v < FOLDER_WINDOW}
+    seen[sid] = now
+    save_json(folder_file(cwd), seen)
+    return st
+
+
 def hook():
+    """SessionStart / UserPromptSubmit: tell the session once whether the ledger is wired (and the
+    keep list). Stop / SessionEnd: measure the transcript and upsert it. Never blocks: every path
+    exits 0. A failed write is said once, to Chii (systemMessage) and to the session (next prompt)."""
     try:
         data = json.load(sys.stdin)
     except Exception:
@@ -277,36 +412,60 @@ def hook():
         return
     sid, cwd, path = data.get("session_id"), str(data.get("cwd") or os.getcwd()), data.get("transcript_path")
     event = data.get("hook_event_name", "")
-    if not sid or not TOKEN:
+    if not sid or "/subagents/" in str(path or ""):
         return
-    try:
-        with open(state_file(cwd), "w") as f:
-            json.dump({"session_id": sid, "transcript_path": path, "at": time.time()}, f)
-    except Exception:
-        pass
-    if event == "SessionStart":
-        here = os.path.abspath(__file__)
-        ctx = ("Time Dividend ledger is on for this session. When a piece of work is finished, log it with the "
-               f"log-session skill; it records through: python3 \"{here}\" entry")
-        ctx += "\n\n" + keep_context()
-        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx}}))
+    st = remember(sid, cwd, path)
+
+    if event in ("SessionStart", "UserPromptSubmit"):
+        notes = []
+        # A repo's own SessionStart hook can run in the background in cloud sessions, where its words
+        # may never reach the session; the first prompt's hook is the one that surely lands. So
+        # SessionStart speaks without marking it said, and the first prompt makes sure.
+        if not st.get("context_said"):
+            notes.append(context_text())
+            if event == "UserPromptSubmit":
+                st["context_said"] = True
+        err = st.get("last_error")
+        if err and err != st.get("error_said"):
+            notes.append(f"Time Dividend ledger: the last automatic write for this session failed ({err}). "
+                         "Tell Chii once, in one line; it is retried at the end of every turn.")
+            st["error_said"] = err
+        if notes:
+            save_json(state_file(sid), st)
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": event,
+                                                     "additionalContext": "\n\n".join(notes)}}))
         return
-    if "/subagents/" in (path or ""):
+
+    if event not in ("Stop", "SessionEnd") or not TOKEN:
         return
     try:
         m = measure_session(sid, path)
-    except Exception:
+    except Exception as err:
+        m, why = None, f"could not read the transcript: {err}"
+    else:
+        why = None if m else "no transcript found for this session"
+    if m:
+        if m.get("you_minutes") is None:
+            m.pop("you_minutes")
+        entry = {"source": "claude-code", "external_id": sid, "project": os.path.basename(cwd.rstrip("/")) or None,
+                 "title_if_empty": m.pop("first_prompt") or None, **m}
+        try:
+            rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": entry})
+        except Exception as err:
+            why = f"could not reach the ledger: {err}"
+    st = load_json(state_file(sid), st)
+    if why is None:
+        st.pop("last_error", None)
+        st["last_ok"] = time.time()
+        save_json(state_file(sid), st)
         return
-    if not m:
-        return
-    if m.get("you_minutes") is None:
-        m.pop("you_minutes")
-    entry = {"source": "claude-code", "external_id": sid, "project": os.path.basename(cwd.rstrip("/")) or None,
-             "title_if_empty": m.pop("first_prompt") or None, **m}
-    try:
-        rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": entry})
-    except Exception:
-        pass
+    st["last_error"] = str(why)[:200]
+    tell = event == "Stop" and st.get("last_error") != st.get("error_shown")
+    if tell:
+        st["error_shown"] = st["last_error"]
+    save_json(state_file(sid), st)
+    if tell:
+        print(json.dumps({"systemMessage": f"Time Dividend ledger: this session was not recorded ({st['last_error']})."}))
 
 
 def entry():
@@ -342,12 +501,17 @@ def entry():
             print("ledger: no prompt of Chii's in this session's transcript, so her minutes are NOT "
                   "recorded; AI time and cost are.")
         if measured.get("cost_usd") is None:
-            print("ledger: no cost records in this session's transcript, so cost is NOT recorded.")
+            print("ledger: no cost records in this session's transcript yet (Claude Code writes them only "
+                  "when its process ends), so cost is NOT recorded now; the end-of-session hook adds it "
+                  "if the record appears.")
+        elif measured.get("cost_basis") == "partial":
+            print("ledger: the cost record stops before the session's last work, so cost is marked partial.")
         for k, v in measured.items():
             e.setdefault(k, v)
     if e["source"] == "claude-code" and not measured:
         print("ledger: could not find this session's transcript, so time and cost are NOT recorded "
-              "(no estimate is substituted). " + ("Session id: " + sid if sid else "No session id in the environment."))
+              "(no estimate is substituted). " + ("Session id: " + sid if sid else
+              "No CLAUDE_CODE_SESSION_ID, and this folder has no single recent session to match."))
     e.setdefault("project", os.path.basename(cwd.rstrip("/")))
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
