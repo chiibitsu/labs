@@ -91,9 +91,13 @@ rather than estimating. Only the top-level session logs; subagents never do.
 - **Human-equivalent:** the AI's honest estimate, with a range and the concrete output
   it counted (`estimate_basis`). Mark estimates *too low / about right / too high* on
   the page each week; that calibration is what makes the data worth something.
-- **Saved** = human-equivalent − your time. A session without an estimate isn't counted as
-  saved; the page marks it **needs estimate** and counts how many are waiting, so none
-  goes missing.
+- **What the page leads with**, for every entry and every total: **time invested** (your
+  measured minutes, shown for every entry, thinking sessions included), **AI cost**, and
+  **time saved**. Time saved is human-equivalent − your time, and only where both exist: an
+  honest estimate of a concrete output *and* your measured minutes. Totals of time saved are
+  labelled as an estimate, with the range from each estimate's low and high. An entry with
+  no estimate shows as **time invested only**, not as missing; one whose minutes are unknown
+  says so, and claims nothing saved.
 - **Cost & tokens:** Claude Code writes a cost total and per-model token counts into the
   transcript **only when its process ends** (a restart, or the session closing), never
   mid-session. So a session that is still running has no cost yet: the hooks record none
