@@ -325,13 +325,17 @@ FOLDER_WINDOW = 12 * 3600   # sessions the hooks saw in a folder this recently c
 
 
 def current_session():
-    """The running session's id: the harness's own CLAUDE_CODE_SESSION_ID, else the one session the
-    hooks saw in this folder lately. Two sessions there is ambiguous: no id, never a guess."""
-    if os.environ.get("CLAUDE_CODE_SESSION_ID"):
-        return os.environ["CLAUDE_CODE_SESSION_ID"]
+    """The running session's id. The hooks' own session_id is the truth (it comes from the hook
+    input); the harness's CLAUDE_CODE_SESSION_ID usually matches it, but after `--continue` or a
+    `--resume` without an id it can still name the startup session. So: the environment's id when
+    the hooks saw it in this folder lately, or when no hooks run here at all; else the one session
+    the hooks saw lately. Anything ambiguous gives no id, never a guess."""
+    env = os.environ.get("CLAUDE_CODE_SESSION_ID") or None
     seen = load_json(folder_file(os.getcwd()), {})
     now = time.time()
     recent = [s for s, at in seen.items() if isinstance(at, (int, float)) and now - at < FOLDER_WINDOW]
+    if env and (env in recent or not recent):
+        return env
     return recent[0] if len(recent) == 1 else None
 
 
@@ -499,7 +503,9 @@ def handle(event, sid, cwd, path):
             why = f"could not reach the ledger: {err}"
     st = load_json(state_file(sid), st)
     if why is None:
-        st.pop("last_error", None)
+        # A new failure after this success is a new episode: it gets told again.
+        for k in ("last_error", "error_said", "error_shown"):
+            st.pop(k, None)
         st["last_ok"] = time.time()
         save_json(state_file(sid), st)
         return

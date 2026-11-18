@@ -225,6 +225,33 @@ class Hooks(unittest.TestCase):
         self.assertEqual((last["external_id"], last["ai_minutes"]), ("sb", 0.0))
 
 
+class Followups(Hooks):
+    def test_entry_prefers_the_hooks_session_over_a_stale_env_id(self):
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        t = self.transcript("resumed", [user(0, "resumed work"), asst(60)])
+        run_hook(self.env, "UserPromptSubmit", "resumed", self.cwd, t)
+        env = dict(self.env, CLAUDE_CODE_SESSION_ID="startup-id")  # what --continue can leave
+        subprocess.run([sys.executable, "-I", CLIENT, "entry"], input='{"title": "x"}', env=env, cwd=self.cwd,
+                       capture_output=True, text=True, timeout=30)
+        self.assertEqual(rows_in(os.path.join(self.state, "dry-run.jsonl"))[-1]["p_entry"]["external_id"], "resumed")
+        env["CLAUDE_CODE_SESSION_ID"] = "resumed"  # the normal case: env and hooks agree
+        subprocess.run([sys.executable, "-I", CLIENT, "entry"], input='{"title": "x"}', env=env, cwd=self.cwd,
+                       capture_output=True, text=True, timeout=30)
+        self.assertEqual(rows_in(os.path.join(self.state, "dry-run.jsonl"))[-1]["p_entry"]["external_id"], "resumed")
+
+    def test_a_failure_after_a_recovery_is_told_again(self):
+        t = self.transcript("s1", BASE)
+        self.assertIn("not recorded", run_hook(self.env, "Stop", "s1", self.cwd, t))
+        self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        time.sleep(DUP_WAIT)
+        self.assertEqual(run_hook(self.env, "Stop", "s1", self.cwd, t), "")  # recovered
+        os.remove(os.path.join(self.state, "dry-run"))
+        time.sleep(DUP_WAIT)
+        self.assertIn("not recorded", run_hook(self.env, "Stop", "s1", self.cwd, t))  # same error, new episode
+        self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
+
+
 class TwoCopies(Hooks):
     """The plugin's hook and the repo's own hook both registered: Claude Code runs them in parallel."""
 
