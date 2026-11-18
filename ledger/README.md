@@ -15,7 +15,7 @@ Parkinson's law can't quietly fill it with more work.
 
 | Where you work | How it's recorded | What you do |
 |---|---|---|
-| Claude Code in the cloud | The repo's own hooks in `.claude/settings.json` (this repo has them). They record AI time, your time and any reported cost at the end of every turn; the `log-session` skill adds the human-equivalent estimate and the log lines | `LEDGER_TOKEN` in the environment (setup below) |
+| Claude Code in the cloud (a session with this one repo, outside a Project) | The repo's own hooks in `.claude/settings.json` (this repo has them). They record AI time, your time and any reported cost at the end of every turn; the `log-session` skill adds the human-equivalent estimate and the log lines | `LEDGER_TOKEN` in the environment (setup below) |
 | Claude Code on your Mac (CLI, desktop) | The `time-dividend` plugin: the same hooks, the same client | One-time setup below |
 | Claude chat & Cowork | [`elsewhere/claude-chat-skill`](./elsewhere/claude-chat-skill/SKILL.md) writes through the Supabase connector | Upload the skill once; it logs when work wraps up |
 | ChatGPT | Custom instruction makes it end finished work with a JSON block | Paste the block on the page |
@@ -33,21 +33,32 @@ settings**. The `extraKnownMarketplaces` and `enabledPlugins` lines in a repo's
 running with nothing to install; `~/.claude/plugins/installed_plugins.json` stayed empty and
 no marketplace was registered; the same declaration installs fine from user settings in the
 same container, so it is not the network. A repo's own `hooks` in `.claude/settings.json` do run
-in cloud sessions (tested the same day), so that is what this repo uses. The plugin lines stay
+in a cloud session with one repository (tested the same day), so that is what this repo uses.
+
+**Where repo hooks do not reach** (Claude Code's
+[settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions) and
+[cloud environment](https://code.claude.com/docs/en/cloud-environments) docs, read 18 Nov 2026):
+a cloud thread inside a **Project** ignores a repo's hooks, and a session with **several
+repositories** reads only the plugin keys, not hooks. Those sessions record nothing
+automatically; log them by hand with `entry` until the route below is in place. The docs also
+say user-level settings never reach a cloud session, and that the hooks an Anthropic-hosted
+cloud session runs come only from the repo and from the organization's **server-managed
+settings** (claude.ai admin console). Server-managed settings are therefore the documented
+route to every cloud session, Project threads and multi-repo sessions included. The plugin lines stay
 for your Mac, where they do work. When both run, both write the same row (an upsert by
 session id), so nothing doubles.
 
-**Other repos.** Two ways, both decisions for you and the vibeOS PM, not made here:
+**Other repos.** Options, all decisions for you and the vibeOS PM, not made here:
 
 - *Per repo:* add the same four hooks to that repo's `.claude/settings.json`, running the
   client fetched from a pinned commit with its sha256 checked first (the pin and hash vibeOS
   `CLAUDE.md` names; the vibeOS PR that moves the pin carries the exact command).
-- *Per environment:* a setup script in the cloud environment that runs
-  `claude plugin marketplace add chiibitsu/labs` and
-  `claude plugin install time-dividend@chiibitsu-labs`, which puts the plugin in user settings
-  for every repo in that environment. Untested as a whole: the install works in a cloud
-  container, but whether a session then loads its hooks has not been seen yet. It also follows
-  `main`, not a pin.
+- *Organization-wide:* the same four hooks in the organization's server-managed settings,
+  running the pinned, hash-checked client. Reaches every cloud session, per the docs above.
+  Not yet tested.
+- *Per environment (setup script installing the plugin):* per the docs above, a cloud
+  session does not run user-level hooks, so this route is expected **not** to work. Kept
+  here only so nobody tries it unknowingly.
 
 ### Any Claude Code repo without the hooks
 

@@ -400,6 +400,39 @@ def remember(sid, cwd, path):
     return st
 
 
+class session_lock:
+    """One hook run per session at a time. The plugin's hooks and a repo's own hooks can both be
+    registered (Claude Code runs them in parallel), so every read-modify-write of a session's state
+    happens under this lock, and the once-only notices stay once. Waits up to a few seconds; if the
+    lock cannot be had (or the platform has no flock), the run goes ahead unlocked rather than block."""
+    def __init__(self, sid):
+        self.path, self.f = state_file(sid) + ".lock", None
+
+    def __enter__(self):
+        try:
+            import fcntl
+            self.f = open(self.path, "a")
+            for _ in range(50):
+                try:
+                    fcntl.flock(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    return self
+                except BlockingIOError:
+                    time.sleep(0.1)
+        except Exception:
+            pass
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            if self.f:
+                self.f.close()  # closing releases the lock
+        except Exception:
+            pass
+
+
+DUPLICATE_WINDOW = 5  # seconds: a second copy of the same hook this soon after the first does nothing
+
+
 def hook():
     """SessionStart / UserPromptSubmit: tell the session once whether the ledger is wired (and the
     keep list). Stop / SessionEnd: measure the transcript and upsert it. Never blocks: every path
@@ -414,7 +447,18 @@ def hook():
     event = data.get("hook_event_name", "")
     if not sid or "/subagents/" in str(path or ""):
         return
+    with session_lock(sid):
+        handle(event, sid, cwd, path)
+
+
+def handle(event, sid, cwd, path):
     st = remember(sid, cwd, path)
+    # The same event, handled moments ago by the other registered copy of this hook: nothing to add.
+    last = st.get("last_event") or {}
+    if last.get("event") == event and time.time() - float(last.get("at") or 0) < DUPLICATE_WINDOW:
+        return
+    st["last_event"] = {"event": event, "at": time.time()}
+    save_json(state_file(sid), st)
 
     if event in ("SessionStart", "UserPromptSubmit"):
         notes = []

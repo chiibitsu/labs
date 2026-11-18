@@ -3,7 +3,7 @@
 Run:  python3 -I ledger/plugin/tests/test_ledger.py
 Nothing here reaches the live ledger: writes go to a dry-run file or to a closed local port.
 """
-import importlib.util, json, os, subprocess, sys, tempfile, unittest
+import importlib.util, json, os, subprocess, sys, tempfile, time, unittest
 from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -223,6 +223,49 @@ class Hooks(unittest.TestCase):
                        capture_output=True, text=True, timeout=30)
         last = [r["p_entry"] for r in rows_in(os.path.join(self.state, "dry-run.jsonl"))][-1]
         self.assertEqual((last["external_id"], last["ai_minutes"]), ("sb", 0.0))
+
+
+class TwoCopies(Hooks):
+    """The plugin's hook and the repo's own hook both registered: Claude Code runs them in parallel."""
+
+    def run_pair(self, event, sid, transcript=None):
+        data = {"hook_event_name": event, "session_id": sid, "cwd": self.cwd}
+        if transcript:
+            data["transcript_path"] = transcript
+        procs = [subprocess.Popen([sys.executable, "-I", CLIENT, "hook"], stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env, text=True)
+                 for _ in range(2)]
+        for p in procs:
+            p.stdin.write(json.dumps(data))
+            p.stdin.close()
+        outs = [p.stdout.read().strip() for p in procs]
+        for p in procs:
+            p.wait(timeout=30)
+            p.stdout.close()
+            p.stderr.close()
+            self.assertEqual(p.returncode, 0)
+        return [o for o in outs if o]
+
+    def test_context_is_said_once(self):
+        env = self.env
+        env.pop("LEDGER_TOKEN")
+        for _ in range(5):
+            sid = "pair-" + str(_)
+            said = self.run_pair("UserPromptSubmit", sid)
+            self.assertEqual(len(said), 1, said)
+
+    def test_one_write_and_one_failure_notice(self):
+        t = self.transcript("s1", BASE)
+        said = self.run_pair("Stop", "s1", t)
+        self.assertEqual(len(said), 1, said)
+        self.assertIn("not recorded", json.loads(said[0])["systemMessage"])
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        time.sleep(DUP_WAIT)
+        self.run_pair("Stop", "s1", t)
+        self.assertEqual(len(rows_in(os.path.join(self.state, "dry-run.jsonl"))), 1)
+
+
+DUP_WAIT = 5.2  # the client's DUPLICATE_WINDOW, plus a margin
 
 
 if __name__ == "__main__":
