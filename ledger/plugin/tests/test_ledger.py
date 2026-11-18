@@ -252,6 +252,29 @@ class Followups(Hooks):
         self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
 
 
+class ManySessionsOneFolder(Hooks):
+    def test_no_session_is_lost_from_the_folder_map(self):
+        env = dict(self.env)
+        env.pop("LEDGER_TOKEN")  # UserPromptSubmit then writes no ledger rows, only state
+        for _ in range(3):
+            sids = ["many-%d-%d" % (_, i) for i in range(8)]
+            procs = [subprocess.Popen([sys.executable, "-I", CLIENT, "hook"], stdin=subprocess.PIPE,
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, text=True)
+                     for _s in sids]
+            for p, sid in zip(procs, sids):
+                p.stdin.write(json.dumps({"hook_event_name": "UserPromptSubmit", "session_id": sid, "cwd": self.cwd}))
+                p.stdin.close()
+            for p in procs:
+                p.wait(timeout=30)
+            L = load_client(self.home)
+            os.environ["LEDGER_STATE_DIR"] = self.state
+            with open(L.folder_file(self.cwd)) as f:
+                seen = json.load(f)
+            os.environ.pop("LEDGER_STATE_DIR")
+            for sid in sids:
+                self.assertIn(sid, seen)
+
+
 class TwoCopies(Hooks):
     """The plugin's hook and the repo's own hook both registered: Claude Code runs them in parallel."""
 

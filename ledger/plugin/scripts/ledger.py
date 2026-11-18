@@ -396,21 +396,21 @@ def remember(sid, cwd, path):
     if path and "/subagents/" not in path:
         st["transcript_path"] = path
     save_json(state_file(sid), st)
-    seen = load_json(folder_file(cwd), {})
-    now = time.time()
-    seen = {k: v for k, v in seen.items() if isinstance(v, (int, float)) and now - v < FOLDER_WINDOW}
-    seen[sid] = now
-    save_json(folder_file(cwd), seen)
+    # Several sessions in one folder share this map, so its update holds a folder-wide lock.
+    with file_lock(folder_file(cwd)):
+        seen = load_json(folder_file(cwd), {})
+        now = time.time()
+        seen = {k: v for k, v in seen.items() if isinstance(v, (int, float)) and now - v < FOLDER_WINDOW}
+        seen[sid] = now
+        save_json(folder_file(cwd), seen)
     return st
 
 
-class session_lock:
-    """One hook run per session at a time. The plugin's hooks and a repo's own hooks can both be
-    registered (Claude Code runs them in parallel), so every read-modify-write of a session's state
-    happens under this lock, and the once-only notices stay once. Waits up to a few seconds; if the
-    lock cannot be had (or the platform has no flock), the run goes ahead unlocked rather than block."""
-    def __init__(self, sid):
-        self.path, self.f = state_file(sid) + ".lock", None
+class file_lock:
+    """An exclusive lock on a lock file beside some shared state. Waits up to a few seconds; if the
+    lock cannot be had (or the platform has no flock), the caller goes ahead unlocked rather than block."""
+    def __init__(self, path):
+        self.path, self.f = path + ".lock", None
 
     def __enter__(self):
         try:
@@ -432,6 +432,13 @@ class session_lock:
                 self.f.close()  # closing releases the lock
         except Exception:
             pass
+
+
+def session_lock(sid):
+    """One hook run per session at a time. The plugin's hooks and a repo's own hooks can both be
+    registered (Claude Code runs them in parallel), so every read-modify-write of a session's state
+    happens under this lock, and the once-only notices stay once."""
+    return file_lock(state_file(sid))
 
 
 DUPLICATE_WINDOW = 5  # seconds: a second copy of the same hook this soon after the first does nothing
