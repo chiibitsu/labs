@@ -25,7 +25,8 @@ before saving.
 ## Codex (cloud tasks or CLI): automatic
 
 1. Create an intake token on the ledger page (Intake tokens → New token).
-2. Add it to the Codex environment as a secret named `LEDGER_TOKEN`.
+2. Add it to the Codex environment under **Environment variables** (not HTTP secrets) as
+   `LEDGER_TOKEN`, and leave public internet access on so the task can reach the ledger.
 3. Add this to the repo's `AGENTS.md`. It runs the same client Claude Code uses, pinned to a
    reviewed commit with its sha256 checked before it runs; the entry goes in on stdin through a
    quoted heredoc, so nothing in it is ever run by the shell. Each command runs in a fresh
