@@ -33,7 +33,7 @@ KEY = os.environ.get("LEDGER_KEY", "sb_publishable_Y_jI74qFxdAlZb4elby75A_7QlUky
 TOKEN = os.environ.get("LEDGER_TOKEN") or ""
 
 IDLE_CAP = 5 * 60      # a gap longer than this before a prompt counts as away, not engaged
-AI_GAP_CAP = 10 * 60   # a gap longer than this between AI events is not AI work
+AI_GAP_CAP = 10 * 60   # a gap this long or longer between AI events is not AI work
 FIRST_READ = 2 * 60    # time credited for the first prompt and the final read
 COST_FRESH = 10 * 60   # a cost record older than this, against the session's end, is stale
 
@@ -202,6 +202,7 @@ def scan(path):
     # cost-state lines are running totals for the current process; if a resumed
     # session restarts them, bank the earlier run and keep adding.
     banked, last, models, banked_models = None, None, {}, {}
+    unpriced = False
     last_event, cost_end = None, None
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -211,6 +212,7 @@ def scan(path):
                     continue
                 if d.get("type") == "cost-state":
                     cur, mu = usage_totals(d)
+                    unpriced = bool(d.get("hasUnknownModelCost"))
                     if last and cur["cost_usd"] + 1e-9 < last["cost_usd"]:
                         banked = {k: (banked or {}).get(k, 0) + last[k] for k in last}
                         for name, u in models.items():
@@ -245,7 +247,8 @@ def scan(path):
                 u[k] = u.get(k, 0) + v
         cost = {"cost_usd": round(total["cost_usd"], 4), "tokens_input": total["tokens_input"],
                 "tokens_cache_read": total["tokens_cache_read"], "tokens_output": total["tokens_output"],
-                "model_usage": models, "cost_basis": "reported", "_covers_until": cost_end}
+                "model_usage": models, "cost_basis": "partial" if unpriced else "reported",
+                "_covers_until": cost_end}
     return ai, prompts, cost
 
 
@@ -268,7 +271,8 @@ def cost_covers_until(d, last_event):
 
 def settle_cost(out, cost):
     """Attach a cost record to a measurement. If its totals stop well before the session's last
-    event, the later work is missing from them: basis 'partial', never filled in."""
+    event, the later work is missing from them: basis 'partial', never filled in. A record that
+    says some model had no known price (hasUnknownModelCost) is partial too."""
     cost = dict(cost)
     until = cost.pop("_covers_until", None)
     out.update(cost)
@@ -356,19 +360,27 @@ def current_session():
     """The running session's id. The hooks' own session_id is the truth (it comes from the hook
     input); the harness's CLAUDE_CODE_SESSION_ID usually matches it, but after `--continue` or a
     `--resume` without an id it can still name the startup session. So: the environment's id when
-    the hooks saw it in this folder lately, or when no hooks run here at all; else the one session
-    the hooks saw lately. Anything ambiguous gives no id, never a guess."""
+    the hooks saw it lately in any folder, when it has a transcript of its own, or when no hooks
+    run here at all; else the one session the hooks saw lately in this folder (the stale-id case).
+    Anything ambiguous gives no id, never a guess."""
     env = os.environ.get("CLAUDE_CODE_SESSION_ID") or None
     seen = load_json(folder_file(os.getcwd()), {})
     now = time.time()
     recent = [s for s, at in seen.items() if isinstance(at, (int, float)) and now - at < FOLDER_WINDOW]
-    if env and (env in recent or not recent):
-        return env
+    if env:
+        st = load_json(state_file(env), {})
+        hooks_saw_it = isinstance(st.get("at"), (int, float)) and now - st["at"] < FOLDER_WINDOW
+        # Seen by the hooks in any folder, or with a transcript of its own: the env id is right.
+        if env in recent or not recent or hooks_saw_it or session_copies(env):
+            return env
     return recent[0] if len(recent) == 1 else None
 
 
 def keep():
     """Print the active keep list (tasks Chii keeps for herself). For sessions without the hooks."""
+    if dry_run_file():
+        print(DRY_NOTE + " The keep list is not read in dry-run: treat it as unknown, not empty.")
+        sys.exit(1)
     if not TOKEN:
         print("ledger: no LEDGER_TOKEN set; the ledger is not wired here.")
         return
@@ -408,18 +420,21 @@ def context_text():
     """What a session is told about the ledger, at session start and on the first prompt."""
     here = os.path.abspath(__file__)
     skill = os.path.normpath(os.path.join(os.path.dirname(here), "..", "skills", "log-session", "SKILL.md"))
+    instead = ("In this repo that command replaces the pinned ledger commands your standing orders "
+               "give for sessions without the hooks (the keep and entry blocks); do not run those here.")
     if dry_run_file():
-        return (DRY_NOTE + " Tell Chii that once, in one line, in your next reply. The log-session skill "
-                f"still records through: python3 \"{here}\" entry (into the dry-run file). The keep list "
-                "is not read in dry-run; treat it as unknown.")
+        return (DRY_NOTE + " Tell the user that once, in one line, in your next reply. The log-session skill "
+                f"still records through: python3 \"{here}\" entry (into the dry-run file). " + instead +
+                " The pinned commands ignore dry-run and would write to the live ledger. The keep list "
+                "is not read in dry-run; treat it as unknown, not empty.")
     if not TOKEN:
         return ("Time Dividend ledger is NOT wired in this session: LEDGER_TOKEN is not set in this "
-                "environment, so nothing about this session is recorded. Tell Chii that once, in one line, "
-                "in your next reply (she adds the token in the environment's settings), then carry on.")
+                "environment, so nothing about this session is recorded. Tell the user that once, in one line, "
+                "in your next reply (the token goes in the environment's settings), then carry on.")
     return ("Time Dividend ledger is on for this session. AI time, Chii's time and any cost Claude Code reports "
             "are recorded automatically at the end of every turn. When a piece of work is finished, add the "
             f"human-equivalent estimate and the log lines with the log-session skill ({skill}); it records "
-            f"through: python3 \"{here}\" entry\n\n" + keep_context())
+            f"through: python3 \"{here}\" entry . " + instead + "\n\n" + keep_context())
 
 
 def unseen_file():
@@ -467,7 +482,7 @@ class file_lock:
     """An exclusive lock on a lock file beside some shared state. Waits up to a few seconds; if the
     lock cannot be had (or the platform has no flock), the caller goes ahead unlocked rather than block."""
     def __init__(self, path):
-        self.path, self.f = path + ".lock", None
+        self.path, self.f, self.busy = path + ".lock", None, False
 
     def __enter__(self):
         try:
@@ -479,6 +494,7 @@ class file_lock:
                     return self
                 except BlockingIOError:
                     time.sleep(0.1)
+            self.busy = True  # another holder kept it the whole wait
         except Exception:
             pass
         return self
@@ -498,6 +514,8 @@ def session_lock(sid):
     return file_lock(state_file(sid))
 
 
+START_SOURCE = None  # SessionStart's source: startup, resume, clear or compact
+
 DUPLICATE_WINDOW = 5  # seconds: a second copy of the same hook this soon after the first does nothing
 
 
@@ -513,10 +531,16 @@ def hook():
         return
     sid, cwd, path = data.get("session_id"), str(data.get("cwd") or os.getcwd()), data.get("transcript_path")
     event = data.get("hook_event_name", "")
+    global START_SOURCE
+    START_SOURCE = data.get("source") if event == "SessionStart" else None
     if not sid or "/subagents/" in str(path or ""):
         return
     try:
-        with session_lock(sid):
+        with session_lock(sid) as lock:
+            if lock.busy:
+                # The other registered copy of this hook is still on this session (a slow ledger):
+                # it does the work and says what is to be said; running unlocked would double both.
+                return
             handle(event, sid, cwd, path)
     except Exception as err:  # never blocks, and never a silent crash
         print(json.dumps({"systemMessage": f"Time Dividend ledger: the hook failed ({str(err)[:160]})."}))
@@ -533,6 +557,9 @@ def handle(event, sid, cwd, path):
 
     if event in ("SessionStart", "UserPromptSubmit"):
         notes = []
+        if START_SOURCE in ("resume", "clear", "compact"):
+            # The earlier context may be gone from the conversation: say it again.
+            st.pop("context_said", None)
         # A repo's own SessionStart hook can run in the background in cloud sessions, where its words
         # may never reach the session; the first prompt's hook is the one that surely lands. So
         # SessionStart speaks without marking it said, and the first prompt makes sure.
@@ -647,8 +674,9 @@ def entry():
                   "recorded; AI time and cost are.")
         if measured.get("cost_usd") is None:
             print("ledger: no cost records in this session's transcript yet (Claude Code writes them when "
-                  "it chooses, at the latest when its process ends), so cost is NOT recorded now; a later "
-                  "hook adds it if a record appears.")
+                  "it chooses, at the latest when its process ends), so cost is NOT recorded now. Where this "
+                  "repo has the ledger hooks, a later turn adds it; otherwise run entry again once a record "
+                  "appears.")
         elif measured.get("cost_basis") == "partial":
             print("ledger: the cost record stops before the session's last work, so cost is marked partial.")
         e.update(measured)

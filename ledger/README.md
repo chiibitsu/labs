@@ -45,8 +45,15 @@ say user-level settings never reach a cloud session, and that the hooks an Anthr
 cloud session runs come only from the repo and from the organization's **server-managed
 settings** (claude.ai admin console). Server-managed settings are therefore the documented
 route to every cloud session, Project threads and multi-repo sessions included. The plugin lines stay
-for your Mac, where they do work. When both run, both write the same row (an upsert by
-session id), so nothing doubles.
+for your Mac, where they do work. When both run and both are this version (0.3.0), only one
+copy writes each time and the other stands aside. **An older installed plugin does not know
+that**: it writes its own numbers to the same row, and the last write wins. So update it once
+(below, step 4). Third-party plugins do not update themselves unless you turn auto-update on
+for the marketplace under `/plugin`, Marketplaces.
+
+**These hooks run the checked-out branch's own code, with `LEDGER_TOKEN` in its
+environment**, at the start of every session and every turn. Never open a branch or a fork's
+pull request you did not write in Claude Code while the token is set: read its diff elsewhere.
 
 **Other repos.** Options, all decisions for you and the vibeOS PM, not made here:
 
@@ -86,7 +93,9 @@ rather than estimating. Only the top-level session logs; subagents never do.
 
 4. **Claude Code on your Mac:** `/plugin marketplace add chiibitsu/labs`, then
    `/plugin install time-dividend@chiibitsu-labs`, and set `LEDGER_TOKEN` in your
-   shell profile. That variable is the only place the client looks for the token.
+   shell profile. That variable is the only place the client looks for the token. If an older
+   version is already installed, update it: `claude plugin update time-dividend@chiibitsu-labs`
+   in your shell (or `/plugin`, Installed, time-dividend, Update now).
 5. **Claude chat / Cowork:** upload `elsewhere/claude-chat-skill/SKILL.md` as a
    skill. It uses your Supabase connector.
 
@@ -99,15 +108,17 @@ rather than estimating. Only the top-level session logs; subagents never do.
   writes in your name are not: "[Request interrupted by user…]", tool results, the
   summary after a compaction, local-command caveats, task notifications, and messages
   from other sessions. None of them can become a session's title either.
-- **Your time is measured only in Claude Code.** A figure from ChatGPT, Codex or Claude chat
-  is that AI's guess (or your own edit), and the page shows it as *not measured*.
+- **Time and tokens are measured only in Claude Code.** A figure from ChatGPT, Codex or Claude
+  chat, for your minutes, the AI's minutes or tokens, is that AI's guess (or your own edit),
+  and the page shows it as *not measured*, in each entry and in every total it feeds.
 - **Human-equivalent:** the AI's honest estimate, with a range and the concrete output
   it counted (`estimate_basis`). Mark estimates *too low / about right / too high* on
   the page each week; that calibration is what makes the data worth something.
 - **What the page leads with**, for every entry and every total: **time invested** (your
   measured minutes, shown for every entry, thinking sessions included), **AI cost**, and
   **time saved**. Time saved is human-equivalent − your time, and only where both exist: an
-  honest estimate of a concrete output *and* your measured minutes. Totals of time saved are
+  honest estimate of a concrete output *and* your minutes. Where those minutes were not
+  measured, the entry and every total built on it say so. Totals of time saved are
   labelled as an estimate, with the range from each estimate's low and high. An entry with
   no estimate shows as **time invested only**, not as missing; one whose minutes are unknown
   says so, and claims nothing saved.
@@ -118,8 +129,10 @@ rather than estimating. Only the top-level session logs; subagents never do.
   record none rather than guess, and a later turn or the `SessionEnd` hook picks it up. The
   newest record counts. Recorded as reported (`cost_basis = reported`). When the newest
   record sits more than 10 minutes before the session's last work, the cost misses the later
-  work and is marked `partial`. A session's own entry never sets cost, tokens or time: the
-  client measures them and drops any it is given. The cloud session service does not give a
+  work and is marked `partial`, as is a record that says some model had no known price. With
+  this version of the client, a Claude Code entry never sets cost, tokens or time: the client
+  measures them and drops any it is given. (The older client vibeOS's standing orders pin still
+  takes given values, until a vibeOS PR moves the pin.) The cloud session service does not give a
   hook its cost (checked 18 Nov 2026: no cost field for a running session, and the only route
   in is a credential file the session is not allowed to read), so there is no fallback. A session resumed in a
   fresh container holds only that container's transcript: its AI time and cost are what that
@@ -143,11 +156,13 @@ file per session in `~/.claude/time-dividend/`, so two sessions in one folder ne
 **Testing a change without touching the live ledger:** create an empty file
 `~/.claude/time-dividend/dry-run`. While it is there, this version of the client writes to
 `dry-run.jsonl` beside it instead of the ledger, needs no token, and does not read the keep
-list. It applies to every session on that machine, and each one is told it is in dry-run, so a
-forgotten file is never silent. **Delete the file when you are done**, or nothing is recorded.
-It covers only this version of the client: an older installed `time-dividend` plugin, and the
-pinned client vibeOS's standing orders run, ignore it and write for real, so disable the plugin
-(`/plugin disable time-dividend`) and skip those pinned commands while testing.
+list (`keep` says so instead). It applies to every session on that machine, and each one is
+told it is in dry-run, so a forgotten file is never silent. **Delete the file when you are
+done**, or nothing is recorded. It covers only this version of the client: an older installed
+`time-dividend` plugin, and the pinned client vibeOS's standing orders run, ignore it and write
+for real. So disable the plugin while testing (`/plugin disable time-dividend`, or
+`claude plugin disable time-dividend@chiibitsu-labs`); the session itself is told not to run
+those pinned commands.
 Tests: `python3 -I ledger/plugin/tests/test_ledger.py` (synthetic transcripts only).
 
 ## Files

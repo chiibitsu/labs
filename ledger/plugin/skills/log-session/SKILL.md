@@ -6,7 +6,8 @@ description: Log the finished piece of work into Chii's Time Dividend ledger —
 # Log this session to the Time Dividend ledger
 
 Timing (AI minutes, Chii's minutes) and cost (dollars and tokens, as Claude Code
-reports them) are recorded automatically by the plugin's hooks.
+reports them) are recorded automatically by the ledger hooks (this repo's own in cloud
+sessions, the plugin's on a Mac).
 Your job is the part only you can judge: **what was done** and **how long it would
 have taken a competent human by hand**.
 

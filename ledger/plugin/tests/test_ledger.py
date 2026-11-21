@@ -134,6 +134,12 @@ class Measure(unittest.TestCase):
         write(self.path, [user(0, "start"), asst(60), user(86400, "next day"), asst(86460), cost(120), asst(90000)])
         self.assertEqual(self.L.measure(self.path)["cost_basis"], "partial")
 
+    def test_a_cost_with_an_unpriced_model_is_partial(self):
+        c = cost(520)
+        c["hasUnknownModelCost"] = True
+        write(self.path, BASE + [c])
+        self.assertEqual(self.L.measure(self.path)["cost_basis"], "partial")
+
     def test_a_typed_prompt_that_starts_with_a_tag_is_hers(self):
         L = self.L
         for text in ["<div class='hero'> is misaligned, fix it", "<3 thanks", "<b>bold</b> please"]:
@@ -319,6 +325,58 @@ class Honesty(Hooks):
         open(env["LEDGER_STATE_DIR"], "w").close()
         out = run_hook(env, "UserPromptSubmit", "s1", self.cwd)  # run_hook asserts exit 0
         self.assertIn("hook failed", json.loads(out)["systemMessage"])
+
+
+class RoundTwo(Hooks):
+    def test_entry_keeps_its_own_session_after_a_cd(self):
+        # Session B's hooks ran in folder q; another session A's ran in this folder. B runs entry here.
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        other = os.path.join(self.home, "other")
+        os.makedirs(other)
+        run_hook(self.env, "UserPromptSubmit", "A", self.cwd)
+        run_hook(self.env, "UserPromptSubmit", "B", other)
+        self.transcript("B", [user(0, "b's work"), asst(600)])
+        subprocess.run([sys.executable, "-I", CLIENT, "entry"], input='{"title": "x"}',
+                       env=dict(self.env, CLAUDE_CODE_SESSION_ID="B"), cwd=self.cwd,
+                       capture_output=True, text=True, timeout=30)
+        self.assertEqual(rows_in(os.path.join(self.state, "dry-run.jsonl"))[-1]["p_entry"]["external_id"], "B")
+
+    def test_dry_run_keep_reads_nothing_and_says_so(self):
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        p = subprocess.run([sys.executable, "-I", CLIENT, "keep"], env=self.env, capture_output=True, text=True, timeout=30)
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("DRY-RUN", p.stdout)
+        self.assertNotIn("UNREACHABLE", p.stdout)  # it never tried the network
+
+    def test_dry_run_context_warns_off_the_pinned_commands(self):
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        ctx = json.loads(run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("do not run those here", ctx)
+        self.assertIn("would write to the live ledger", ctx)
+
+    def test_context_is_said_again_after_a_compaction(self):
+        env = dict(self.env)
+        env.pop("LEDGER_TOKEN")
+        run_hook(env, "UserPromptSubmit", "s1", self.cwd)
+        time.sleep(DUP_WAIT)
+        data = {"hook_event_name": "SessionStart", "session_id": "s1", "cwd": self.cwd, "source": "compact"}
+        p = subprocess.run([sys.executable, "-I", CLIENT, "hook"], input=json.dumps(data), env=env,
+                           capture_output=True, text=True, timeout=30)
+        self.assertIn("NOT wired", p.stdout)
+        self.assertIn("NOT wired", run_hook(env, "UserPromptSubmit", "s1", self.cwd))  # the prompt makes sure
+
+    def test_a_copy_that_cannot_get_the_lock_stands_aside(self):
+        import fcntl
+        env = dict(self.env)
+        env.pop("LEDGER_TOKEN")
+        L = load_client(self.home)
+        os.environ["LEDGER_STATE_DIR"] = self.state
+        lock = L.state_file("s1") + ".lock"
+        os.environ.pop("LEDGER_STATE_DIR")
+        with open(lock, "a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            self.assertEqual(run_hook(env, "UserPromptSubmit", "s1", self.cwd), "")  # the holder speaks
+        self.assertIn("NOT wired", run_hook(env, "UserPromptSubmit", "s1", self.cwd))
 
 
 class ManySessionsOneFolder(Hooks):
