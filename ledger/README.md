@@ -51,8 +51,8 @@ session id), so nothing doubles.
 **Other repos.** Options, all decisions for you and the vibeOS PM, not made here:
 
 - *Per repo:* add the same four hooks to that repo's `.claude/settings.json`, running the
-  client fetched from a pinned commit with its sha256 checked first (the pin and hash vibeOS
-  `CLAUDE.md` names; the vibeOS PR that moves the pin carries the exact command).
+  client fetched from a pinned commit with its sha256 checked first (the pin and hash in vibeOS
+  `templates/claude-md.md`, "Log the work"; the vibeOS PR that moves the pin carries the exact command).
 - *Organization-wide:* the same four hooks in the organization's server-managed settings,
   running the pinned, hash-checked client. Reaches every cloud session, per the docs above.
   Not yet tested.
@@ -80,7 +80,7 @@ rather than estimating. Only the top-level session logs; subagents never do.
    *Intake tokens* (one per tool, e.g. "Claude Code cloud").
 3. **Claude Code on the web:** add the token as an environment variable named
    `LEDGER_TOKEN` in **each** cloud environment that should log (environment menu → Edit).
-   A session in an environment without it tells you, once, that the ledger is not wired, and
+   A session in an environment without it tells you that the ledger is not wired, and
    logs nothing. This repo's `.claude/settings.json` already has the hooks (see
    *Why cloud sessions use repo hooks* above).
 
@@ -99,6 +99,8 @@ rather than estimating. Only the top-level session logs; subagents never do.
   writes in your name are not: "[Request interrupted by user…]", tool results, the
   summary after a compaction, local-command caveats, task notifications, and messages
   from other sessions. None of them can become a session's title either.
+- **Your time is measured only in Claude Code.** A figure from ChatGPT, Codex or Claude chat
+  is that AI's guess (or your own edit), and the page shows it as *not measured*.
 - **Human-equivalent:** the AI's honest estimate, with a range and the concrete output
   it counted (`estimate_basis`). Mark estimates *too low / about right / too high* on
   the page each week; that calibration is what makes the data worth something.
@@ -110,30 +112,43 @@ rather than estimating. Only the top-level session logs; subagents never do.
   no estimate shows as **time invested only**, not as missing; one whose minutes are unknown
   says so, and claims nothing saved.
 - **Cost & tokens:** Claude Code writes a cost total and per-model token counts into the
-  transcript **only when its process ends** (a restart, or the session closing), never
-  mid-session. So a session that is still running has no cost yet: the hooks record none
-  rather than guess, a `SessionEnd` hook records it if the record lands before it runs, and
-  the next turn after a restart picks it up. Recorded as reported (`cost_basis = reported`).
-  When those totals stop more than 10 minutes before the session's last work, the cost
-  misses the later work and is marked `partial`. The cloud session service does not give a
+  transcript at points of its own choosing: at the latest when its process ends (a restart,
+  or the session closing), and in one cloud session seen 21 Nov 2026 several times
+  mid-session too (why is untested). Until the first one, a session has no cost: the hooks
+  record none rather than guess, and a later turn or the `SessionEnd` hook picks it up. The
+  newest record counts. Recorded as reported (`cost_basis = reported`). When the newest
+  record sits more than 10 minutes before the session's last work, the cost misses the later
+  work and is marked `partial`. A session's own entry never sets cost, tokens or time: the
+  client measures them and drops any it is given. The cloud session service does not give a
   hook its cost (checked 18 Nov 2026: no cost field for a running session, and the only route
   in is a credential file the session is not allowed to read), so there is no fallback. A session resumed in a
   fresh container holds only that container's transcript: its AI time and cost are what that
   copy records, and when it holds no prompt of yours, your minutes are left blank, not guessed. That's the API-equivalent cost: on a subscription it isn't your bill,
   but it's the honest number to set against a human's hours. The page shows cost
-  per day and week, and **cost per saved hour** overall. ChatGPT and Codex
+  per day and week, and **cost per saved hour** overall. Totals count only known values: the
+  small line under each says how many entries are unknown, not measured, not reported or
+  partial, and a total with nothing known shows "—". ChatGPT and Codex
   don't report cost, so fill it in by hand if you want it (`manual`).
 
 ## When something fails
 
-Never blocking, never silent. With no `LEDGER_TOKEN`, the session is told once that the ledger
-is not wired, so it can tell you. When an automatic write fails, you see one line at the end
-of that turn, and the session is told once on your next prompt. The hooks keep a small state
+Never blocking, never silent. With no `LEDGER_TOKEN`, the session is told at its start and on
+your first prompt that the ledger is not wired, so it can tell you. When an automatic write
+fails, you see one line at the end of that turn, and the session is told once on your next
+prompt. A failure in the final write as a session closes, which no later prompt of that
+session can tell, is told on the next prompt of any session on that machine. If the hook
+itself breaks, you see one line saying so. The hooks keep a small state
 file per session in `~/.claude/time-dividend/`, so two sessions in one folder never mix.
 
 **Testing a change without touching the live ledger:** create an empty file
-`~/.claude/time-dividend/dry-run`. Writes then go to `dry-run.jsonl` beside it, without the
-token. Tests: `python3 -I ledger/plugin/tests/test_ledger.py` (synthetic transcripts only).
+`~/.claude/time-dividend/dry-run`. While it is there, this version of the client writes to
+`dry-run.jsonl` beside it instead of the ledger, needs no token, and does not read the keep
+list. It applies to every session on that machine, and each one is told it is in dry-run, so a
+forgotten file is never silent. **Delete the file when you are done**, or nothing is recorded.
+It covers only this version of the client: an older installed `time-dividend` plugin, and the
+pinned client vibeOS's standing orders run, ignore it and write for real, so disable the plugin
+(`/plugin disable time-dividend`) and skip those pinned commands while testing.
+Tests: `python3 -I ledger/plugin/tests/test_ledger.py` (synthetic transcripts only).
 
 ## Files
 

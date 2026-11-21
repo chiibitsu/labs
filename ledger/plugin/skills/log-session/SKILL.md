@@ -48,6 +48,9 @@ python3 "<path from session context>/ledger.py" entry <<'LEDGER_ENTRY'
 LEDGER_ENTRY
 ```
 
+Never put timing, cost or tokens in the entry (`you_minutes`, `ai_minutes`, `cost_usd`,
+`tokens_*` and the like): the client measures them from the transcript and drops any you give.
+
 The command prints what it recorded. Mention it in one line in your final message
 (e.g. "Logged: ~7 h human-equivalent, ~20 min of yours, $13 of AI"). If your context says the
 ledger is NOT wired, or has no "Time Dividend ledger" line at all, nothing is being recorded

@@ -316,7 +316,7 @@ async function loadAll() {
       sb.from("ledger_keep").select("*").order("sort").order("created_at"),
       sb.from("ledger_spent").select("*").gte("day", dayKey(addDays(weekStart(day), -35))),
       sb.from("ledger_tokens").select("id, label, revoked, last_used_at, created_at").order("created_at", { ascending: false }),
-      sb.from("ledger_sessions").select("human_minutes, human_low, human_high, you_minutes, ai_minutes, saved_minutes, calibration, cost_usd, tokens_input, tokens_cache_read, tokens_output"),
+      sb.from("ledger_sessions").select("source, cost_basis, human_minutes, human_low, human_high, you_minutes, ai_minutes, saved_minutes, calibration, cost_usd, tokens_input, tokens_cache_read, tokens_output"),
     ]);
     for (const r of [ses, keep, spent, toks, all]) if (r.error) throw r.error;
     S = { sessions: ses.data, keep: keep.data, spent: spent.data, tokens: toks.data, all: all.data };
@@ -326,6 +326,22 @@ async function loadAll() {
 
 /* ── render ── */
 function sum(rows, k) { return rows.reduce((a, r) => a + (num(r[k]) || 0), 0); }
+/* Only Claude Code measures your minutes from its transcript; any other source's figure is a chat AI's guess or your own edit: not measured. */
+function guessedYou(r) { return num(r.you_minutes) !== null && r.source !== "claude-code"; }
+/* A total of what is known, never an unknown counted as zero: "—" when nothing is known, and the
+   small line says how many entries are unknown, not measured or partial. */
+function investedTotal(rows) {
+  const known = rows.filter((r) => num(r.you_minutes) !== null);
+  const unknown = rows.length - known.length, guessed = known.filter(guessedYou).length;
+  const notes = [unknown ? unknown + " unknown" : "", guessed ? guessed + " not measured" : ""].filter(Boolean);
+  return { text: known.length ? fmt(sum(known, "you_minutes")) : "—", note: notes.length ? " (" + notes.join(", ") + ")" : "" };
+}
+function costTotal(rows) {
+  const known = rows.filter((r) => num(r.cost_usd) !== null);
+  const missing = rows.length - known.length, partial = known.filter((r) => r.cost_basis === "partial").length;
+  const notes = [missing ? missing + " not reported" : "", partial ? partial + " partial" : ""].filter(Boolean);
+  return { text: known.length ? usd(sum(known, "cost_usd")) : "—", note: notes.length ? " (" + notes.join(", ") + ")" : "" };
+}
 /* Time saved exists only where an honest human-equivalent estimate does. Its range comes from
    each estimate's own low/high; an estimate without one counts at its point value. */
 function hasSaved(r) { return num(r.human_minutes) !== null && num(r.you_minutes) !== null; }
@@ -352,10 +368,11 @@ function render() {
   const weekSes = S.sessions.filter((s) => { const t = endOf(s); return t >= ws && t < we; });
   const weekSaved = sum(weekSes.filter(hasSaved), "saved_minutes");
 
-  const daySaved = savedRange(daySes), onlyDay = daySes.length - daySaved.n;
+  const daySaved = savedRange(daySes);
+  const dayInv = investedTotal(daySes), weekInv = investedTotal(weekSes), dayCost = costTotal(daySes), weekCost = costTotal(weekSes);
   $("dayStats").innerHTML = [
-    ["hero", "time invested", fmt(sum(daySes, "you_minutes")), "yours, " + daySes.length + (daySes.length === 1 ? " entry" : " entries") + " · this week " + fmt(sum(weekSes, "you_minutes"))],
-    ["", "AI cost", usd(sum(daySes, "cost_usd")), tok(daySes.reduce((a, s) => a + tokens(s), 0)) + " tokens · this week " + usd(sum(weekSes, "cost_usd"))],
+    ["hero", "time invested", dayInv.text, "yours, " + daySes.length + (daySes.length === 1 ? " entry" : " entries") + dayInv.note + " · this week " + weekInv.text],
+    ["", "AI cost", dayCost.text, tok(daySes.reduce((a, s) => a + tokens(s), 0)) + " tokens" + dayCost.note + " · this week " + weekCost.text],
     ["", "time saved · estimate", daySaved.n ? fmt(daySaved.point) : "—", daySaved.n ? "over " + daySaved.n + (daySaved.n === 1 ? " estimated entry" : " estimated entries") + rangeText(daySaved) + " · this week " + fmt(weekSaved) : "no estimated entries"],
     ["", "human-equivalent", fmt(sum(estimated, "human_minutes")), "what the estimated work would have taken by hand"],
     ["", "AI time", fmt(sum(daySes, "ai_minutes")), "working, start to finish"],
@@ -409,7 +426,7 @@ function renderLog(daySes) {
     return '<div class="card sess" data-sid="' + s.id + '">' +
       '<div class="sess-head"><h3>' + esc(s.title || "Untitled session") + '</h3><span class="src">' + esc(s.source) + "</span>" +
       (s.project ? '<span class="src" style="color:var(--soft)">' + esc(s.project) + "</span>" : "") + "</div>" +
-      '<div class="figs"><b>invested ' + fmt(s.you_minutes) + "</b> · AI cost " +
+      '<div class="figs"><b>invested ' + (num(s.you_minutes) !== null ? fmt(s.you_minutes) + (guessedYou(s) ? " (not measured)" : "") : "unknown") + "</b> · AI cost " +
       (num(s.cost_usd) !== null ? usd(s.cost_usd) + (s.cost_basis === "reported" ? "" : s.cost_basis ? " (" + esc(s.cost_basis) + ")" : "") : "not reported") + " · " + saved +
       " · AI " + fmt(s.ai_minutes) + (tokens(s) ? " · " + tok(tokens(s)) + " tokens" : "") + "</div>" +
       (s.estimate_basis ? '<p class="basis">' + esc(s.estimate_basis) + "</p>" : "") +
@@ -452,14 +469,15 @@ function renderAll() {
   const you = sum(est, "you_minutes"), human = sum(est, "human_minutes");
   const mult = you > 0 ? (human / you) : null;
   const savedAll = sum(est, "saved_minutes"), costEst = sum(est, "cost_usd");
+  const estCost = costTotal(est);
   const perHour = savedAll > 0 && costEst > 0 ? costEst / (savedAll / 60) : null;
-  const allSaved = savedRange(rows);
+  const allSaved = savedRange(rows), allInv = investedTotal(rows), allCost = costTotal(rows);
   $("allStats").innerHTML = [
-    ["hero", "time invested, all time", fmt(sum(rows, "you_minutes")), "yours, " + rows.length + " entries"],
-    ["", "AI cost", usd(sum(rows, "cost_usd")), tok(rows.reduce((a, r) => a + tokens(r), 0)) + " tokens, all entries"],
+    ["hero", "time invested, all time", allInv.text, "yours, " + rows.length + " entries" + allInv.note],
+    ["", "AI cost", allCost.text, tok(rows.reduce((a, r) => a + tokens(r), 0)) + " tokens, all entries" + allCost.note],
     ["", "time saved · estimate", allSaved.n ? fmt(savedAll) : "—", allSaved.n ? "over " + allSaved.n + (allSaved.n === 1 ? " estimated entry" : " estimated entries") + rangeText(allSaved) + (rows.length > allSaved.n ? " · " + (rows.length - allSaved.n) + " with no time saved counted" : "") : "no estimated entries"],
     ["", "leverage", mult ? mult.toFixed(1) + "×" : "—", "human-equivalent ÷ your time, estimated entries"],
-    ["", "cost per saved hour", perHour !== null ? usd(perHour) : "—", "API-equivalent $ ÷ estimated hours saved"],
+    ["", "cost per saved hour", perHour !== null ? usd(perHour) : "—", "API-equivalent $ ÷ estimated hours saved" + (perHour !== null ? estCost.note : "")],
   ].map((s) => '<div class="stat ' + s[0] + '"><span>' + s[1] + "</span><b>" + s[2] + "</b><small>" + s[3] + "</small></div>").join("");
   const c = { too_low: 0, about_right: 0, too_high: 0 };
   rows.forEach((r) => { if (r.calibration) c[r.calibration]++; });

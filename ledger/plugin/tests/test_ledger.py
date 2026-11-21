@@ -126,6 +126,22 @@ class Measure(unittest.TestCase):
         write(self.path, BASE + [cost(0, with_times=False)])
         self.assertEqual(self.L.measure(self.path)["cost_basis"], "reported")
 
+    def test_a_resumed_session_cost_record_is_not_partial(self):
+        # After a resume the process time (totalDuration) is far short of the wall-clock span; the
+        # record sits right after the last work, so it covers it.
+        write(self.path, [user(0, "start"), asst(60), user(86400, "next day"), asst(86460), cost(120)])
+        self.assertEqual(self.L.measure(self.path)["cost_basis"], "reported")
+        write(self.path, [user(0, "start"), asst(60), user(86400, "next day"), asst(86460), cost(120), asst(90000)])
+        self.assertEqual(self.L.measure(self.path)["cost_basis"], "partial")
+
+    def test_a_typed_prompt_that_starts_with_a_tag_is_hers(self):
+        L = self.L
+        for text in ["<div class='hero'> is misaligned, fix it", "<3 thanks", "<b>bold</b> please"]:
+            self.assertTrue(L.is_human_prompt(user(1, text, origin={"kind": "human"})), text)
+        for text in ["<command-name>/clear</command-name>", "<local-command-stdout>x</local-command-stdout>",
+                     "<task-notification>x</task-notification>", "<system-reminder>x</system-reminder>"]:
+            self.assertFalse(L.is_human_prompt(user(1, text, origin={"kind": "human"})), text)
+
     def test_no_prompt_of_hers_leaves_her_minutes_unknown(self):
         write(self.path, [asst(0), asst(30), user(40, "<task-notification/>", origin={"kind": "task-notification"})])
         m = self.L.measure(self.path)
@@ -174,7 +190,7 @@ class Hooks(unittest.TestCase):
     def test_stop_records_the_session(self):
         open(os.path.join(self.state, "dry-run"), "w").close()
         t = self.transcript("s1", BASE + [cost(520)])
-        self.assertEqual(run_hook(self.env, "Stop", "s1", self.cwd, t), "")
+        self.assertIn("DRY-RUN", json.loads(run_hook(self.env, "Stop", "s1", self.cwd, t))["systemMessage"])
         rows = rows_in(os.path.join(self.state, "dry-run.jsonl"))
         self.assertEqual(len(rows), 1)
         self.assertNotIn("p_token", rows[0])
@@ -188,6 +204,7 @@ class Hooks(unittest.TestCase):
         t = self.transcript("s1", BASE)
         out = json.loads(run_hook(self.env, "Stop", "s1", self.cwd, t))
         self.assertIn("not recorded", out["systemMessage"])
+        time.sleep(DUP_WAIT)  # past the duplicate window, so this is a real second turn
         self.assertEqual(run_hook(self.env, "Stop", "s1", self.cwd, t), "")  # same failure: said already
         ctx = json.loads(run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))["hookSpecificOutput"]["additionalContext"]
         self.assertIn("last automatic write for this session failed", ctx)
@@ -245,11 +262,63 @@ class Followups(Hooks):
         self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
         open(os.path.join(self.state, "dry-run"), "w").close()
         time.sleep(DUP_WAIT)
-        self.assertEqual(run_hook(self.env, "Stop", "s1", self.cwd, t), "")  # recovered
+        self.assertIn("DRY-RUN", run_hook(self.env, "Stop", "s1", self.cwd, t))  # recovered
         os.remove(os.path.join(self.state, "dry-run"))
         time.sleep(DUP_WAIT)
         self.assertIn("not recorded", run_hook(self.env, "Stop", "s1", self.cwd, t))  # same error, new episode
         self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
+
+
+class Honesty(Hooks):
+    def entry(self, body, **env):
+        p = subprocess.run([sys.executable, "-I", CLIENT, "entry"], input=json.dumps(body), env=dict(self.env, **env),
+                           cwd=self.cwd, capture_output=True, text=True, timeout=30)
+        return p.stdout
+
+    def test_entry_never_takes_measured_values_from_the_session(self):
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        self.transcript("s1", [user(0, "the ask"), asst(60), cost(60, usd=1.25)])
+        out = self.entry({"title": "x", "you_minutes": 45, "ai_minutes": 90, "cost_usd": 9.99,
+                          "cost_basis": "reported", "tokens_output": 99999, "human_minutes": 60},
+                         CLAUDE_CODE_SESSION_ID="s1")
+        self.assertIn("dropped", out)
+        e = rows_in(os.path.join(self.state, "dry-run.jsonl"))[-1]["p_entry"]
+        self.assertEqual((e["you_minutes"], e["ai_minutes"], e["cost_usd"], e["tokens_output"]), (4.0, 0.0, 1.25, 400))
+        # No transcript at all: the given values are still dropped, never recorded as measured.
+        self.entry({"title": "y", "you_minutes": 45, "cost_usd": 3.5}, CLAUDE_CODE_SESSION_ID="nowhere")
+        e = rows_in(os.path.join(self.state, "dry-run.jsonl"))[-1]["p_entry"]
+        self.assertNotIn("you_minutes", e)
+        self.assertNotIn("cost_usd", e)
+
+    def test_dry_run_is_never_silent_and_needs_no_token(self):
+        open(os.path.join(self.state, "dry-run"), "w").close()
+        env = dict(self.env)
+        env.pop("LEDGER_TOKEN")
+        ctx = json.loads(run_hook(env, "UserPromptSubmit", "s1", self.cwd))["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("DRY-RUN", ctx)
+        t = self.transcript("s1", BASE)
+        self.assertIn("DRY-RUN", run_hook(env, "Stop", "s1", self.cwd, t))
+        self.assertEqual(len(rows_in(os.path.join(self.state, "dry-run.jsonl"))), 1)
+
+    def test_a_failed_final_write_is_told_in_the_next_session(self):
+        t = self.transcript("s1", BASE)
+        run_hook(self.env, "SessionEnd", "s1", self.cwd, t)
+        ctx = json.loads(run_hook(self.env, "UserPromptSubmit", "s2", self.cwd))["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("final write of an earlier session", ctx)
+        time.sleep(DUP_WAIT)
+        self.assertNotIn("earlier session", run_hook(self.env, "UserPromptSubmit", "s2", self.cwd))  # once
+
+    def test_an_error_said_only_at_session_start_is_said_again_on_the_prompt(self):
+        t = self.transcript("s1", BASE)
+        run_hook(self.env, "Stop", "s1", self.cwd, t)
+        self.assertIn("failed", run_hook(self.env, "SessionStart", "s1", self.cwd))
+        self.assertIn("failed", run_hook(self.env, "UserPromptSubmit", "s1", self.cwd))
+
+    def test_a_broken_state_folder_says_so_and_exits_0(self):
+        env = dict(self.env, LEDGER_STATE_DIR=os.path.join(self.home, "file-not-dir"))
+        open(env["LEDGER_STATE_DIR"], "w").close()
+        out = run_hook(env, "UserPromptSubmit", "s1", self.cwd)  # run_hook asserts exit 0
+        self.assertIn("hook failed", json.loads(out)["systemMessage"])
 
 
 class ManySessionsOneFolder(Hooks):

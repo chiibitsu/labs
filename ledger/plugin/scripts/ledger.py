@@ -6,7 +6,7 @@
                           measures the session from its transcript and upserts timing
                           (AI minutes, your minutes) and the cost and token totals
                           Claude Code reports into the ledger. On SessionStart and the
-                          first prompt it tells the session, once, whether the ledger is
+                          first prompt it tells the session whether the ledger is
                           wired, plus the keep list and the logging command.
   ledger.py entry         Reads an entry JSON on stdin (title, human estimate,
                           actions...) and records it against the current session.
@@ -17,8 +17,10 @@
 
 Writes go to the Supabase RPC public.ledger_ingest, gated by your intake token
 (the LEDGER_TOKEN environment variable, and nothing else). Never blocks Claude: the hook
-exits 0 on any failure. It says once per session when the ledger is not wired (no token) and
-once per distinct failure when a write did not land; nothing else. `entry` reports the outcome
+exits 0 on any failure. It says when the ledger is not wired (no token) at session start and on
+the first prompt, and once per distinct failure when a write did not land; a failure at the very
+end of a session is told on the next prompt of any session on this machine. In dry-run mode it
+says so. `entry` reports the outcome
 and exits 0; `keep` exits 1 when the list is unreachable, so the caller cannot mistake that for
 empty.
 """
@@ -80,10 +82,16 @@ def save_json(path, value):
 
 def dry_run_file():
     """When a file named `dry-run` sits in the state folder, writes go to `dry-run.jsonl` beside it
-    instead of the ledger (reads such as the keep list still go out). For testing a change in a
-    real session without touching the live ledger."""
+    instead of the ledger, no token is needed, and the keep list is not read. For testing a change
+    in a real session without touching the live ledger. It covers this copy of the client only, and
+    every session that uses it is told, so a forgotten marker is never silent."""
     d = state_dir()
     return os.path.join(d, "dry-run.jsonl") if os.path.exists(os.path.join(d, "dry-run")) else None
+
+
+DRY_NOTE = ("Time Dividend ledger is in DRY-RUN on this machine: nothing reaches the live ledger "
+            "(writes go to dry-run.jsonl). Delete the file `dry-run` in the ledger's state folder to "
+            "record for real.")
 
 
 def rpc(fn, payload, timeout=8):
@@ -129,9 +137,24 @@ def prompt_text(content):
     return ""
 
 
-def is_synthetic(text):
+# Tags Claude Code wraps around text it writes as a "user" line (commands, their output, hook and
+# system notices, messages from other sessions). A prompt she types that happens to start with "<"
+# (pasted HTML, "<3") is hers.
+SYNTHETIC_TAGS = ("command-name", "command-message", "command-args", "local-command-stdout",
+                  "local-command-stderr", "local-command-caveat", "bash-input", "bash-stdout",
+                  "bash-stderr", "task-notification", "system-reminder", "user-prompt-submit-hook",
+                  "cross-session-message", "agent-message", "teammate-message", "channel", "wake")
+
+
+def is_synthetic(text, has_origin=False):
     t = (text or "").lstrip()
-    return t.startswith("<") or t.startswith(SYNTHETIC_PREFIXES)
+    if t.startswith(SYNTHETIC_PREFIXES):
+        return True
+    if t.startswith("<"):
+        name = t[1:].split(">", 1)[0].split(None, 1)[0].lstrip("/") if len(t) > 1 else ""
+        # With no origin to go by, any leading tag is treated as Claude Code's, as before.
+        return name in SYNTHETIC_TAGS or not has_origin
+    return False
 
 
 def is_human_prompt(d):
@@ -147,12 +170,13 @@ def is_human_prompt(d):
     elif not isinstance(content, str):
         return False
     text = prompt_text(content)
+    origin = d.get("origin") or {}
+    has_origin = bool((isinstance(origin, dict) and origin.get("kind")) or d.get("turnOrigin"))
     # A synthetic text is never hers, whatever origin it carries. An image with no text is.
-    if text.strip() and is_synthetic(text):
+    if text.strip() and is_synthetic(text, has_origin):
         return False
     if not text.strip() and not (isinstance(content, list) and "image" in types):
         return False
-    origin = d.get("origin") or {}
     if isinstance(origin, dict) and origin.get("kind"):
         return origin.get("kind") == "human"
     if d.get("turnOrigin"):
@@ -226,16 +250,20 @@ def scan(path):
 
 
 def cost_covers_until(d, last_event):
-    """When a cost record's totals stop: its process start plus its duration, both in ms, when the
-    record carries them; else the last event written before it. Claude Code writes these records
-    only when its process ends, so a session still running has none for its current run."""
+    """When a cost record's totals stop: at least the last event written before it (the record
+    counts everything up to where it sits), or its process start plus its duration (ms) if that is
+    later. The duration counts only the process's own running time, so after a resume or a long
+    idle it falls days short of the record; it can only push the end later, never earlier.
+    Claude Code writes these records at points of its own choosing (seen mid-session as well as at
+    process end), so the newest one in the transcript is the one that counts."""
+    until = last_event
     try:
         start, dur = float(d.get("startTime") or 0), float(d.get("totalDuration") or 0)
         if start > 1e12 and dur >= 0:
-            return (start + dur) / 1000
+            until = max(until or 0, (start + dur) / 1000)
     except Exception:
         pass
-    return last_event
+    return until
 
 
 def settle_cost(out, cost):
@@ -377,9 +405,13 @@ def keep_context():
 
 
 def context_text():
-    """What a session is told about the ledger, once."""
+    """What a session is told about the ledger, at session start and on the first prompt."""
     here = os.path.abspath(__file__)
     skill = os.path.normpath(os.path.join(os.path.dirname(here), "..", "skills", "log-session", "SKILL.md"))
+    if dry_run_file():
+        return (DRY_NOTE + " Tell Chii that once, in one line, in your next reply. The log-session skill "
+                f"still records through: python3 \"{here}\" entry (into the dry-run file). The keep list "
+                "is not read in dry-run; treat it as unknown.")
     if not TOKEN:
         return ("Time Dividend ledger is NOT wired in this session: LEDGER_TOKEN is not set in this "
                 "environment, so nothing about this session is recorded. Tell Chii that once, in one line, "
@@ -388,6 +420,31 @@ def context_text():
             "are recorded automatically at the end of every turn. When a piece of work is finished, add the "
             f"human-equivalent estimate and the log lines with the log-session skill ({skill}); it records "
             f"through: python3 \"{here}\" entry\n\n" + keep_context())
+
+
+def unseen_file():
+    """Failures at the very end of a session (SessionEnd), which no later prompt of that session can
+    tell: kept machine-wide so the next prompt of any session tells them, once."""
+    return os.path.join(state_dir(), "unseen-failures.json")
+
+
+def note_unseen(sid, err):
+    with file_lock(unseen_file()):
+        u = load_json(unseen_file(), {})
+        if err is None:
+            u.pop(sid, None)
+        else:
+            u[sid] = {"error": err, "at": time.time()}
+        save_json(unseen_file(), u)
+
+
+def take_unseen(except_sid):
+    with file_lock(unseen_file()):
+        u = load_json(unseen_file(), {})
+        out = [v.get("error") for k, v in u.items() if k != except_sid and isinstance(v, dict)]
+        if out:
+            save_json(unseen_file(), {k: v for k, v in u.items() if k == except_sid})
+    return out
 
 
 def remember(sid, cwd, path):
@@ -458,8 +515,11 @@ def hook():
     event = data.get("hook_event_name", "")
     if not sid or "/subagents/" in str(path or ""):
         return
-    with session_lock(sid):
-        handle(event, sid, cwd, path)
+    try:
+        with session_lock(sid):
+            handle(event, sid, cwd, path)
+    except Exception as err:  # never blocks, and never a silent crash
+        print(json.dumps({"systemMessage": f"Time Dividend ledger: the hook failed ({str(err)[:160]})."}))
 
 
 def handle(event, sid, cwd, path):
@@ -484,14 +544,22 @@ def handle(event, sid, cwd, path):
         if err and err != st.get("error_said"):
             notes.append(f"Time Dividend ledger: the last automatic write for this session failed ({err}). "
                          "Tell Chii once, in one line; it is retried at the end of every turn.")
-            st["error_said"] = err
+            if event == "UserPromptSubmit":  # like the context: only the prompt's hook surely lands
+                st["error_said"] = err
+        if event == "UserPromptSubmit":
+            others = take_unseen(sid)
+            if others:
+                notes.append("Time Dividend ledger: the final write of an earlier session on this machine "
+                             f"failed ({'; '.join(str(o) for o in others)[:300]}), so that session's last turn "
+                             "and its cost may be missing from the ledger. Tell Chii once, in one line.")
         if notes:
             save_json(state_file(sid), st)
             print(json.dumps({"hookSpecificOutput": {"hookEventName": event,
                                                      "additionalContext": "\n\n".join(notes)}}))
         return
 
-    if event not in ("Stop", "SessionEnd") or not TOKEN:
+    dry = dry_run_file()
+    if event not in ("Stop", "SessionEnd") or not (TOKEN or dry):
         return
     try:
         m = measure_session(sid, path)
@@ -514,19 +582,32 @@ def handle(event, sid, cwd, path):
         for k in ("last_error", "error_said", "error_shown"):
             st.pop(k, None)
         st["last_ok"] = time.time()
+        if dry and not st.get("dry_shown"):
+            st["dry_shown"] = True
+            print(json.dumps({"systemMessage": DRY_NOTE}))
         save_json(state_file(sid), st)
+        note_unseen(sid, None)
         return
     st["last_error"] = str(why)[:200]
-    tell = event == "Stop" and st.get("last_error") != st.get("error_shown")
+    tell = st.get("last_error") != st.get("error_shown")
     if tell:
         st["error_shown"] = st["last_error"]
     save_json(state_file(sid), st)
+    if event == "SessionEnd":
+        # No prompt of this session follows, and a SessionEnd message may never be shown.
+        note_unseen(sid, st["last_error"])
     if tell:
         print(json.dumps({"systemMessage": f"Time Dividend ledger: this session was not recorded ({st['last_error']})."}))
 
 
+# What the client measures from a Claude Code transcript. For a Claude Code entry these come only
+# from the measurement: a value the session supplies for one of them is dropped, never recorded.
+MEASURED_KEYS = ("started_at", "ended_at", "ai_minutes", "you_minutes", "cost_usd", "tokens_input",
+                 "tokens_cache_read", "tokens_output", "model_usage", "cost_basis")
+
+
 def entry():
-    if not TOKEN:
+    if not TOKEN and not dry_run_file():
         print("ledger: no LEDGER_TOKEN set; create one on the ledger page and add it to the environment.")
         return
     raw = sys.stdin.read()
@@ -543,6 +624,13 @@ def entry():
     # Only Claude Code writes a transcript this client can read; other tools give their numbers in the entry.
     sid = current_session() if e["source"] == "claude-code" else None
     measured = None
+    if e["source"] == "claude-code":
+        given = [k for k in MEASURED_KEYS if k in e]
+        for k in given:
+            e.pop(k)
+        if given:
+            print("ledger: " + ", ".join(given) + " are measured from the transcript, never taken from the "
+                  "entry, so the values given were dropped.")
     if e["source"] != "claude-code":
         print(f"ledger: source {e['source']}: time and cost are recorded only as given in the entry.")
     elif sid:
@@ -558,13 +646,12 @@ def entry():
             print("ledger: no prompt of Chii's in this session's transcript, so her minutes are NOT "
                   "recorded; AI time and cost are.")
         if measured.get("cost_usd") is None:
-            print("ledger: no cost records in this session's transcript yet (Claude Code writes them only "
-                  "when its process ends), so cost is NOT recorded now; the end-of-session hook adds it "
-                  "if the record appears.")
+            print("ledger: no cost records in this session's transcript yet (Claude Code writes them when "
+                  "it chooses, at the latest when its process ends), so cost is NOT recorded now; a later "
+                  "hook adds it if a record appears.")
         elif measured.get("cost_basis") == "partial":
             print("ledger: the cost record stops before the session's last work, so cost is marked partial.")
-        for k, v in measured.items():
-            e.setdefault(k, v)
+        e.update(measured)
     if e["source"] == "claude-code" and not measured:
         print("ledger: could not find this session's transcript, so time and cost are NOT recorded "
               "(no estimate is substituted). " + ("Session id: " + sid if sid else
@@ -575,12 +662,15 @@ def entry():
     except Exception as err:
         print(f"ledger: could not record ({err})")
         return
+    if sid == "dry-run":
+        print("ledger: DRY-RUN, written to dry-run.jsonl only, not to the live ledger.")
     # The write has succeeded; nothing below may report it as failed.
     try:
         cost = f" · cost ${float(e['cost_usd']):.2f}" if e.get("cost_usd") is not None else " · cost not recorded"
         saved = (f" · saved ≈ {round(float(e['human_minutes']) - float(e['you_minutes']))} min"
                  if e.get("human_minutes") is not None and e.get("you_minutes") is not None else
-                 " · saved not computed (your minutes unknown)")
+                 " · saved not computed (" + ("your minutes unknown" if e.get("you_minutes") is None
+                                               else "no human-equivalent estimate") + ")")
     except Exception:
         cost, saved = "", ""
     print(f"ledger: recorded session {sid} · you {e.get('you_minutes')} min · "
