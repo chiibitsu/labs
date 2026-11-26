@@ -123,7 +123,7 @@ def transcript_files(path):
 def usage_from_messages(path):
     """Sum per-message usage across the transcript (and subagents), once per message id.
     Claude Code writes the same API message on several lines, so de-duplicate by id."""
-    seen, models, cost, unpriced = set(), {}, 0.0, False
+    seen, models, cost, unpriced, any_priced = set(), {}, 0.0, False, False
     for fp in transcript_files(path):
         try:
             f = open(fp, encoding="utf-8")
@@ -155,13 +155,14 @@ def usage_from_messages(path):
                     unpriced = True
                 else:
                     cost += c
+                    any_priced = True
     if not models:
         return {}
     out = {"tokens_input": sum(r["inputTokens"] + r["cacheCreationInputTokens"] for r in models.values()),
            "tokens_cache_read": sum(r["cacheReadInputTokens"] for r in models.values()),
            "tokens_output": sum(r["outputTokens"] for r in models.values()),
            "model_usage": models}
-    if any(r["priced"] for r in models.values()):
+    if any_priced:
         out["cost_usd"] = round(cost, 4)
         out["cost_basis"] = "partial" if unpriced else "estimate"
     return out
@@ -201,6 +202,21 @@ def spool(entry, err):
         box[f"{entry.get('source')}:{entry.get('external_id') or id(entry)}"] = {"entry": entry, "error": str(err)[:200], "at": time.time()}
         with open(spool_path(), "w") as f:
             json.dump(box, f)
+    except Exception:
+        pass
+
+
+def unspool(entry):
+    """A newer send succeeded: drop any older unsent snapshot of the same session."""
+    try:
+        with open(spool_path()) as f:
+            box = json.load(f)
+        if box.pop(f"{entry.get('source')}:{entry.get('external_id')}", None) is not None:
+            if box:
+                with open(spool_path(), "w") as f:
+                    json.dump(box, f)
+            else:
+                os.remove(spool_path())
     except Exception:
         pass
 
@@ -347,6 +363,7 @@ def hook():
              "title_if_empty": m.pop("first_prompt") or None, **m}
     try:
         rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": entry})
+        unspool(entry)
     except Exception as err:
         spool(entry, err)  # said out loud at the next session start; never blocks Claude
 
@@ -377,6 +394,7 @@ def entry():
     e.setdefault("project", project_name(cwd))
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
+        unspool(e)
         saved = (e.get("human_minutes") or 0) - (e.get("you_minutes") or 0)
         cost = f" · cost ${e['cost_usd']:.2f}" if e.get("cost_usd") is not None else ""
         print(f"ledger: recorded session {sid} · you {e.get('you_minutes')} min · "
@@ -417,6 +435,7 @@ def emit():
     e.setdefault("project", project_name(os.getcwd()))
     try:
         sid = rpc("ledger_ingest", {"p_token": TOKEN, "p_entry": e})
+        unspool(e)
         print(f"ledger: recorded {e['source']} line {sid}")
     except Exception as err:
         spool(e, err)
