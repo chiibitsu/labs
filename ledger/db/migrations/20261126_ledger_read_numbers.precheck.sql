@@ -53,6 +53,11 @@ other_problems as (
         is distinct from
         'created_at timestamp with time zone, id uuid, label text, revoked boolean, token_hash text'
   union all
+  select 'ledger_read_tokens already exists and is owned by ' || pg_get_userbyid(c.relowner) || ', not ' || current_user
+  from pg_class c
+  where c.oid = to_regclass('public.ledger_read_tokens')
+    and c.relowner <> (select oid from pg_roles where rolname = current_user)
+  union all
   select 'a function named ' || p.proname || ' already exists with a different shape'
   from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
   where ns.nspname = 'public'

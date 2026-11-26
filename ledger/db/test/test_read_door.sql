@@ -78,6 +78,14 @@ select pg_temp.ok(
    where j like '%FREETEXT%'),
   'no free text (titles, estimate basis, action log, keep list) in any row');
 
+select pg_temp.ok(
+  (select model_usage = '{"claude-opus-5-5": {"inputTokens": 7, "priced": true}}'::jsonb
+     from public.ledger_read_numbers(current_setting('t.tok'), 1, 0)),
+  'model_usage keeps model names with their numbers and true/false fields, drops text');
+select pg_temp.ok(
+  (select model_usage is null from public.ledger_read_numbers(current_setting('t.tok'), 1, 1199)),
+  'a model_usage that is not an object comes back empty, not as-is');
+
 -- ── A column added later must not leak ───────────────────────────────────────
 reset role;
 alter table public.ledger_sessions add column secret_note text default 'FREETEXT-NEW-COLUMN';

@@ -19,7 +19,10 @@ A script can read the ledger's **numbers** without a key that can change anythin
 | Paging | keep adding `p_limit` to `p_offset` until a page comes back shorter than `p_limit` |
 | Bad or revoked token | an error, never an empty list (Postgres code 28000; expected to arrive as HTTP 403, not yet seen on the real ledger) |
 
-Never returned: session titles, estimate notes, the action log, the keep list, or
+`model_usage` is rebuilt: model names with only their number and true/false fields.
+
+Never returned: session titles, estimate notes, the action log, the keep list, any
+text inside `model_usage`, or
 any column added to sessions later (the list above is fixed in the function).
 
 **Read tokens are separate from intake tokens.** They live in their own table,

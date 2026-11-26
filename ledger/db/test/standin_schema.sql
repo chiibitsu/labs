@@ -84,3 +84,10 @@ from generate_series(1, 1200) g;
 insert into public.ledger_actions (session_id, kind, line)
 select id, 'did', 'FREETEXT-ACTION' from public.ledger_sessions limit 5;
 insert into public.ledger_keep (kind, label, why, sort) values ('task', 'FREETEXT-KEEP', 'FREETEXT-WHY', 1);
+
+-- model_usage with text hidden inside, and one that isn't an object at all.
+update public.ledger_sessions set model_usage =
+  '{"claude-opus-5-5": {"inputTokens": 7, "priced": true, "note": "FREETEXT-MU-NESTED"}, "summary": "FREETEXT-MU-TOP"}'
+where started_at = (select min(started_at) from public.ledger_sessions);
+update public.ledger_sessions set model_usage = '["FREETEXT-MU-ARRAY"]'
+where started_at = (select max(started_at) from public.ledger_sessions);

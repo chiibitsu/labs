@@ -49,6 +49,17 @@ out="$(precheck clash)"
 case "$out" in "DO NOT RUN YET | "*"ledger_read_tokens already exists"*) echo "ok   pre-check stops on a clashing ledger_read_tokens table";;
   *) echo "FAIL: pre-check said: $out"; exit 1;; esac
 
+q -c "create database foreign_owner"
+q -d foreign_owner -f "$here/standin_schema.sql"
+q -d foreign_owner -c "create role intruder nologin" -c "create table public.ledger_read_tokens (id uuid primary key default gen_random_uuid(), label text not null, token_hash text not null unique, revoked boolean not null default false, created_at timestamptz not null default now())" -c "alter table public.ledger_read_tokens owner to intruder"
+out="$(precheck foreign_owner)"
+case "$out" in "DO NOT RUN YET | "*"owned by intruder"*) echo "ok   pre-check stops on a read-token table owned by another role";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+if q -d foreign_owner -f "$mig" >/dev/null 2>&1; then echo "FAIL: migration ran on a foreign-owned token table"; exit 1; fi
+q -d foreign_owner -At -c "select to_regproc('public.ledger_read_numbers') is null" | grep -qx t \
+  || { echo "FAIL: door was created on a foreign-owned token table"; exit 1; }
+echo "ok   migration refuses a foreign-owned token table and creates no door"
+
 echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"

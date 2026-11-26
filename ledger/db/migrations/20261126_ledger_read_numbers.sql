@@ -28,6 +28,17 @@ create table if not exists public.ledger_read_tokens (
   created_at  timestamptz not null default now()
 );
 
+-- If the table already existed, it must be ours (from an earlier run of this file).
+-- A table owned by another role would let that role add its own token.
+do $$
+begin
+  if (select c.relowner from pg_class c where c.oid = 'public.ledger_read_tokens'::regclass)
+     <> (select oid from pg_roles where rolname = current_user) then
+    raise exception 'ledger: public.ledger_read_tokens already exists and is owned by another role; stopping';
+  end if;
+end;
+$$;
+
 -- Nobody reaches this table through the API: RLS on, no policies, no grants.
 alter table public.ledger_read_tokens enable row level security;
 revoke all on table public.ledger_read_tokens from public, anon, authenticated;
@@ -85,7 +96,15 @@ begin
            s.tokens_input::bigint,
            s.tokens_cache_read::bigint,
            s.tokens_output::bigint,
-           s.model_usage::jsonb
+           -- model_usage is rebuilt, not passed through: model name -> only its
+           -- number and true/false fields. Any text inside it is dropped.
+           (select jsonb_object_agg(m.key, (
+                     select coalesce(jsonb_object_agg(f.key, f.value), '{}'::jsonb)
+                     from jsonb_each(m.value) f
+                     where jsonb_typeof(f.value) in ('number', 'boolean')))
+              from jsonb_each(case when jsonb_typeof(s.model_usage::jsonb) = 'object'
+                                   then s.model_usage::jsonb else '{}'::jsonb end) m
+             where jsonb_typeof(m.value) = 'object')
     from public.ledger_sessions s
     order by s.started_at nulls last, s.id
     limit  least(greatest(coalesce(p_limit, 500), 1), 1000)
