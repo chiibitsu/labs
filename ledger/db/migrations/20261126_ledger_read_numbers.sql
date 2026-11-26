@@ -17,6 +17,23 @@
 
 begin;
 
+-- 0. Any function this file replaces must already be ours. CREATE OR REPLACE keeps
+--    an existing owner, and that owner could later rewrite the door.
+do $$
+declare bad text;
+begin
+  select string_agg(p.oid::regprocedure::text || ' (owned by ' || pg_get_userbyid(p.proowner) || ')', ', ')
+    into bad
+  from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+  where ns.nspname = 'public'
+    and p.proname in ('ledger_read_numbers', 'ledger_new_read_token', 'ledger_revoke_read_token')
+    and p.proowner <> (select oid from pg_roles where rolname = current_user);
+  if bad is not null then
+    raise exception 'ledger: these functions already exist and are owned by another role: %; stopping', bad;
+  end if;
+end;
+$$;
+
 -- 1. Read tokens live in their own table, apart from the write (intake) tokens,
 --    so a read token is never accepted by a write function and can be revoked
 --    without touching any write token.

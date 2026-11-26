@@ -60,6 +60,24 @@ q -d foreign_owner -At -c "select to_regproc('public.ledger_read_numbers') is nu
   || { echo "FAIL: door was created on a foreign-owned token table"; exit 1; }
 echo "ok   migration refuses a foreign-owned token table and creates no door"
 
+q -c "create database foreign_fn"
+q -d foreign_fn -f "$here/standin_schema.sql"
+q -d foreign_fn -c "create role intruder2 nologin" \
+  -c "create function public.ledger_read_numbers(p_token text, p_limit integer default 500, p_offset integer default 0) returns setof integer language sql as 'select 1'" \
+  -c "alter function public.ledger_read_numbers(text,integer,integer) owner to intruder2"
+out="$(precheck foreign_fn)"
+case "$out" in "DO NOT RUN YET | "*"ledger_read_numbers"*"owned by intruder2"*) echo "ok   pre-check stops on a door function owned by another role";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+if q -d foreign_fn -f "$mig" >/dev/null 2>&1; then echo "FAIL: migration ran over a foreign-owned function"; exit 1; fi
+q -d foreign_fn -At -c "select pg_get_userbyid(proowner) || ' ' || pg_get_function_result(oid) from pg_proc where proname = 'ledger_read_numbers'" | grep -qx "intruder2 SETOF integer" \
+  && q -d foreign_fn -At -c "select to_regclass('public.ledger_read_tokens') is null" | grep -qx t \
+  || { echo "FAIL: migration changed something on a foreign-owned function"; exit 1; }
+echo "ok   migration refuses a foreign-owned function and changes nothing"
+q -d foreign_fn -c "alter function public.ledger_read_numbers(text,integer,integer) owner to postgres"
+out="$(precheck foreign_fn)"
+case "$out" in "DO NOT RUN YET | "*"ledger_read_numbers"*"different shape"*) echo "ok   pre-check stops on a same-arguments function with a different return";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+
 echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"

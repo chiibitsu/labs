@@ -58,12 +58,24 @@ other_problems as (
   where c.oid = to_regclass('public.ledger_read_tokens')
     and c.relowner <> (select oid from pg_roles where rolname = current_user)
   union all
-  select 'a function named ' || p.proname || ' already exists with a different shape'
-  from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+  select 'a function named ' || p.oid::regprocedure::text || ' already exists'
+         || case when p.proowner <> (select oid from pg_roles where rolname = current_user)
+                 then ' and is owned by ' || pg_get_userbyid(p.proowner) else ' with a different shape' end
+  from pg_proc p
+  join pg_namespace ns on ns.oid = p.pronamespace
+  join (values
+    ('ledger_read_numbers', 'p_token text, p_limit integer, p_offset integer',
+     'TABLE(started_at timestamp with time zone, ended_at timestamp with time zone, source text, project text, '
+     'ai_minutes numeric, you_minutes numeric, human_minutes numeric, saved_minutes numeric, cost_usd numeric, '
+     'cost_basis text, tokens_input bigint, tokens_cache_read bigint, tokens_output bigint, model_usage jsonb)'),
+    ('ledger_new_read_token',    'p_label text', 'text'),
+    ('ledger_revoke_read_token', 'p_label text', 'integer')
+  ) as want(name, args, result) on want.name = p.proname
   where ns.nspname = 'public'
-    and (   (p.proname = 'ledger_read_numbers'      and pg_get_function_identity_arguments(p.oid) <> 'p_token text, p_limit integer, p_offset integer')
-         or (p.proname = 'ledger_new_read_token'    and pg_get_function_identity_arguments(p.oid) <> 'p_label text')
-         or (p.proname = 'ledger_revoke_read_token' and pg_get_function_identity_arguments(p.oid) <> 'p_label text'))
+    and (   p.proowner <> (select oid from pg_roles where rolname = current_user)
+         or p.prokind <> 'f'
+         or pg_get_function_identity_arguments(p.oid) <> want.args
+         or pg_get_function_result(p.oid) <> want.result)
 ),
 all_problems as (select p from col_problems union all select p from other_problems)
 select case when count(*) = 0 then 'SAFE TO RUN' else 'DO NOT RUN YET' end as verdict,
