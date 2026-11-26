@@ -21,6 +21,10 @@ Parkinson's law can't quietly fill it with more work.
 
 Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/chatgpt-and-codex.md).
 
+One line format for every tool, and how to add a new one: [`FORMAT.md`](./FORMAT.md).
+If a session can't reach the ledger, it says so at the next session start and keeps
+the line to retry; it never invents numbers.
+
 ## One-time setup (about 10 minutes)
 
 1. **Allow the login link.** Supabase → `chiibitsu-labs` → Authentication → URL
@@ -58,13 +62,18 @@ Details for ChatGPT and Codex: [`elsewhere/chatgpt-and-codex.md`](./elsewhere/ch
 - **Cost & tokens:** Claude Code writes a running cost total and per-model token
   counts into every transcript; the hook records them as reported (`cost_basis =
   reported`). That's the API-equivalent cost: on a subscription it isn't your bill,
-  but it's the honest number to set against a human's hours. The page shows cost
+  but it's the honest number to set against a human's hours. Cloud transcripts
+  carry no cost total, so there the client adds up each message's tokens and prices
+  them from list prices (`cost_basis = estimate`; `partial` if a model has no listed
+  price). See [`FORMAT.md`](./FORMAT.md). The page shows cost
   per day and week, and **cost per saved hour** overall. ChatGPT and Codex
   don't report cost, so fill it in by hand if you want it (`manual`).
 
 ## Files
 
 - `index.html`: the private daily page
+- `FORMAT.md`: the ledger line format and the adapter guide
+- `adapters/`: worked adapter example (local model)
 - `plugin/`: Claude Code plugin (`hooks/`, `scripts/ledger.py`, `skills/log-session/`)
 - `elsewhere/`: Claude chat/Cowork skill, ChatGPT and Codex instructions
 - `../.claude-plugin/marketplace.json`: makes this repo a plugin marketplace
