@@ -26,9 +26,18 @@ fingerprint() {  # everything about the existing write tokens and write door
    || (select prosrc || coalesce(proacl::text, '') from pg_proc where oid = 'public.ledger_ingest(text,jsonb)'::regprocedure))"
 }
 
-echo "1. migration applies, twice, and leaves write tokens untouched"
+pre="$here/../migrations/20261126_ledger_read_numbers.precheck.sql"
+precheck() {  # run the pre-check in a read-only transaction: any write would error
+  $as env PGOPTIONS="-c default_transaction_read_only=on" psql -h "$work" -U postgres -X -v ON_ERROR_STOP=1 -q -At -F ' | ' -d "$1" -f "$pre"
+}
+
+echo "0. read-only pre-check"
 q -c "create database t"
 q -d t -f "$here/standin_schema.sql"
+out="$(precheck t)"
+case "$out" in "SAFE TO RUN | "*"| none") echo "ok   matching ledger: $out";; *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+
+echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"
 q -d t -f "$mig"
@@ -46,6 +55,10 @@ echo "3. a misnamed ledger column makes the whole migration roll back"
 q -c "create database bad"
 q -d bad -f "$here/standin_schema.sql"
 q -d bad -c "alter table public.ledger_sessions rename column cost_basis to cost_kind"
+q -d bad -c "alter table public.ledger_sessions alter column model_usage type text"
+out="$(precheck bad)"
+case "$out" in "DO NOT RUN YET | "*"cost_basis is missing"*"model_usage is text"*) echo "ok   pre-check stops on a mismatched ledger: $out";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
 if q -d bad -f "$mig" >/dev/null 2>&1; then echo "FAIL: migration applied on a mismatched ledger"; exit 1; fi
 q -d bad -At -c "select to_regclass('public.ledger_read_tokens') is null and to_regproc('public.ledger_read_numbers') is null" | grep -qx t \
   || { echo "FAIL: a failed apply left something behind"; exit 1; }

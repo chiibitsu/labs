@@ -35,6 +35,10 @@ anything. Revoke it (below) and mint a new one.
 
 Supabase → `chiibitsu-labs` → SQL Editor:
 
+- **Check first** (read-only, changes nothing): paste
+  `migrations/20261126_ledger_read_numbers.precheck.sql` → Run. One row comes back.
+  `SAFE TO RUN` with problems `none` means go ahead; `DO NOT RUN YET` lists what differs.
+- **Apply:** paste `migrations/20261126_ledger_read_numbers.sql` → Run.
 - **Make a read token** (shows it once; only its fingerprint is kept):
   `select public.ledger_new_read_token('nightly export');`
 - **Revoke it:** `select public.ledger_revoke_read_token('nightly export');`
