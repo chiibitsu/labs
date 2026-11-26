@@ -78,6 +78,27 @@ out="$(precheck foreign_fn)"
 case "$out" in "DO NOT RUN YET | "*"ledger_read_numbers"*"different shape"*) echo "ok   pre-check stops on a same-arguments function with a different return";;
   *) echo "FAIL: pre-check said: $out"; exit 1;; esac
 
+for case_ in policy grant; do
+  q -c "create database pre_$case_"
+  q -d pre_$case_ -f "$here/standin_schema.sql"
+  q -d pre_$case_ -c "create table public.ledger_read_tokens (id uuid primary key default gen_random_uuid(), label text not null, token_hash text not null unique, revoked boolean not null default false, created_at timestamptz not null default now())" \
+    -c "revoke all on public.ledger_read_tokens from anon, authenticated, service_role"
+  if [ $case_ = policy ]; then
+    q -d pre_$case_ -c "alter table public.ledger_read_tokens enable row level security" -c "create policy open_door on public.ledger_read_tokens for all using (true) with check (true)"
+    want="row-level policies"
+  else
+    q -d pre_$case_ -c "create role api_custom nologin" -c "grant insert, select on public.ledger_read_tokens to api_custom"
+    want="grants to api_custom"
+  fi
+  out="$(precheck pre_$case_)"
+  case "$out" in "DO NOT RUN YET | "*"$want"*) echo "ok   pre-check stops on an existing token table with $want";;
+    *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+  if q -d pre_$case_ -f "$mig" >/dev/null 2>&1; then echo "FAIL: migration ran over a token table with $want"; exit 1; fi
+  q -d pre_$case_ -At -c "select to_regproc('public.ledger_read_numbers') is null" | grep -qx t \
+    || { echo "FAIL: door created over a token table with $want"; exit 1; }
+  echo "ok   migration refuses an existing token table with $want and creates no door"
+done
+
 echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"

@@ -58,6 +58,14 @@ other_problems as (
   where c.oid = to_regclass('public.ledger_read_tokens')
     and c.relowner <> (select oid from pg_roles where rolname = current_user)
   union all
+  select 'ledger_read_tokens already exists with row-level policies'
+  where exists (select 1 from pg_policy where polrelid = to_regclass('public.ledger_read_tokens'))
+  union all
+  select 'ledger_read_tokens already exists with grants to ' || string_agg(distinct pg_get_userbyid(a.grantee), ', ')
+  from pg_class c, aclexplode(c.relacl) a
+  where c.oid = to_regclass('public.ledger_read_tokens') and a.grantee <> c.relowner
+  having count(*) > 0
+  union all
   select 'a function named ' || p.oid::regprocedure::text || ' already exists'
          || case when p.proowner <> (select oid from pg_roles where rolname = current_user)
                  then ' and is owned by ' || pg_get_userbyid(p.proowner) else ' with a different shape' end

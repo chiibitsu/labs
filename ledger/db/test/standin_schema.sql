@@ -10,9 +10,10 @@
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin; end if;
 end $$;
 grant usage on schema public to anon, authenticated;
-alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated;
 
 create table public.ledger_sessions (
@@ -87,7 +88,7 @@ insert into public.ledger_keep (kind, label, why, sort) values ('task', 'FREETEX
 
 -- model_usage with text hidden inside, and one that isn't an object at all.
 update public.ledger_sessions set model_usage =
-  '{"claude-opus-5-5": {"inputTokens": 7, "priced": true, "note": "FREETEXT-MU-NESTED"}, "summary": "FREETEXT-MU-TOP"}'
+  '{"claude-opus-5-5": {"inputTokens": 7, "priced": true, "note": "FREETEXT-MU-NESTED", "FREETEXT-MU-KEY": 1}, "summary": "FREETEXT-MU-TOP", "FREETEXT MU MODEL KEY!": {"inputTokens": 1}}'
 where started_at = (select min(started_at) from public.ledger_sessions);
 update public.ledger_sessions set model_usage = '["FREETEXT-MU-ARRAY"]'
 where started_at = (select max(started_at) from public.ledger_sessions);

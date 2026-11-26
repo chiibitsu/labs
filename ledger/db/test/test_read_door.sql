@@ -48,6 +48,12 @@ select pg_temp.ok(
      from pg_proc where oid = 'public.ledger_read_numbers(text,integer,integer)'::regprocedure),
   'door body has no write, DDL or dynamic-SQL statement');
 
+select pg_temp.ok(
+  (select coalesce(array_agg(distinct pg_get_userbyid(a.grantee)::text), '{}') = array['postgres']
+     from pg_class c, aclexplode(c.relacl) a where c.oid = 'public.ledger_read_tokens'::regclass)
+  and not exists (select 1 from pg_policy where polrelid = 'public.ledger_read_tokens'::regclass),
+  'token table: only its owner has grants (default grants to anon, authenticated, service_role removed), no policies');
+
 -- ── From here on, act as the API caller holding only the publishable key ─────
 set role anon;
 
@@ -81,7 +87,7 @@ select pg_temp.ok(
 select pg_temp.ok(
   (select model_usage = '{"claude-opus-5-5": {"inputTokens": 7, "priced": true}}'::jsonb
      from public.ledger_read_numbers(current_setting('t.tok'), 1, 0)),
-  'model_usage keeps model names with their numbers and true/false fields, drops text');
+  'model_usage keeps model-id names and known counters only; text keys, text values and odd names dropped');
 select pg_temp.ok(
   (select model_usage is null from public.ledger_read_numbers(current_setting('t.tok'), 1, 1199)),
   'a model_usage that is not an object comes back empty, not as-is');

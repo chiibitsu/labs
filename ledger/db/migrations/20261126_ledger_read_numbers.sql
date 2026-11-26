@@ -37,6 +37,28 @@ $$;
 -- 1. Read tokens live in their own table, apart from the write (intake) tokens,
 --    so a read token is never accepted by a write function and can be revoked
 --    without touching any write token.
+--    If the table already exists it must be one an earlier run of this file left:
+--    owned by us, with no policies and no grants to anyone else. Otherwise stop,
+--    because whoever can reach it could add their own token.
+do $$
+declare
+  me oid := (select oid from pg_roles where rolname = current_user);
+  t  regclass := to_regclass('public.ledger_read_tokens');
+begin
+  if t is not null then
+    if (select relowner from pg_class where oid = t) <> me then
+      raise exception 'ledger: public.ledger_read_tokens already exists and is owned by another role; stopping';
+    end if;
+    if exists (select 1 from pg_policy where polrelid = t) then
+      raise exception 'ledger: public.ledger_read_tokens already exists with row-level policies; stopping';
+    end if;
+    if exists (select 1 from pg_class c, aclexplode(c.relacl) a where c.oid = t and a.grantee <> me) then
+      raise exception 'ledger: public.ledger_read_tokens already exists with grants to other roles; stopping';
+    end if;
+  end if;
+end;
+$$;
+
 create table if not exists public.ledger_read_tokens (
   id          uuid primary key default gen_random_uuid(),
   label       text not null,
@@ -45,20 +67,24 @@ create table if not exists public.ledger_read_tokens (
   created_at  timestamptz not null default now()
 );
 
--- If the table already existed, it must be ours (from an earlier run of this file).
--- A table owned by another role would let that role add its own token.
+-- Nobody but the owner reaches this table: RLS on, no policies, and every grant
+-- the database added by default (to anon, authenticated, service_role or any
+-- other role) removed.
+alter table public.ledger_read_tokens enable row level security;
+revoke all on table public.ledger_read_tokens from public;
 do $$
+declare r text;
 begin
-  if (select c.relowner from pg_class c where c.oid = 'public.ledger_read_tokens'::regclass)
-     <> (select oid from pg_roles where rolname = current_user) then
-    raise exception 'ledger: public.ledger_read_tokens already exists and is owned by another role; stopping';
-  end if;
+  for r in
+    select distinct quote_ident(pg_get_userbyid(a.grantee))
+    from pg_class c, aclexplode(c.relacl) a
+    where c.oid = 'public.ledger_read_tokens'::regclass
+      and a.grantee <> c.relowner and a.grantee <> 0
+  loop
+    execute 'revoke all on table public.ledger_read_tokens from ' || r;
+  end loop;
 end;
 $$;
-
--- Nobody reaches this table through the API: RLS on, no policies, no grants.
-alter table public.ledger_read_tokens enable row level security;
-revoke all on table public.ledger_read_tokens from public, anon, authenticated;
 
 -- 2. The door. Fixed column list: a column added to ledger_sessions later is
 --    never returned unless someone edits this list. STABLE: Postgres refuses any
@@ -113,15 +139,21 @@ begin
            s.tokens_input::bigint,
            s.tokens_cache_read::bigint,
            s.tokens_output::bigint,
-           -- model_usage is rebuilt, not passed through: model name -> only its
-           -- number and true/false fields. Any text inside it is dropped.
+           -- model_usage is rebuilt, not passed through. Kept: model names that
+           -- look like model ids (letters, digits and . _ : / @ -, up to 100
+           -- characters), and under each only these known counters, with number
+           -- (or, for priced, true/false) values. Every other key and value is dropped.
            (select jsonb_object_agg(m.key, (
                      select coalesce(jsonb_object_agg(f.key, f.value), '{}'::jsonb)
                      from jsonb_each(m.value) f
-                     where jsonb_typeof(f.value) in ('number', 'boolean')))
+                     where (f.key in ('inputTokens', 'outputTokens', 'cacheReadInputTokens',
+                                      'cacheCreationInputTokens', 'costUSD')
+                            and jsonb_typeof(f.value) = 'number')
+                        or (f.key = 'priced' and jsonb_typeof(f.value) = 'boolean')))
               from jsonb_each(case when jsonb_typeof(s.model_usage::jsonb) = 'object'
                                    then s.model_usage::jsonb else '{}'::jsonb end) m
-             where jsonb_typeof(m.value) = 'object')
+             where jsonb_typeof(m.value) = 'object'
+               and m.key ~ '^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,99}$')
     from public.ledger_sessions s
     order by s.started_at nulls last, s.id
     limit  least(greatest(coalesce(p_limit, 500), 1), 1000)
