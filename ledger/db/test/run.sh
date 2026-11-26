@@ -5,8 +5,13 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 mig="$here/../migrations/20261126_ledger_read_numbers.sql"
-PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
-export PATH="$PGBIN:$PATH"
+if [ -n "${PGBIN:-}" ]; then export PATH="$PGBIN:$PATH"
+elif ! command -v initdb >/dev/null 2>&1; then  # Debian/Ubuntu keep them off PATH
+  for d in /usr/lib/postgresql/*/bin; do [ -x "$d/initdb" ] && PGBIN="$d"; done
+  [ -n "${PGBIN:-}" ] && export PATH="$PGBIN:$PATH"
+fi
+command -v initdb >/dev/null 2>&1 && command -v pg_ctl >/dev/null 2>&1 \
+  || { echo "run.sh: Postgres server tools (initdb, pg_ctl) not found; install Postgres 13+ or set PGBIN"; exit 1; }
 
 work="$(mktemp -d)"
 as=""; if [ "$(id -u)" = 0 ]; then as="runuser -u postgres --"; chown postgres "$work"; fi
