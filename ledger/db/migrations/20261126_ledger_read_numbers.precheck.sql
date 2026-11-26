@@ -45,11 +45,13 @@ other_problems as (
   select 'Postgres ' || current_setting('server_version') || ' is older than 13' as p
   where current_setting('server_version_num')::int < 130000
   union all
-  select 'a table named ledger_read_tokens already exists with other columns'
+  select 'a table named ledger_read_tokens already exists with a different shape'
   where to_regclass('public.ledger_read_tokens') is not null
-    and (select count(*) from information_schema.columns
-          where table_schema = 'public' and table_name = 'ledger_read_tokens'
-            and column_name in ('id', 'label', 'token_hash', 'revoked', 'created_at')) <> 5
+    and (select string_agg(column_name || ' ' || data_type, ', ' order by column_name)
+           from information_schema.columns
+          where table_schema = 'public' and table_name = 'ledger_read_tokens')
+        is distinct from
+        'created_at timestamp with time zone, id uuid, label text, revoked boolean, token_hash text'
   union all
   select 'a function named ' || p.proname || ' already exists with a different shape'
   from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace

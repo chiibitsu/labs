@@ -7,8 +7,8 @@ here="$(cd "$(dirname "$0")" && pwd)"
 mig="$here/../migrations/20261126_ledger_read_numbers.sql"
 if [ -n "${PGBIN:-}" ]; then export PATH="$PGBIN:$PATH"
 elif ! command -v initdb >/dev/null 2>&1; then  # Debian/Ubuntu keep them off PATH
-  for d in /usr/lib/postgresql/*/bin; do [ -x "$d/initdb" ] && PGBIN="$d"; done
-  [ -n "${PGBIN:-}" ] && export PATH="$PGBIN:$PATH"
+  PGBIN="$(for d in /usr/lib/postgresql/*/bin; do [ -x "$d/initdb" ] && echo "$d"; done | sort -V | tail -1 || true)"
+  [ -n "$PGBIN" ] && export PATH="$PGBIN:$PATH"
 fi
 command -v initdb >/dev/null 2>&1 && command -v pg_ctl >/dev/null 2>&1 \
   || { echo "run.sh: Postgres server tools (initdb, pg_ctl) not found; install Postgres 13+ or set PGBIN"; exit 1; }
@@ -42,6 +42,13 @@ q -d t -f "$here/standin_schema.sql"
 out="$(precheck t)"
 case "$out" in "SAFE TO RUN | "*"| none") echo "ok   matching ledger: $out";; *) echo "FAIL: pre-check said: $out"; exit 1;; esac
 
+q -c "create database clash"
+q -d clash -f "$here/standin_schema.sql"
+q -d clash -c "create table public.ledger_read_tokens (id uuid, label text, token_hash text, revoked boolean, created_at timestamptz, owner text not null)"
+out="$(precheck clash)"
+case "$out" in "DO NOT RUN YET | "*"ledger_read_tokens already exists"*) echo "ok   pre-check stops on a clashing ledger_read_tokens table";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+
 echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"
@@ -51,6 +58,9 @@ echo "ok   ledger_tokens rows, grants, policies and ledger_ingest are byte-for-b
 q -d t -At -c "select count(*) from public.ledger_read_tokens" | grep -qx 0 \
   || { echo "FAIL: self-check left a token behind"; exit 1; }
 echo "ok   self-check leaves no token behind"
+out="$(precheck t)"
+case "$out" in "SAFE TO RUN | "*"| none") echo "ok   pre-check still says SAFE after the migration (re-run is fine)";;
+  *) echo "FAIL: pre-check after migration said: $out"; exit 1;; esac
 
 echo "2. the door"
 q -d t -f "$here/test_read_door.sql" 2>&1 | sed 's/^psql:[^ ]* NOTICE:  /  /; s/^NOTICE:  /  /'
