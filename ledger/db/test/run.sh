@@ -136,8 +136,9 @@ q -c "create database bad"
 q -d bad -f "$here/standin_schema.sql"
 q -d bad -c "alter table public.ledger_sessions rename column cost_basis to cost_kind"
 q -d bad -c "alter table public.ledger_sessions alter column model_usage type text"
+q -d bad -c "alter table public.ledger_sessions alter column tokens_output type numeric"
 out="$(precheck bad)"
-case "$out" in "DO NOT RUN YET | "*"cost_basis is missing"*"model_usage is text"*) echo "ok   pre-check stops on a mismatched ledger: $out";;
+case "$out" in "DO NOT RUN YET | "*"cost_basis is missing"*"model_usage is text"*"tokens_output is numeric"*) echo "ok   pre-check stops on a mismatched ledger: $out";;
   *) echo "FAIL: pre-check said: $out"; exit 1;; esac
 if q -d bad -f "$mig" >/dev/null 2>&1; then echo "FAIL: migration applied on a mismatched ledger"; exit 1; fi
 q -d bad -At -c "select to_regclass('public.ledger_read_tokens') is null and to_regproc('public.ledger_read_numbers') is null" | grep -qx t \

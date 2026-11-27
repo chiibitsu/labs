@@ -38,7 +38,7 @@ col_problems as (
      or (kind = 'time'   and data_type not in ('timestamp with time zone', 'timestamp without time zone', 'date'))
      or (kind = 'text'   and data_type not in ('text', 'character varying', 'character', 'USER-DEFINED'))
      or (kind = 'number' and data_type not in ('numeric', 'real', 'double precision', 'integer', 'bigint', 'smallint'))
-     or (kind = 'whole'  and data_type not in ('integer', 'bigint', 'smallint', 'numeric'))
+     or (kind = 'whole'  and data_type not in ('integer', 'bigint', 'smallint'))
      or (kind = 'json'   and data_type not in ('jsonb', 'json'))
      or (kind = 'key'    and data_type not in ('uuid', 'bigint', 'integer', 'text', 'character varying'))
 ),
