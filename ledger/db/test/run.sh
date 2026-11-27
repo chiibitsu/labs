@@ -99,6 +99,15 @@ for case_ in policy grant; do
   echo "ok   migration refuses an existing token table with $want and creates no door"
 done
 
+q -c "create database prepop"
+q -d prepop -f "$here/standin_schema.sql"
+q -d prepop -c "create table public.ledger_read_tokens (id uuid primary key default gen_random_uuid(), label text not null, token_hash text not null unique, revoked boolean not null default false, created_at timestamptz not null default now())" \
+  -c "revoke all on public.ledger_read_tokens from anon, authenticated, service_role" \
+  -c "insert into public.ledger_read_tokens (label, token_hash) values ('planted', encode(sha256(convert_to('known', 'UTF8')), 'hex'))"
+out="$(precheck prepop)"
+case "$out" in "DO NOT RUN YET | "*"already holds 1 token"*) echo "ok   pre-check stops on a token table that already holds a token";;
+  *) echo "FAIL: pre-check said: $out"; exit 1;; esac
+
 echo "1. migration applies, twice, and leaves write tokens untouched"
 before="$(fingerprint t)"
 q -d t -f "$mig"
@@ -115,6 +124,12 @@ case "$out" in "SAFE TO RUN | "*"| none") echo "ok   pre-check still says SAFE a
 echo "2. the door"
 q -d t -f "$here/test_read_door.sql" 2>&1 | sed 's/^psql:[^ ]* NOTICE:  /  /; s/^NOTICE:  /  /'
 [ "$before" = "$(fingerprint t)" ] || { echo "FAIL: tests changed ledger_tokens or ledger_ingest"; exit 1; }
+
+echo "2b. read-only token audit"
+out="$($as env PGOPTIONS="-c default_transaction_read_only=on" psql -h "$work" -U postgres -X -v ON_ERROR_STOP=1 -q -At -F ' | ' -d t -f "$here/../checks/20261127_read_tokens_audit.sql")"
+case "$out" in "nightly export | "*"| t | revoked") echo "ok   audit lists labels and status only: $(echo "$out" | sed 's/ | 20[^|]*|/ | <time> |/')";;
+  *) echo "FAIL: audit said: $out"; exit 1;; esac
+echo "$out" | grep -q '[0-9a-f]\{64\}' && { echo "FAIL: audit shows a fingerprint"; exit 1; }
 
 echo "3. a misnamed ledger column makes the whole migration roll back"
 q -c "create database bad"

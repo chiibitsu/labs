@@ -1,6 +1,7 @@
 -- Read-only pre-check for 20261126_ledger_read_numbers.sql. Run this FIRST.
--- It only reads the database's own catalogue (names and types). It changes nothing
--- and reads no ledger rows.
+-- It reads the database's own catalogue (names and types) and counts rows in
+-- ledger_read_tokens if that table already exists. It changes nothing and reads
+-- no ledger sessions.
 --
 -- Supabase -> chiibitsu-labs -> SQL Editor -> paste this file -> Run.
 -- One row comes back:
@@ -85,7 +86,18 @@ other_problems as (
          or pg_get_function_identity_arguments(p.oid) <> want.args
          or pg_get_function_result(p.oid) <> want.result)
 ),
-all_problems as (select p from col_problems union all select p from other_problems)
+token_rows as (
+  -- A first install must start with no read tokens: any token already there was
+  -- not made by ledger_new_read_token and would open the door at once.
+  select (xpath('/row/n/text()',
+          query_to_xml('select count(*) as n from public.ledger_read_tokens', false, true, '')))[1]::text::int as n
+  where to_regclass('public.ledger_read_tokens') is not null
+),
+row_problems as (
+  select 'ledger_read_tokens already holds ' || n || ' token(s); a first install needs it empty (if you already applied the door and made these tokens yourself, you do not need to run it again)' as p
+  from token_rows where n > 0
+),
+all_problems as (select p from col_problems union all select p from other_problems union all select p from row_problems)
 select case when count(*) = 0 then 'SAFE TO RUN' else 'DO NOT RUN YET' end as verdict,
        current_setting('server_version')                                     as postgres,
        coalesce(string_agg(p, '; ' order by p), 'none')                      as problems

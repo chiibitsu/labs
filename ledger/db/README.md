@@ -44,6 +44,8 @@ Supabase → `chiibitsu-labs` → SQL Editor:
   `migrations/20261126_ledger_read_numbers.precheck.sql` → Run. One row comes back.
   `SAFE TO RUN` with problems `none` means go ahead; `DO NOT RUN YET` lists what differs.
 - **Apply:** paste `migrations/20261126_ledger_read_numbers.sql` → Run.
+- **Audit (after applying):** paste `checks/20261127_read_tokens_audit.sql` → Run. It lists each
+  read token's label, date and status, never the token. Expect only tokens you made.
 - **Make a read token** (shows it once; only its fingerprint is kept):
   `select public.ledger_new_read_token('nightly export');`
 - **Revoke it:** `select public.ledger_revoke_read_token('nightly export');`
